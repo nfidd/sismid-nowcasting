@@ -49,41 +49,12 @@ The skills and methods taught in this course apply broadly across infectious dis
 - understanding of population-level modelling with observation error
 - understanding of the link between Rt estimation and nowcasting
 
-## Forecasting
-
-- understanding of forecasting as an epidemiological problem
-- familiarity with ARIMA models for forecasting epidemiological time series
-- understanding of autocorrelation and partial autocorrelation functions for time series analysis
-- understanding of stationarity and data transformations for forecasting
-
-## Combining nowcasting and forecasting
+## Combining nowcasting and forecasting (bridge to the forecasting course)
 
 - understanding of the challenges of forecasting with incomplete data due to reporting delays
 - understanding of the link between nowcasting and forecasting
 - understanding of pipeline approaches for combining nowcasting and forecasting
 - understanding of joint approaches for simultaneous nowcasting and forecasting
 - understanding of the trade-offs between timeliness and completeness in real-time analysis
-
-## Evaluating forecasts (and nowcasts)
-
-- understanding of the four principles of good probabilistic forecasts: calibration, unbiasedness, accuracy, and sharpness
-- familiarity with scoring metrics: Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and Continuous Ranked Probability Score (CRPS)
-- understanding of time-series cross-validation for forecast evaluation
-- familiarity with visual assessment of forecasts and nowcasts
-- understanding the challenges with, and possible solutions for, evaluating datasets with incomplete or missing forecast data
-
-## Ensemble models
-
-- understanding of predictive ensembles and their properties
-- familiarity with different forecast representation formats (samples, quantiles, bins)
-- understanding of linear opinion pools and Vincent averaging for ensemble methods
-- familiarity with hubverse data standards for collaborative forecasting
-
-## Collaborative modeling
-
-- understanding of modeling hubs and hubverse-style tools
-- developing and evaluating forecasting models using real epidemiological data
-- implementing time-series cross-validation for model assessment
-- generating and formatting forecasts for submission to a hub
-- submitting forecasts to a local and/or online hub, generating and interpreting evaluation metrics
+- familiarity with evaluating nowcasts and short-horizon forecasts using proper scoring rules (e.g. the Continuous Ranked Probability Score, CRPS)
 

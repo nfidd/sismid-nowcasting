@@ -33,7 +33,7 @@ The source file of this session is located at `sessions/delay-distributions.qmd`
 
 ## Libraries used
 
-In this session we will use the `nfidd` package to load a data set of infection times and access stan models and helper functions, the `ggplot2` package for plotting, the `dplyr` and `tidyr` packages to wrangle data, the `lubridate` package to deal with dates, the `posterior` and `tidybayes` packages for investigating the results of the inference conducted with stan.
+In this session we will use the `nfidd.nowcasting` package to load a data set of infection times and access stan models and helper functions, the `ggplot2` package for plotting, the `dplyr` and `tidyr` packages to wrangle data, the `lubridate` package to deal with dates, the `posterior` and `tidybayes` packages for investigating the results of the inference conducted with stan.
 
 ```{r libraries, message = FALSE}
 library("nfidd.nowcasting")
@@ -85,7 +85,7 @@ Using infectious disease data for analysis comes with three common challenges:
 
 ## Load the outbreak data
 
-We will work with a data set that is included in the `nfidd` R package that you installed initially.
+We will work with a data set that is included in the `nfidd.nowcasting` R package that you installed initially.
 The column `infection_time` is a linelist of infections from our example outbreak, given as a decimal number of days that have passed since the initial infection of the outbreak.
 It can be loaded with the `data` command.
 
@@ -123,7 +123,7 @@ Let's put these assumptions into practice by simulating some data, adding onset 
 ::: {.callout-tip}
 ## Take a few minutes
 Throughout the course, we repeatedly use some small chunks of code.
-Instead of copying these between sessions, we've put them into functions in the `nfidd` R package that we can use when needed.
+Instead of copying these between sessions, we've put them into functions in the `nfidd.nowcasting` R package that we can use when needed.
 To see exactly what the function does, just type the function name, e.g. `add_delays` for the function below.
 :::
 

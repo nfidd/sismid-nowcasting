@@ -16,32 +16,36 @@ How can we use data typically collected in an outbreak to answer questions like
 
 - what **is** the number of cases now? (*nowcasting*)
 - is it rising/falling and by how much? (*$R_t$ estimation*)
-- what does this mean for the near future (*forecasting*)
+- what does this mean for the near future (*forecasting*, in the [companion course](https://nfidd.github.io/sismid-forecasting/))
 
 in real time.
 
 ### Timeline
 
+This was the **nowcasting** course (first half of the week):
+
 ::: {.incremental}
-- delay distributions and how to estimate them (day 1)
-- $R_t$ estimation and nowcasting (day 2)
-- forecasting, evaluation, and ensemble methods (day 2)
-- forecasting hubs, applications, and linking nowcasting and forecasting (day 3)
+- delay distributions and how to estimate them
+- biases in delays: censoring and right truncation
+- using delays to model the data generating process
+- $R_t$ estimation and the renewal equation
+- nowcasting, and joint estimation of delays and nowcasts
+- linking nowcasting and forecasting (bridge to the forecasting course)
 :::
 
 # Key takeaways
 
-### Day 1: Delay distributions {.smaller}
+### Delay distributions {.smaller}
 
-- delays play a fundamental role in nowcasting/forecasting
+- delays play a fundamental role in nowcasting (and forecasting)
 - we characterise them with probability distributions
 - estimating delays requires correction for biases due to
   - **double interval censoring** (daily data)
   - **right truncation** (real-time analysis)
-  
+
 ![](figures/truncation_final.png)
 
-### Day 2: $R_t$ estimation {.smaller}
+### $R_t$ estimation {.smaller}
 
 - **$R_t$ estimation** using the renewal equation is a convolution problem
 - improving the generative model leads to improvements in estimation (**geometric random walk** vs. independent priors)
@@ -50,7 +54,7 @@ in real time.
 
 ![](figures/r_convolution_sketch.png)
 
-### Day 2: Nowcasting {.smaller}
+### Nowcasting {.smaller}
 
 - **nowcasting** is the task of predicting what data will look once delays have resolved
 - it is a **right truncation problem** (same as discussed before)
@@ -58,30 +62,20 @@ in real time.
 
 ![](figures/complete_reporting_triangle.png)
 
-### Day 2 (cont.): Forecasting and evaluation {.smaller}
+### Bridge: from nowcasting to forecasting {.smaller}
 
-- **forecasting** is the task of making unconditional statements about the future
-- meaningful forecasts are **probabilistic**
-- we can assess forecasts using **proper scoring rules** (MAE, RMSE, CRPS)
-- methods include **ARIMA models**, **ensemble approaches**, and **time-series cross-validation**
-- we can use visualisation and scoring to understand the predictive performance of different models
+- nowcasts feed naturally into **forecasts** of the near future
+- meaningful nowcasts and forecasts are **probabilistic**
+- we can assess them using **proper scoring rules** (e.g. CRPS)
+- the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) (second half of the week) covers forecasting models, evaluation, ensembles, and hubs
 
 ![](figures/pit-log-scale.png)
 
-### Day 3: Collaborative modelling and applications {.smaller}
+### Outlook {.smaller}
 
-- **forecasting hubs** enable collaborative modelling efforts across institutions
-- **hubverse tools** provide standardised formats for forecast submission and evaluation
-- linking **nowcasting and forecasting** through joint or pipeline approaches
 - the methods introduced here have **wide applications** in infectious disease epidemiology
 - **open-source tools** are available to make this task easier in practice
-
-### Outlook: Contributing to forecast hubs {.smaller}
-
-- apply these methods in practice to learn about typical nowcast/forecast performance
-- contribute to **collaborative forecast hubs** to compare approaches
-- use **hubverse standards** for forecast formatting and submission
-- example: European Respiratory Forecasting Hub
+- a real-world example of collaborative nowcasting and forecasting: the European Respiratory Forecasting Hub
 
 ![](figures/respicast.png)
 
