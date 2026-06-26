@@ -19,10 +19,10 @@ jobs:
       LANG: "en_US.UTF-8"
       LC_ALL: "en_US.UTF-8"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Checkout toy hub repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: reichlab/sismid-ili-forecasting-sandbox
           path: ./sismid-ili-forecasting-sandbox
