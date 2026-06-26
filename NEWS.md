@@ -1,4 +1,6 @@
-# nfidd (development version)
+# nfidd.nowcasting (development version)
+
+- Split the combined SISMID course into a standalone nowcasting course and renamed the package from `nfidd` to `nfidd.nowcasting`. Forecasting sessions, slides, datasets, and Stan-free helpers now live in the companion `nfidd.forecasting` package.
 
 # nfidd 1.2.0
 

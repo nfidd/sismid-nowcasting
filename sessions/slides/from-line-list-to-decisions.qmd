@@ -31,34 +31,13 @@ Hans Rosling, Liberia, 2014
 [UKHSA, 2022](https://www.gov.uk/government/publications/monkeypox-outbreak-technical-briefings/investigation-into-monkeypox-outbreak-in-england-technical-briefing-1) <br>
 [Overton et al., *PLOS Comp Biol*, 2023](https://doi.org/10.1371/journal.pcbi.1011463)
 
-### Sometimes we can only access proxy data {.smaller}
-
-**Influenza-like illness (ILI)**: fever AND additional "flu-like" symptom (cough, headache, sore throat, etc.)
-
-- Used when direct case data isn't available
-- Measures % of outpatient visits due to ILI
-
-```{r ili-plot, fig.width=8, fig.height=4, fig.align='center'}
-library(nfidd)
-library(ggplot2)
-library(dplyr)
-data(flu_data)
-flu_data <- flu_data |> filter(epiweek <= "2017-08-27")
-ggplot(flu_data, aes(x = epiweek, y = wili)) +
-  geom_path() +
-  labs(title = "US ILI surveillance data (2003-2017)",
-       x = "Epidemiological week", 
-       y = "Weighted ILI (% of visits)") +
-  theme_minimal()
-```
-
 ### Aim of this course:
 
 How can we use data typically collected for other purposes to answer questions like
 
 - what **is** the number of cases now? (*nowcasting*)
 - is it rising/falling and by how much? (*$R_t$ estimation*)
-- what does this mean for the near future (*forecasting*)
+- what does this mean for the near future (*forecasting*, covered in the [companion course](https://nfidd.github.io/sismid-forecasting/))
 
 in real time.
 
@@ -71,7 +50,7 @@ Throughout the course we will
    
 ```{r outbreak-plot, fig.width=5, fig.height=3, fig.align='center'}
 library(ggplot2)
-library(nfidd)
+library(nfidd.nowcasting)
 ### visualise the infection curve
 data(infection_times)
 ggplot(infection_times, aes(x = infection_time)) +
@@ -96,27 +75,31 @@ Throughout the course we will
 
 Throughout the course we will
 
-3. shift, in the second half, to demonstrations of **data-driven forecasting** and real-world applications
+3. build up to **nowcasting**: estimating what current counts will be once delayed reports arrive
 
 ### Approach
 
 Throughout the course we will
 
-4. work through all steps of a forecasting pipeline of data exploration, model and experimental design, forecast evaluation and combination.
+4. finish by linking nowcasting and forecasting, bridging into the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/)
 
 ### Timeline
 
+This is the **nowcasting** course (first half of the week, Monday to Wednesday midday):
+
 ::: {.incremental}
-- delay distributions and how to estimate them (day 1)
-- $R_t$ estimation and nowcasting (day 2)
-- forecasting, evaluation, and ensemble methods (day 2)
-- forecasting hubs, applications, and linking nowcasting and forecasting (day 3)
+- delay distributions and how to estimate them
+- biases in delays: censoring and right truncation
+- using delays to model the data generating process
+- $R_t$ estimation and the renewal equation
+- nowcasting, and joint estimation of delays and nowcasts
+- linking nowcasting and forecasting (bridge to the forecasting course)
 :::
 
 #
 
 To start the course go to:
-[https://nfidd.github.io/sismid/](https://nfidd.github.io/sismid/)
+[https://nfidd.github.io/sismid-nowcasting/](https://nfidd.github.io/sismid-nowcasting/)
 and get started on the first session (*Delay distributions*)
 
 #

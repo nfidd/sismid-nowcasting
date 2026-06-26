@@ -6,7 +6,7 @@
 \usage{
 nfidd_load_stan_functions(
   functions = NULL,
-  stan_path = nfidd::nfidd_stan_path(),
+  stan_path = nfidd.nowcasting::nfidd_stan_path(),
   wrap_in_block = FALSE,
   write_to_file = FALSE,
   output_file = "nfidd_functions.stan"
@@ -35,9 +35,9 @@ A character string containing the requested Stan functions
 Load Stan functions as a string
 }
 \seealso{
-Other stantools: 
-\code{\link{nfidd_stan_function_files}()},
-\code{\link{nfidd_stan_functions}()},
-\code{\link{nfidd_stan_path}()}
+Other stantools:
+\code{\link[=nfidd_stan_function_files]{nfidd_stan_function_files()}},
+\code{\link[=nfidd_stan_functions]{nfidd_stan_functions()}},
+\code{\link[=nfidd_stan_path]{nfidd_stan_path()}}
 }
 \concept{stantools}

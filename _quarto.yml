@@ -4,11 +4,11 @@ project:
     - "*.qmd"
 
 website:
-  title: "NFIDD SISMID"
-  site-url: https://nfidd.github.io/sismid/
-  repo-url: https://github.com/nfidd/sismid
+  title: "SISMID: Nowcasting"
+  site-url: https://nfidd.github.io/sismid-nowcasting/
+  repo-url: https://github.com/nfidd/sismid-nowcasting
   repo-actions: [source, issue]
-  description: "Nowcasting and forecasting infectious disease dynamics - SISMID"
+  description: "Nowcasting infectious disease dynamics - SISMID"
   body-footer: '<script data-goatcounter="https://nfidd.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>'
   open-graph: true
   favicon: nfidd-favicon.png
@@ -20,7 +20,7 @@ website:
       - authors.qmd
     right:
       - icon: github
-        href: https://github.com/nfidd/sismid
+        href: https://github.com/nfidd/sismid-nowcasting
   sidebar:
     - id: reference
       title: "Reference"

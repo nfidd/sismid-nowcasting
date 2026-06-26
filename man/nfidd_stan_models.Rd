@@ -4,7 +4,7 @@
 \alias{nfidd_stan_models}
 \title{List Available Stan Models in NFIDD}
 \usage{
-nfidd_stan_models(stan_path = nfidd::nfidd_stan_path())
+nfidd_stan_models(stan_path = nfidd.nowcasting::nfidd_stan_path())
 }
 \arguments{
 \item{stan_path}{Character string specifying the path to Stan files. Defaults

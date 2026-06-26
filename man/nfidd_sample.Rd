@@ -40,7 +40,7 @@ for course use to speed up model fitting. All cmdstanr sample arguments
 can still be overridden for experimentation.
 }
 \seealso{
-Other modelhelpers: 
-\code{\link{nfidd_cmdstan_model}()}
+Other modelhelpers:
+\code{\link[=nfidd_cmdstan_model]{nfidd_cmdstan_model()}}
 }
 \concept{modelhelpers}

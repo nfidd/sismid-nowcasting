@@ -2,9 +2,9 @@
 output: github_document
 ---
 
-# Nowcasting and forecasting infectious disease dynamics
+# Nowcasting infectious disease dynamics
 
-This repository contains the material to create the nfidd sismid course page.
+This repository contains the material to create the SISMID nowcasting course page (the `nfidd.nowcasting` package and website). It is the first half of the SISMID week and is paired with the companion [forecasting course](https://github.com/nfidd/sismid-forecasting).
 
 All the raw material is in the folder `sessions/` and is written in
 `quarto`. Any changes to the quarto files are automatically

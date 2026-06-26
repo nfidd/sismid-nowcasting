@@ -6,7 +6,7 @@
 #'
 #' @export
 nfidd_stan_path <- function() {
-  system.file("stan", package = "nfidd")
+  system.file("stan", package = "nfidd.nowcasting")
 }
 
 #' Count the number of unmatched braces in a line
@@ -101,7 +101,7 @@ nfidd_stan_path <- function() {
 #'
 #' @family stantools
 nfidd_stan_functions <- function(
-    stan_path = nfidd::nfidd_stan_path()) {
+    stan_path = nfidd.nowcasting::nfidd_stan_path()) {
   stan_files <- list.files(
     file.path(stan_path, "functions"),
     pattern = "\\.stan$", full.names = TRUE,
@@ -133,7 +133,7 @@ nfidd_stan_functions <- function(
 #' @family stantools
 nfidd_stan_function_files <- function(
     functions = NULL,
-    stan_path = nfidd::nfidd_stan_path()) {
+    stan_path = nfidd.nowcasting::nfidd_stan_path()) {
   # List all Stan files in the directory
   all_files <- list.files(
     file.path(stan_path, "functions"),
@@ -188,7 +188,7 @@ nfidd_stan_function_files <- function(
 #'
 #' @export
 nfidd_load_stan_functions <- function(
-    functions = NULL, stan_path = nfidd::nfidd_stan_path(),
+    functions = NULL, stan_path = nfidd.nowcasting::nfidd_stan_path(),
     wrap_in_block = FALSE, write_to_file = FALSE,
     output_file = "nfidd_functions.stan") {
   stan_files <- list.files(
@@ -217,7 +217,7 @@ nfidd_load_stan_functions <- function(
   # Add version comment
   version_comment <- paste(
     "// Stan functions from nfidd version",
-    utils::packageVersion("nfidd")
+    utils::packageVersion("nfidd.nowcasting")
   )
   all_content <- c(version_comment, all_content)
 
@@ -249,7 +249,7 @@ nfidd_load_stan_functions <- function(
 #'
 #' @examples
 #' nfidd_stan_models()
-nfidd_stan_models <- function(stan_path = nfidd::nfidd_stan_path()) {
+nfidd_stan_models <- function(stan_path = nfidd.nowcasting::nfidd_stan_path()) {
   stan_files <- list.files(
     stan_path,
     pattern = "\\.stan$", full.names = FALSE,
@@ -273,7 +273,7 @@ nfidd_stan_models <- function(stan_path = nfidd::nfidd_stan_path()) {
 #'   If provided, this takes precedence over model_name.
 #' @param include_paths Character vector of paths to include for Stan
 #'   compilation. Defaults to the result of `nfidd_stan_path()` or can be
-#'   overridden using the R option "nfidd.stan_path".
+#'   overridden using the R option "nfidd.nowcasting.stan_path".
 #' @param ... Additional arguments passed to cmdstanr::cmdstan_model().
 #'
 #' @return A CmdStanModel object.
@@ -294,7 +294,7 @@ nfidd_stan_models <- function(stan_path = nfidd::nfidd_stan_path()) {
 nfidd_cmdstan_model <- function(
     model_name = NULL,
     model_file = NULL,
-    include_paths = getOption("nfidd.stan_path", nfidd::nfidd_stan_path()),
+    include_paths = getOption("nfidd.nowcasting.stan_path", nfidd.nowcasting::nfidd_stan_path()),
     ...) {
 
   # Determine which Stan file to use
@@ -308,7 +308,7 @@ nfidd_cmdstan_model <- function(
     # Use model from NFIDD package
     stan_model <- system.file(
       "stan", paste0(model_name, ".stan"),
-      package = "nfidd"
+      package = "nfidd.nowcasting"
     )
 
     if (stan_model == "") {

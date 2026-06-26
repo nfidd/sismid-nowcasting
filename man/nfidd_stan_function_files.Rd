@@ -6,7 +6,7 @@
 \usage{
 nfidd_stan_function_files(
   functions = NULL,
-  stan_path = nfidd::nfidd_stan_path()
+  stan_path = nfidd.nowcasting::nfidd_stan_path()
 )
 }
 \arguments{
@@ -25,9 +25,9 @@ This function retrieves Stan files from a specified directory, optionally
 filtering for files that contain specific functions.
 }
 \seealso{
-Other stantools: 
-\code{\link{nfidd_load_stan_functions}()},
-\code{\link{nfidd_stan_functions}()},
-\code{\link{nfidd_stan_path}()}
+Other stantools:
+\code{\link[=nfidd_load_stan_functions]{nfidd_load_stan_functions()}},
+\code{\link[=nfidd_stan_functions]{nfidd_stan_functions()}},
+\code{\link[=nfidd_stan_path]{nfidd_stan_path()}}
 }
 \concept{stantools}

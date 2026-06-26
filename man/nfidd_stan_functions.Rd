@@ -4,7 +4,7 @@
 \alias{nfidd_stan_functions}
 \title{Get Stan function names from Stan files}
 \usage{
-nfidd_stan_functions(stan_path = nfidd::nfidd_stan_path())
+nfidd_stan_functions(stan_path = nfidd.nowcasting::nfidd_stan_path())
 }
 \arguments{
 \item{stan_path}{Character string specifying the path to the directory
@@ -20,9 +20,9 @@ This function reads all Stan files in the specified directory and extracts
 the names of all functions defined in those files.
 }
 \seealso{
-Other stantools: 
-\code{\link{nfidd_load_stan_functions}()},
-\code{\link{nfidd_stan_function_files}()},
-\code{\link{nfidd_stan_path}()}
+Other stantools:
+\code{\link[=nfidd_load_stan_functions]{nfidd_load_stan_functions()}},
+\code{\link[=nfidd_stan_function_files]{nfidd_stan_function_files()}},
+\code{\link[=nfidd_stan_path]{nfidd_stan_path()}}
 }
 \concept{stantools}

@@ -7,11 +7,14 @@ order: 0
 
 ### Aim of the course
 
+This is the **nowcasting** course, the first half of the SISMID week (Monday to Wednesday midday).
+It is paired with a companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) that runs in the second half of the week.
+
 In this course we will address how can we use data typically collected in an outbreak, or in routine surveillance, to answer questions like
 
 -   What is the number of cases now (*nowcasting*)
 -   Are infections rising/falling and by how much (*$R_t$ estimation*)
--   What does this mean for the near future (*forecasting*)
+-   What does this mean for the near future (*forecasting*, covered in the companion course)
 
 To answer these questions, we need to understand the epidemiological processes that create the kinds of data that we typically have available for outbreak analysis and infectious disease surveillance.
 
@@ -62,14 +65,15 @@ For those attending the in-person version the course also:
 
 ### Timeline for the course
 
-The course was created to be taught in-person for 2.5 days but of course if you are studying this on your own using the web site you can go through the material at your own pace and in your own time.
+This nowcasting course is taught in-person over the first half of the SISMID week (Monday to Wednesday midday), but of course if you are studying this on your own using the web site you can go through the material at your own pace and in your own time.
 Broadly, the intended timeline is:
 
--   delay distributions and how to estimate them (day 1)
--   $R_t$ estimation and the generation interval (day 1)
--   nowcasting (day 2)
--   forecasting and evaluation (day 2)
--   ensemble methods and applications (day 3)
+-   delay distributions and how to estimate them
+-   biases in delays: censoring and right truncation
+-   using delays to model the data generating process
+-   $R_t$ estimation and the renewal equation
+-   nowcasting, and joint estimation of delays and nowcasts
+-   linking nowcasting and forecasting (bridge to the [forecasting course](https://nfidd.github.io/sismid-forecasting/))
 
 Let's get started!
 
@@ -77,6 +81,6 @@ Let's get started!
 
 -   [Introduction to the course and the instructors](slides/introduction-to-the-course-and-the-instructors)
 
--   If you haven't already, start with [getting set up for the course](../getting-set-up)
+-   If you haven't already, start with [getting set up for the course](../getting-started)
 
 -   Once you're all set up, let's start with the first session on [delay distributions](delay-distributions).
