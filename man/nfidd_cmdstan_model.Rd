@@ -7,7 +7,8 @@
 nfidd_cmdstan_model(
   model_name = NULL,
   model_file = NULL,
-  include_paths = getOption("nfidd.stan_path", nfidd::nfidd_stan_path()),
+  include_paths = getOption("nfidd.nowcasting.stan_path",
+    nfidd.nowcasting::nfidd_stan_path()),
   ...
 )
 }
@@ -20,7 +21,7 @@ If provided, this takes precedence over model_name.}
 
 \item{include_paths}{Character vector of paths to include for Stan
 compilation. Defaults to the result of `nfidd_stan_path()` or can be
-overridden using the R option "nfidd.stan_path".}
+overridden using the R option "nfidd.nowcasting.stan_path".}
 
 \item{...}{Additional arguments passed to cmdstanr::cmdstan_model().}
 }
@@ -32,7 +33,7 @@ This function creates a CmdStanModel object using either a specified Stan
 model from the NFIDD package or a custom Stan file provided by the user.
 }
 \examples{
-\dontshow{if (requireNamespace("cmdstanr", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("cmdstanr", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 if (!is.null(cmdstanr::cmdstan_version(error_on_NA = FALSE))) {
   # Using a model from the NFIDD package
   model <- nfidd_cmdstan_model("simple-nowcast", compile = FALSE)
@@ -42,7 +43,7 @@ if (!is.null(cmdstanr::cmdstan_version(error_on_NA = FALSE))) {
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-Other modelhelpers: 
-\code{\link{nfidd_sample}()}
+Other modelhelpers:
+\code{\link[=nfidd_sample]{nfidd_sample()}}
 }
 \concept{modelhelpers}

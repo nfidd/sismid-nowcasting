@@ -13,9 +13,9 @@ A character string with the path to the Stan code
 Get the path to Stan code
 }
 \seealso{
-Other stantools: 
-\code{\link{nfidd_load_stan_functions}()},
-\code{\link{nfidd_stan_function_files}()},
-\code{\link{nfidd_stan_functions}()}
+Other stantools:
+\code{\link[=nfidd_load_stan_functions]{nfidd_load_stan_functions()}},
+\code{\link[=nfidd_stan_function_files]{nfidd_stan_function_files()}},
+\code{\link[=nfidd_stan_functions]{nfidd_stan_functions()}}
 }
 \concept{stantools}

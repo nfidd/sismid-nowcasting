@@ -5,4 +5,4 @@
 library(testthat)
 
 # Package will be loaded by devtools/R CMD check
-test_check("nfidd")
+test_check("nfidd.nowcasting")
