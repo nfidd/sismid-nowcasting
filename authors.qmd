@@ -8,7 +8,7 @@ The NFIDD course was developed by the **NFIDD course contributors**:
 - [Kath Sherratt](https://github.com/kathsherratt)
 - [Sebastian Funk](https://github.com/sbfnk)
 
-The SISMID course was adapted by the **SISMID course contributors**:
+The SISMID nowcasting course was adapted by the **SISMID course contributors**:
 
 - [Sam Abbott](https://github.com/seabbs)
 - [Thomas Robacker](https://github.com/trobacker)
@@ -20,7 +20,7 @@ If you use materials from this course in your work, please cite:
 
 > NFIDD course contributors (2025). NFIDD: Nowcasting and Forecasting Infectious Disease Dynamics. Version [VERSION]. DOI: [PLACEHOLDER - Zenodo DOI will be added upon release]
 
-> SISMID course contributors (2025). NFIDD SISMID: Nowcasting and Forecasting Infectious Disease Dynamics - SISMID. Version [VERSION]. DOI: [PLACEHOLDER - Zenodo DOI will be added upon release]
+> SISMID course contributors (2025). SISMID: Nowcasting Infectious Disease Dynamics. Version [VERSION]. DOI: [PLACEHOLDER - Zenodo DOI will be added upon release]
 
 ### BibTeX Entry
 
@@ -36,13 +36,13 @@ If you use materials from this course in your work, please cite:
 ```
 
 ```bibtex
-@misc{sismid2025,
+@misc{sismidnowcasting2025,
   author = {{Sam Abbott, Thomas Robacker, Nick Reich}},
-  title = {{NFIDD SISMID: Nowcasting and Forecasting Infectious Disease Dynamics - SISMID}},
+  title = {{SISMID: Nowcasting Infectious Disease Dynamics}},
   year = {2025},
   version = {[VERSION]},
   doi = {[PLACEHOLDER - Zenodo DOI]},
-  url = {https://nfidd.github.io/sismid/}
+  url = {https://nfidd.github.io/sismid-nowcasting/}
 }
 ```
 
@@ -59,9 +59,9 @@ All course materials are provided under the [MIT License](https://opensource.org
 We welcome contributions to improve and expand the course materials.
 You can:
 
-- [Report issues or suggest improvements](https://github.com/nfidd/nfidd/issues)
-- [Join discussions](https://github.com/nfidd/nfidd/discussions)
-- [Submit pull requests](https://github.com/nfidd/nfidd/pulls)
+- [Report issues or suggest improvements](https://github.com/nfidd/sismid-nowcasting/issues)
+- [Join discussions](https://github.com/nfidd/sismid-nowcasting/discussions)
+- [Submit pull requests](https://github.com/nfidd/sismid-nowcasting/pulls)
 
 ## Acknowledgements
 

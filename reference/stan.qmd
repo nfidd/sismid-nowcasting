@@ -125,7 +125,7 @@ model {
 
 ```{r, eval = FALSE}
 library(cmdstanr)
-library(nfidd)
+library(nfidd.nowcasting)
 
 # Load a model
 model <- nfidd_cmdstan_model("delays")

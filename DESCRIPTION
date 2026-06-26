@@ -1,5 +1,5 @@
-Package: nfidd
-Title: Material to support course on nowcasting and forecasting of infectious
+Package: nfidd.nowcasting
+Title: Material to support course on nowcasting of infectious
     disease dynamics
 Version: 1.2.0.9000
 Authors@R: c(
@@ -10,11 +10,11 @@ Authors@R: c(
       email = "epiforecasts@gmail.com"
     )
   )
-Description: Resources to support a short course on nowcasting and forecasting
-    of infectious disease dynamics.
+Description: Resources to support a short course on nowcasting of
+    infectious disease dynamics.
 License: MIT + file LICENSE
-URL: https://github.com/nfidd/sismid
-BugReports: https://github.com/nfidd/sismid/issues
+URL: https://github.com/nfidd/sismid-nowcasting
+BugReports: https://github.com/nfidd/sismid-nowcasting/issues
 Depends:
     R (>= 4.2.0)
 Imports:
@@ -23,31 +23,18 @@ Imports:
     tidyr,
     tidybayes
 Suggests:
-    bayesplot,
     covr,
-    epidatr,
-    fpp3,
     ggplot2,
-    gridExtra,
     lintr,
     lubridate,
-    plotly,
     posterior,
     purrr,
     rmarkdown,
-    testthat (>= 3.0.0),
     roxyglobals,
-    hubUtils,
-    hubEnsembles,
-    hubEvals,
-    hubData,
-    hubVis,
-    here
+    scoringutils,
+    testthat (>= 3.0.0)
 Remotes:
-    stan-dev/cmdstanr,
-    hubverse-org/hubEvals,
-    hubverse-org/hubData,
-    hubverse-org/hubVis
+    stan-dev/cmdstanr
 Encoding: UTF-8
 Language: en-GB
 RoxygenNote: 7.3.2

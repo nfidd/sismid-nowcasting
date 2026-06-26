@@ -39,7 +39,7 @@ Hans Rosling, Liberia, 2014
 - Measures % of outpatient visits due to ILI
 
 ```{r ili-plot, fig.width=8, fig.height=4, fig.align='center'}
-library(nfidd)
+library(nfidd.nowcasting)
 library(ggplot2)
 library(dplyr)
 data(flu_data)
@@ -71,7 +71,7 @@ Throughout the course we will
    
 ```{r outbreak-plot, fig.width=5, fig.height=3, fig.align='center'}
 library(ggplot2)
-library(nfidd)
+library(nfidd.nowcasting)
 ### visualise the infection curve
 data(infection_times)
 ggplot(infection_times, aes(x = infection_time)) +

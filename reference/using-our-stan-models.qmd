@@ -5,7 +5,7 @@ order: 11
 ---
 
 ```{r, include = FALSE}
-library(nfidd)
+library(nfidd.nowcasting)
 ```
 
 This guide covers how to use NFIDD's Stan tools for working with both package models and custom Stan code.
@@ -51,7 +51,7 @@ fit <- nfidd_sample(model, data = your_data)
 Set globally using R options:
 
 ```{r, eval = FALSE}
-options(nfidd.stan_path = "/path/to/your/stan")
+options(nfidd.nowcasting.stan_path = "/path/to/your/stan")
 model <- nfidd_cmdstan_model("simple-nowcast")
 ```
 
@@ -177,7 +177,7 @@ for (file in function_files) {
 Set options to use local functions:
 
 ```{r, eval = FALSE}
-options(nfidd.stan_path = ".")
+options(nfidd.nowcasting.stan_path = ".")
 ```
 
 Now you can modify the local model and it will use local functions:
@@ -288,7 +288,7 @@ your_project/
 In your R code:
 
 ```{r, eval = FALSE}
-options(nfidd.stan_path = c("models/functions", nfidd_stan_path()))
+options(nfidd.nowcasting.stan_path = c("models/functions", nfidd_stan_path()))
 model <- nfidd_cmdstan_model(model_file = "models/my_model.stan")
 ```
 
