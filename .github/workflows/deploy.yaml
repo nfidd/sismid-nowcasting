@@ -71,7 +71,7 @@ jobs:
 
       - name: Deploy to GitHub pages 🚀
         if: github.ref_name == 'main'
-        uses: JamesIves/github-pages-deploy-action@v4.7.3
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
           branch: gh-pages
           folder: _site
