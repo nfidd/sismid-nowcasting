@@ -23,7 +23,7 @@ Data after the dashed line are marked as uncertain. How can we use them for fore
 **Traditional approach**: Wait for "complete" data
 
 - Might mean forecasting from 2+ weeks ago
-- But as we've seen, forecasts after 2 weeks can be difficult
+- But forecast uncertainty grows with the horizon, so longer forecasts are harder
 - Even our forecasts of "what is happening now" end up quite uncertain
 
 **The challenge**:
@@ -31,6 +31,15 @@ Data after the dashed line are marked as uncertain. How can we use them for fore
 - Reporting delays mean recent data are incomplete
 - But we need forecasts based on the most recent information
 - How do we bridge this gap?
+
+### A taste of forecasting {.smaller}
+
+A first look at forecasting - the [forecasting course](https://nfidd.github.io/sismid-forecasting/) covers it in full.
+
+- **Forecasting**: a probabilistic statement about dates with *no data yet* (the future)
+- Good forecasts are **probabilistic**; uncertainty grows with the horizon
+- Our renewal model is already *generative*: keep simulating $R_t$ forward to forecast
+- We **evaluate** forecasts against what was observed, using proper scoring rules (e.g. CRPS)
 
 ### Nowcasting reminder
 

@@ -6,11 +6,26 @@ bibliography: ../nfidd.bib
 
 # Introduction
 
-In the previous sessions, we've explored nowcasting (estimating what current data will look like once all reports are in) and forecasting (predicting future trends) as separate problems.
-However, in real-time epidemic analysis, these challenges are connected.
-When we want to forecast from the most recent data, we face the problem that this data is incomplete due to reporting delays.
+Throughout this course we have focused on **nowcasting**: estimating what current data will look like once all delayed reports are in.
+In this final session we take a first **taste of forecasting** - predicting future trends - and see how naturally it extends the nowcasting and renewal-equation models you have already built.
 
+This is the bridge to the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/), which runs in the second half of the week and covers forecasting, forecast evaluation, ensembles, and forecast hubs in much more depth.
+Here we give just enough of a taste to motivate that course and to show why nowcasting and forecasting belong together.
+
+The key idea is that in real-time epidemic analysis nowcasting and forecasting are connected.
+When we want to forecast from the most recent data, we face the problem that this data is incomplete due to reporting delays - exactly the problem nowcasting is designed to solve.
 In this session, we'll explore different approaches to handling this challenge, from simple methods that ignore the problem to joint models.
+
+## A gentle on-ramp: what is forecasting?
+
+If you have not met forecasting before, here is all you need for this session.
+
+- **Forecasting** means making a quantitative, probabilistic statement about what will happen on dates for which we have *no data at all yet* (the future).
+- A good forecast is **probabilistic**: rather than a single number it gives a full distribution, so it expresses how uncertain we are. Forecast uncertainty grows the further ahead we look.
+- We have, in fact, already done most of the work needed to forecast. The renewal-equation model from the [$R_t$ estimation session](R-estimation-and-the-renewal-equation) is a *generative* model: once it has estimated the recent reproduction number, we can keep simulating the random walk for $R_t$ forward in time to generate infections, and therefore onsets, on future days. That extension is exactly what turns an estimation model into a forecasting model, and the Stan model we use below (`estimate-inf-and-r-rw-forecast`) does precisely this.
+- To know whether a forecast was any good we **evaluate** it by comparing the predicted distribution against what was eventually observed, using a *proper scoring rule* (we use the Continuous Ranked Probability Score, CRPS, below).
+
+That is the entire forecasting toolkit we need here. The [forecasting course](https://nfidd.github.io/sismid-forecasting/) develops each of these ideas - generative and time-series forecasting models, scoring rules, ensembles, and hubs - in full.
 
 ## Slides
 
@@ -18,7 +33,7 @@ In this session, we'll explore different approaches to handling this challenge, 
 
 ## Objectives
 
-This session aims to show how to combine nowcasting and forecasting to make better predictions when data are subject to reporting delays.
+This session aims to give a taste of forecasting and to show how to combine nowcasting and forecasting to make better predictions when data are subject to reporting delays.
 
 ::: {.callout-note collapse="true"}
 
@@ -63,13 +78,13 @@ options(cmdstanr_warn_inits = FALSE)
 
 # The challenge: forecasting with incomplete data
 
-As we've seen in previous sessions, epidemiological data often arrives with delays.
+As we've seen throughout this course, epidemiological data often arrives with delays.
 When we want to forecast future trends, we ideally want to use the most recent data available.
 However, this recent data is incomplete due to reporting delays.
 
 The traditional approach is to wait until data is "complete" (or nearly so) before forecasting.
 But this might mean forecasting from data that is several weeks old (though more often a few days for most reporting to be complete).
-As we've seen, forecasts degrade quickly with longer forecast horizons, so even our forecasts of "what is happening now" might end up being quite uncertain.
+Because forecast uncertainty grows with the forecast horizon, starting from older data means even our forecasts of "what is happening now" might end up being quite uncertain.
 
 ::: {.callout-tip}
 ## The nowcasting-forecasting continuum
@@ -90,10 +105,11 @@ We'll start by generating synthetic data that mimics the challenges we face in r
 This builds on the approach from the [joint nowcasting session](sessions/joint-nowcasting), but now we'll also create a dataset filtered at a two-week forecast horizon for evaluation (i.e. the data that we would ultimately observe for the two weeks after the forecast date).
 
 ::: {.callout-note}
-## Connecting to ILI forecasting
+## Beyond simulated onsets: other surveillance data
 
-While we use the linelist data (individual symptom onsets with reporting delays) for clarity in this session, the forecasting sessions focus on ILI percentage data.
-These data types differ substantially:
+We use simulated line-list data here (individual symptom onsets with reporting delays) because it lets us see the whole infection → onset → report process clearly, and because it connects directly to the renewal and nowcasting models we have already built.
+
+Real surveillance streams behave differently in ways worth keeping in mind:
 
 **Our simulated data:**
 
@@ -101,23 +117,16 @@ These data types differ substantially:
 - Delays cause under-reporting that resolves over time
 - Clear temporal progression: infection → onset → report
 
-**ILI surveillance data (from forecasting sessions):**
+**Other surveillance data (e.g. compound indicators such as influenza-like illness, ILI):**
 
-- Compound measure: % of visits for influenza-like illness
-- Can be revised up OR down as reports arrive
-- Combines multiple diseases and reporting locations
+- Aggregated, compound measures (e.g. % of visits for ILI) rather than individual events
+- Can be revised up *or* down as later reports arrive
+- May combine multiple diseases and reporting locations
 
-**Adapting these methods for ILI:**
+The methods in this session adapt to these settings: the joint modelling framework can handle bidirectional revisions with minor modifications, while pipeline approaches may need separate models for upward and downward revisions.
+The key insight is that whether dealing with simple delays or more complex revisions, combining nowcasting and forecasting in a coherent framework improves predictions.
 
-- The joint modelling framework can handle bidirectional revisions by modelling the full revision process with minor modifications
-- Pipeline approaches may need separate models for upward and downward revisions
-- Understanding the data generation process (how individual reports → ILI %) helps identify biases
-- Performance may be limited by the complexity of the compound measure
-
-The key insight is that whether dealing with simple delays or complex revisions, combining nowcasting and forecasting in a coherent framework improves predictions.
-
-One approach that has been taken in previous work is to use the number of hospitals that have reported in order to estimate how much reporting revisions to expect. 
-These data are actually available in the data we downloaded from `epidatar` earlier in the course.
+The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) works with real surveillance data of this kind and explores these issues in depth.
 :::
 
 ## Generate the underlying epidemic
