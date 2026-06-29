@@ -27,7 +27,7 @@ Each session in this course uses R code for demonstration. All the content is se
 
 If you choose the local setup option, here's what you'll need to do:
 
-1.  Install R and RStudio
+1.  Install R and RStudio (use the Visual Editor for best notebook experience)
 2.  Install the `nfidd.nowcasting` R package
 3.  Install cmdstan
 4.  Download course materials (if using the hybrid approach you may not need to do this)
