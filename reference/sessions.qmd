@@ -56,13 +56,17 @@ It is paired with the companion [forecasting & evaluation course](https://nfidd.
     -   joint estimation of delays, nowcasts and reproduction numbers
 -   Wrap up
 
-## Session 7: Combining nowcasting and forecasting
+## Session 7: Methods in the real world
+
+-   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates
+
+## Session 8: Combining nowcasting and forecasting
 
 -   [Introduction](../sessions/slides/forecasting-nowcasting): why combine nowcasting and forecasting?
 -   [Practice](../sessions/forecasting-nowcasting): connecting nowcasting and forecasting
 -   Wrap up
 
-## Session 8: Summary and discussion
+## Session 9: Summary and discussion
 
 -   [Summary](../sessions/slides/closing) of the course
 -   Final discussion and [further reading](../sessions/end-of-course-summary-and-discussion)
