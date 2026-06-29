@@ -19,7 +19,7 @@ This is the modelling idea behind tools such as `epidemia`, which jointly models
 
 ## Objectives
 
-The aim of this session is to show how to combine multiple parallel surveillance streams into a single joint model built on the renewal equation, and to understand what happens when those streams *agree* and when they *conflict*.
+The aim of this session is to show how to combine multiple parallel surveillance streams into a single joint model built on the renewal equation, to understand what happens when those streams *agree* and when they *conflict*, and to place this within a principled modelling workflow.
 
 ::: {.callout-note collapse="true"}
 # Setup
@@ -95,6 +95,20 @@ chaining deaths off cases instead of off the shared infections.
 We use the **parallel / conditionally-independent-given-infections** formulation: a single renewal process generates the latent infections, and each stream is a separate convolution of those infections with its own delay and scaling.
 This keeps the infection process as the one shared quantity that every stream informs.
 :::
+
+## Where this sits in a modelling workflow
+
+Fitting several data streams is not a one-off trick: it is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026].
+The figure below sketches that workflow.
+We start from a research question and target estimand (here, the latent infections and $R_t$), build a process model (the renewal equation) and an observation model for each data source, and only then choose how to *integrate* those sources and how to do inference.
+
+![A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again -- model checking, identifiability and conflict between data sources all feed revisions. Figure by Sam Abbott, reproduced from the `a-workflow-for-infectious-disease-modelling` repository [@abbottWorkflowInfectiousDisease2026] under the MIT licence.](figures/workflow-diagram.png)
+
+Two arrows in that diagram matter most for this session.
+The first is **data integration choices**: how separate observation models are combined.
+Our parallel joint model is one such choice -- the simplest one, in which every stream looks directly at the shared infections.
+The second is the feedback arrow labelled *conflict between data sources reveals model misspecification*: when streams cannot be reconciled by a single shared process, that tension is information, and it points us back to revise the model rather than to trust the compromise.
+We return to both of these below.
 
 # Simulating parallel data streams from a shared infection trajectory
 
@@ -290,10 +304,25 @@ In practice we often fix or strongly inform one of these scalings (for example, 
 # What happens when streams conflict?
 
 Combining streams is powerful when they tell a consistent story.
-But real surveillance streams can *disagree*: a change in testing policy can bend the case curve without any change in transmission, or a reporting artefact can distort deaths.
-When we force a single shared infection process to explain conflicting signals, the model reaches a *compromise* -- and that compromise may not match any individual stream.
+But real surveillance streams can *disagree*, and it is worth being precise about what that means in this model.
 
-To see this, we re-simulate the deaths stream from a *different* infection trajectory that keeps rising in the second half of the outbreak, while cases and wastewater still come from the original (declining) trajectory.
+## What does it mean for streams to conflict?
+
+In our parallel model every stream is a delayed, scaled view of the *same* latent infections.
+So a stream implicitly carries its own answer to the question "what must the infection trajectory have looked like?".
+Two streams **conflict** when those implied trajectories are incompatible: the cases imply infections that are falling while the deaths imply infections that are still rising, say, and no single $R_t$ path can produce both at once.
+
+Why does this happen in practice?
+The model assumes each stream is the shared infections convolved with a *fixed* delay and multiplied by a *constant* scaling.
+Conflict is what we see when one of those assumptions is wrong for at least one stream, for example:
+
+- **Changing ascertainment.** A change in testing policy or test availability bends the case curve without any change in transmission, so the constant-ascertainment assumption breaks.
+- **Mis-specified delays.** If the true infection-to-death delay is longer or more dispersed than the PMF we supplied, deaths will appear shifted relative to the infections the other streams imply.
+- **Mis-specified scalings.** A drifting infection fatality ratio (e.g. with changing age structure or treatment) or a reporting artefact pushes a stream off the level the others support.
+- **Genuinely different populations.** Streams that sample different groups (e.g. hospital deaths vs community cases) need not share one infection process at all.
+
+To see conflict in action, we re-simulate the deaths stream from a *different* infection trajectory that keeps rising in the second half of the outbreak, while cases and wastewater still come from the original (declining) trajectory.
+This is a deliberately stark version of the mis-specified-IFR/changing-severity case above: the deaths now demand a rising epidemic that the other two streams flatly contradict.
 
 ```{r simulate_conflict}
 conflict_inf <- infections
@@ -303,6 +332,8 @@ exp_deaths_conflict <- ifr * convolve_with_delay(conflict_inf, death_delay_pmf)
 obs_conflict <- obs |>
   mutate(deaths = rpois(n, exp_deaths_conflict))
 ```
+
+## Fitting to conflicting streams
 
 We refit the same joint model to this conflicting data.
 
@@ -357,9 +388,80 @@ A single shared infection process cannot simultaneously be declining (to match c
 The joint estimate is no longer faithful to any single stream.
 :::
 
-When streams genuinely conflict, the answer is rarely to average them blindly.
-Instead we need to reason about *why* they disagree -- a change in ascertainment, a reporting artefact, a stream-specific delay that has shifted -- and encode that understanding in the model (for example by allowing a time-varying ascertainment, or by down-weighting a stream we trust less).
-Thinking carefully about data sources, their biases, and how to reconcile them is a core part of a principled modelling workflow [@abbottWorkflowInfectiousDisease2026].
+## How the joint model surfaces conflict
+
+The $R_t$ comparison above already hints at trouble, but in a real analysis we would not know the truth to compare against.
+So how would conflict actually announce itself?
+It shows up in three linked ways, and a principled workflow looks for all of them.
+
+**1. Poor fit to one stream.**
+The clearest symptom is a *posterior predictive check*: simulate each stream from the fitted model and overlay it on the data.
+Because the shared infections are dragged towards a compromise, at least one stream ends up fitted badly.
+We can extract the expected counts the model implies for each stream (`exp_cases`, `exp_deaths`) and compare them to the conflicting data.
+
+```{r ppc_conflict}
+exp_draws <- fit_conflict |>
+  gather_draws(exp_cases[day], exp_deaths[day]) |>
+  group_by(.variable, day) |>
+  median_qi(.value, .width = 0.9)
+
+obs_long <- obs_conflict |>
+  select(day, cases, deaths) |>
+  pivot_longer(-day, names_to = "stream", values_to = "value") |>
+  mutate(.variable = paste0("exp_", stream))
+
+ggplot(exp_draws, aes(x = day)) +
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3) +
+  geom_line(aes(y = .value)) +
+  geom_point(data = obs_long, aes(y = value), size = 0.6) +
+  facet_wrap(~.variable, scales = "free_y") +
+  labs(title = "Posterior predictive fit under conflicting streams",
+       subtitle = "Fitted expectation (line + 90% band) vs observed (points)",
+       x = "Day", y = NULL)
+```
+
+The compromise infection trajectory cannot match both streams: typically the fitted expectation systematically *under*-shoots the late, rising deaths while *over*-shooting the declining cases (or vice versa), with the data points drifting outside the predictive band on one or both panels.
+A consistent run of points on one side of the fitted line for a single stream is the tell-tale sign that that stream is fighting the others.
+
+**2. Tension in the shared latent infections.**
+Conflict does not stay neatly inside one stream.
+Because all streams pull on the *same* infections, an irreconcilable stream distorts the shared trajectory itself -- and hence $R_t$, as we saw -- and inflates its uncertainty as the sampler is pulled between two incompatible explanations.
+A latent quantity that suddenly becomes much more uncertain, or that no longer matches *any* stream when you propagate it back through the observation models, is a second symptom of conflict.
+
+**3. Degraded sampling.**
+When the geometry of the posterior is contorted by trying to satisfy contradictory data, the sampler struggles.
+In practice this surfaces as divergent transitions, low effective sample sizes, or high `rhat` in the fit summary.
+It is always worth scanning the diagnostics of the conflicting fit (`fit_conflict`) and comparing them to the clean fit: sampler complaints are not just a computational nuisance, they can be a signature of a misspecified model.
+
+::: callout-tip
+## Take 5 minutes
+
+Look at the posterior predictive plot and at the diagnostics of `fit_conflict` (the `rhat` and `ess_bulk` columns in `fit_conflict`, and any divergence warnings).
+Which stream is fitted worst, and in which direction does the model miss?
+Do the sampler diagnostics look worse than for the consistent fit?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+The deaths panel is fitted worst: the rising deaths in the second half of the outbreak sit *above* the fitted expectation, because the model has been pulled down towards the declining cases and wastewater.
+Symmetrically, the late cases tend to sit slightly *below* their fitted line, because the deaths have tugged the shared infections up.
+Neither stream is fitted as cleanly as in the consistent case, which is the data-space signature of the $R_t$ compromise.
+The diagnostics for the conflicting fit are usually a little worse (larger `rhat`, smaller `ess_bulk`, occasional divergences) because the posterior is harder to explore when the data cannot be reconciled.
+:::
+
+## What should a modeller do about conflict?
+
+When streams genuinely conflict, the answer is rarely to average them blindly: the compromise is faithful to no stream and, as we have seen, can be actively misleading about $R_t$.
+Conflict is *information*, and in the workflow above it is exactly the feedback arrow *conflict between data sources reveals model misspecification* sending us back to revise the model rather than to trust the fit.
+A reasonable sequence is:
+
+- **Diagnose, do not average.** Treat a bad posterior predictive fit, distorted latent infections, or poor sampler diagnostics as evidence that an assumption is wrong, and identify *which* stream and *which* assumption (delay, scaling, or shared-population) is implicated.
+- **Relax the offending assumption.** Encode the suspected mechanism in the model: a time-varying ascertainment or IFR (e.g. its own random walk) can absorb a drifting scaling; a more flexible or re-estimated delay can absorb a shifted timing. This is the "add more dynamic components" move in the workflow diagram.
+- **Compare models.** Refit with and without the extra flexibility and compare them (e.g. predictive performance, or how much the conflict in the predictive checks is resolved). Conflict that disappears once a mechanism is added tells you something real about the data-generating process.
+- **Down-weight or drop as a last resort.** If a stream is simply not measuring the same infections (a different population, or an artefact you cannot model), it may be right to down-weight it or exclude it -- but only after you understand *why*, so the choice is principled rather than convenient.
+
+Thinking carefully about data sources, their biases, and how to reconcile them -- and iterating between fitting, checking and revising -- is the core of a principled modelling workflow [@abbottWorkflowInfectiousDisease2026].
 
 # Going further
 
