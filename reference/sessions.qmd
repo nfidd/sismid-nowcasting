@@ -105,17 +105,23 @@ Tuesday: 15.30–17.00
 
 Wednesday: 09.00–09.15 — Day 2 review
 
-## Session 9: Summary and discussion
+## Session 9: New session (to be written)
 
-Wednesday: 09.15–09.45
+Wednesday: 09.15–10.30
+
+-   Held open for a new or expanded nowcasting session — see the open issues for candidates.
+
+*Coffee break 10.30–11.00*
+
+## Session 10: Summary and discussion
+
+Wednesday: 11.00–11.30
 
 -   [Summary](../sessions/slides/closing) of the course
 -   Final discussion and [further reading](../sessions/end-of-course-summary-and-discussion)
 
-## Session 10: Methods in the real world
+## Session 11: Methods in the real world
 
-Wednesday: 09.45–10.30
+Wednesday: 11.30–12.30
 
 -   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates
-
-*The course finishes by the Wednesday-midday handover to the forecasting course; the remaining Wednesday-morning time is held open for a new or expanded session (see the open issues).*
