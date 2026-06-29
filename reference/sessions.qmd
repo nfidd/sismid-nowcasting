@@ -6,67 +6,112 @@ comments: false
 
 This is the **nowcasting** course, taught in the first half of the SISMID week.
 It is paired with the companion [forecasting & evaluation course](https://nfidd.github.io/sismid-forecasting/).
+The schedule below is a proposed plan, with timings based on how long the sessions have taken to run in previous courses.
 
-# Epidemiological delays
+# Day 1 (Monday): Epidemiological delays
 
 ## Session 0: Introduction and course overview
 
--   [Introduction](../sessions/slides/introduction-to-the-course-and-the-instructors): the course and the instructors
--   [Getting started](../getting-started): getting started with the course
--   [Introduction to the course](../sessions/introduction-and-course-overview): how the course is taught
--   [Motivating the course](../sessions/slides/from-line-list-to-decisions): from an epidemiological line list to informing decisions in real-time
+Monday: 09.00-09.30
+
+-   [Introduction](../sessions/slides/introduction-to-the-course-and-the-instructors): the course and the instructors (10 mins)
+-   [Motivating the course](../sessions/slides/from-line-list-to-decisions): from an epidemiological line list to informing decisions in real-time (20 mins)
+
+## Getting set up
+
+Monday: 09.30-10.15
+
+-   [Getting set up for the course](../getting-started): installing R, the `nfidd.nowcasting` package and cmdstan, and checking everyone's environment is working (45 mins)
 
 ## Session 1: Delay distributions
 
--   [Introduction](../sessions/slides/introduction-to-epidemiological-delays): epidemiological delays and how to represent them with probability distributions
--   [Practice](../sessions/delay-distributions): simulate and estimate epidemiological delays
--   Wrap up
+Monday: 10.15-10.30 and 11.00-11.45
+
+-   [Introduction](../sessions/slides/introduction-to-epidemiological-delays): epidemiological delays and how to represent them with probability distributions (10 mins)
+-   [Practice](../sessions/delay-distributions): simulate and estimate epidemiological delays (45 mins)
+-   Wrap up (5 mins)
 
 ## Session 2: Biases in delay distributions
 
--   [Introduction](../sessions/slides/introduction-to-biases-in-epidemiological-delays): biases in delay distributions
--   [Practice](../sessions/biases-in-delay-distributions): interval censoring - estimating delays from discrete dates
--   [Practice](../sessions/biases-in-delay-distributions): right truncation - estimating delays in real-time with incomplete data
--   Wrap up
+Monday: 11.45-12.30 and 13.30-14.15
+
+-   [Introduction](../sessions/slides/introduction-to-biases-in-epidemiological-delays): biases in delay distributions (10 mins)
+-   [Practice](../sessions/biases-in-delay-distributions):
+    -   interval censoring - estimating delays from discrete dates (35 mins)
+    -   right truncation - estimating delays in real-time with incomplete data (35 mins)
+-   Wrap up (10 mins)
 
 ## Session 3: Using delay distributions to model the data generating process of an epidemic
 
--   [Introduction](../sessions/slides/convolutions): using delay distributions to model the data generating process of an epidemic
--   [Practice](../sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic): implementing a convolution model and identifying potential problems
--   Wrap up
+Monday: 14.45-15.30
 
-# Nowcasting
+-   [Introduction](../sessions/slides/convolutions): using delay distributions to model the data generating process of an epidemic (15 mins)
+-   [Practice](../sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic): implementing a convolution model and identifying potential problems (30 mins)
+
+# Day 2 (Tuesday): Estimating transmission and nowcasting
+
+Tuesday: 09.00-09.15
+
+-   Day 1 review (15 mins)
 
 ## Session 4: $R_t$ estimation and the renewal equation
 
--   [Introduction](../sessions/slides/introduction-to-reproduction-number): the time-varying reproduction number
--   [Practice](../sessions/R-estimation-and-the-renewal-equation): using the renewal equation to estimate R
--   Wrap up
+Tuesday: 09.15-10.45
+
+-   [Introduction](../sessions/slides/introduction-to-reproduction-number): the time-varying reproduction number (10 mins)
+-   [Practice](../sessions/R-estimation-and-the-renewal-equation): using the renewal equation to estimate R (75 mins)
+-   Wrap up (5 mins)
 
 ## Session 5: Nowcasting concepts
 
--   [Introduction](../sessions/slides/introduction-to-nowcasting): nowcasting as a right-truncation problem
--   [Practice](../sessions/nowcasting): simulating and basic nowcasting
+Tuesday: 11.15-12.30
+
+-   [Introduction](../sessions/slides/introduction-to-nowcasting): nowcasting as a right-truncation problem (10 mins)
+-   [Practice](../sessions/nowcasting): simulating and basic nowcasting (60 mins)
+-   Wrap up (5 mins)
 
 ## Session 6: Nowcasting with an unknown reporting delay
 
--   [Introduction](../sessions/slides/introduction-to-joint-estimation-of-nowcasting-and-reporting-delays): joint estimation of delays and nowcasts
+Tuesday: 13.30-15.00
+
+-   [Introduction](../sessions/slides/introduction-to-joint-estimation-of-nowcasting-and-reporting-delays): joint estimation of delays and nowcasts (10 mins)
 -   [Practice](../sessions/joint-nowcasting):
     -   joint estimation of delays and nowcasts
-    -   joint estimation of delays, nowcasts and reproduction numbers
--   Wrap up
+    -   joint estimation of delays, nowcasts and reproduction numbers (70 mins)
+-   Wrap up (10 mins)
 
-## Session 7: Methods in the real world
+## Session 7: Jointly fitting multiple data streams
 
--   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates
+Tuesday: 15.30-17.00
 
-## Session 8: Combining nowcasting and forecasting
+-   [Practice](../sessions/multiple-data-streams):
+    -   combining cases, deaths and a wastewater signal in one joint renewal model (75 mins)
+    -   exploring what happens when streams conflict (10 mins)
+-   Wrap up (5 mins)
 
--   [Introduction](../sessions/slides/forecasting-nowcasting): why combine nowcasting and forecasting?
--   [Practice](../sessions/forecasting-nowcasting): connecting nowcasting and forecasting
--   Wrap up
+# Day 3 (Wednesday): Real-world methods and bridging to forecasting
 
-## Session 9: Summary and discussion
+Wednesday: 09.00-09.15
 
--   [Summary](../sessions/slides/closing) of the course
--   Final discussion and [further reading](../sessions/end-of-course-summary-and-discussion)
+-   Day 2 review (15 mins)
+
+## Session 8: Methods in the real world
+
+Wednesday: 09.15-10.15
+
+-   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates (60 mins)
+
+## Session 9: Combining nowcasting and forecasting
+
+Wednesday: 10.45-11.45
+
+-   [Introduction](../sessions/slides/forecasting-nowcasting): why combine nowcasting and forecasting? (10 mins)
+-   [Practice](../sessions/forecasting-nowcasting): connecting nowcasting and forecasting (45 mins)
+-   Wrap up (5 mins)
+
+## Session 10: Summary and discussion
+
+Wednesday: 11.45-12.15
+
+-   [Summary](../sessions/slides/closing) of the course (10 mins)
+-   Final discussion and [further reading](../sessions/end-of-course-summary-and-discussion) (20 mins)
