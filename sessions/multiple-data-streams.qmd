@@ -1,6 +1,6 @@
 ---
 title: "Jointly fitting multiple data streams"
-order: 6.8
+order: 14.5
 bibliography: ../nfidd.bib
 ---
 
