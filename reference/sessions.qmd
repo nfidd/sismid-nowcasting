@@ -82,44 +82,45 @@ Tuesday: 11.00–12.30
 
 *Lunch 12.30–13.30*
 
-## Session 7: Jointly fitting multiple data streams
+## Session 7: Combining nowcasting and forecasting
 
 Tuesday: 13.30–15.00
-
--   Combining multiple data sources by jointly fitting the renewal model to several parallel streams (cases, deaths and a simple wastewater signal), and exploring data conflict.
--   *New session — being added in a separate PR; the links will be wired in once it merges.*
-
-*Coffee break 15.00–15.30*
-
-## Session 8: Combining nowcasting and forecasting
-
-Tuesday: 15.30–17.00
 
 -   [Introduction](../sessions/slides/forecasting-nowcasting): why combine nowcasting and forecasting?
 -   [Practice](../sessions/forecasting-nowcasting): connecting nowcasting and forecasting, building up to a forecast from the renewal model
 -   Wrap up
 
+*Coffee break 15.00–15.30*
+
+## Session 8: Jointly fitting multiple data streams
+
+Tuesday: 15.30–17.00
+
+-   Combining multiple data sources by jointly fitting the renewal model to several parallel streams (cases, deaths and a simple wastewater signal), and exploring data conflict.
+-   *New session — being added in a separate PR; the links will be wired in once it merges.*
+
 # Day 3 — Wednesday 15 July: Real-world methods and wrap-up
 
 Wednesday: 09.00–09.15 — Day 2 review
 
-## Session 9: New session (to be written)
+## Session 9: Modelling complex reporting processes
 
 Wednesday: 09.15–10.30
 
--   Held open for a new or expanded nowcasting session — see the open issues for candidates.
+-   Modelling more complex reporting processes (e.g. day-of-week effects and richer delay and reporting structures) using `epinowcast`.
+-   *New session — a draft is being added in a separate PR; the link will be wired in once it merges.*
 
 *Coffee break 10.30–11.00*
 
-## Session 10: Summary and discussion
+## Session 10: Methods in the real world
 
-Wednesday: 11.00–11.30
+Wednesday: 11.00–12.00
+
+-   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates
+
+## Session 11: Summary and discussion
+
+Wednesday: 12.00–12.30
 
 -   [Summary](../sessions/slides/closing) of the course
 -   Final discussion and [further reading](../sessions/end-of-course-summary-and-discussion)
-
-## Session 11: Methods in the real world
-
-Wednesday: 11.30–12.30
-
--   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates
