@@ -8,7 +8,6 @@ This is the **nowcasting** course, taught in the first half of the SISMID week.
 It is paired with the companion [forecasting & evaluation course](https://nfidd.github.io/sismid-forecasting/).
 
 The schedule follows the standard SISMID day: modules run 09.00–10.30, 11.00–12.30, 13.30–15.00 and 15.30–17.00, with coffee breaks at 10.30 and 15.00 and lunch 12.30–13.30.
-Session lengths follow the times these sessions take in the [nfidd](https://nfidd.github.io/nfidd) course; remaining time is left free for new or expanded material (see the open issues).
 
 # Day 1 — Monday 13 July: Delays and the renewal equation
 
