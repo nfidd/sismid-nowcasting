@@ -8,9 +8,10 @@ bibliography: ../nfidd.bib
 ## Draft session
 
 This is a **draft** session and is still under review.
-The structure, narrative, and example are in place, but the heavy model fits are not yet run as part of the course.
+The simulation and data-preparation code runs as part of the course, but the `epinowcast` model fits do not.
 Every chunk that compiles or fits an `epinowcast` model is marked `#| eval: false`, so the code is shown but not executed when the site is built.
-To run these chunks yourself you will need a working `cmdstanr` toolchain and the `epinowcast` package installed (see the setup callout below).
+This keeps the site build fast and means `epinowcast` is *not* a dependency of the course.
+To run those chunks yourself you will need a working `cmdstanr` toolchain and the `epinowcast` package installed (see the setup callout below).
 :::
 
 # Introduction
@@ -19,8 +20,10 @@ In the [nowcasting concepts session](nowcasting) and the [joint nowcasting sessi
 We started from a known delay distribution, then learned to jointly estimate the delay and the nowcast from the reporting triangle, and finally added a renewal process so that the generative model of transmission informed the nowcast.
 
 Those bespoke models were ideal for *learning* how nowcasting works because we could see every part of the model.
+They are also a perfectly valid choice for real analyses: there is nothing wrong with writing your own model when you understand the reporting process well.
 However, real surveillance data is usually messier than those models handle comfortably.
-In this session we step back and ask what happens when the reporting process itself becomes complicated, and we introduce [`epinowcast`](https://package.epinowcast.org/) [@epinowcastPackage2024] as a flexible, well-tested framework for exactly these situations.
+In this session we step back and ask what happens when the reporting process itself becomes complicated.
+We then introduce [`epinowcast`](https://package.epinowcast.org/) [@epinowcastPackage2024] as one flexible, well-tested framework for exactly these situations, and frame it as a direct generalisation of the joint nowcasting model we already built.
 
 ## Slides
 
@@ -40,18 +43,30 @@ The source file of this session is located at `sessions/complex-reporting-proces
 
 ## Libraries used
 
-In this session we will use the `epinowcast` package to specify and fit nowcasting models, the `data.table` package that `epinowcast` uses for its data structures, and the `ggplot2` library for plotting.
+In this session we will use the `nfidd.nowcasting` package to load infection times and the simulation helpers we have used throughout, the `dplyr` and `tidyr` packages for data wrangling, and the `ggplot2` library for plotting.
+The worked `epinowcast` example additionally uses the `epinowcast` package and the `data.table` package that it uses for its data structures.
 
 ```{r libraries, message = FALSE}
-#| eval: false
-library("epinowcast")
-library("data.table")
+library("nfidd.nowcasting")
+library("dplyr")
+library("tidyr")
 library("ggplot2")
 ```
 
 ::: {.callout-tip}
-`epinowcast` compiles models with `cmdstanr`, so you will need a working CmdStan toolchain (the same one used elsewhere in this course).
-The package is on CRAN and is also available from the [epinowcast R-universe](https://epinowcast.r-universe.dev).
+`epinowcast` is not a dependency of this course, because it compiles its models with `cmdstanr` and would slow the course build down considerably.
+The `epinowcast` chunks below are shown but not run.
+To run them yourself, install `epinowcast` from its R-universe (it is also on CRAN) along with `cmdstanr`:
+
+```{r install-epinowcast}
+#| eval: false
+install.packages(
+  "epinowcast",
+  repos = c("https://epinowcast.r-universe.dev", getOption("repos"))
+)
+```
+
+You will also need a working CmdStan toolchain (the same one used elsewhere in this course).
 Installation and setup instructions are on the [package website](https://package.epinowcast.org/).
 :::
 
@@ -60,7 +75,6 @@ Installation and setup instructions are on the [package website](https://package
 We set a random seed for reproducibility.
 
 ```{r initialise}
-#| eval: false
 set.seed(123)
 ```
 
@@ -68,7 +82,7 @@ set.seed(123)
 
 # Why real reporting is harder than our models assume
 
-## The bespoke models we have built so far
+## The model we have built so far
 
 In the [joint nowcasting session](joint-nowcasting) we modelled each cell of the reporting triangle as
 
@@ -94,11 +108,14 @@ This is a property of the *report date*, not of the underlying epidemic, and it 
 Reporting delays lengthen when a system is under strain and shorten when it has spare capacity.
 A single fixed $p_{t,d}$ cannot represent a delay distribution that drifts across the outbreak.
 
+- **Delays that vary by strata.**
+Reporting speed often differs by age group, region, or pathogen, so a single shared delay can be wrong for some strata.
+
+- **Weekly or otherwise batched reporting.**
+Some systems report only once a week, or in irregular batches, so that counts arrive in lumps rather than smoothly.
+
 - **Missing and late reporting.**
 Some reports never arrive, or arrive far beyond the maximum delay we assumed, and weekends and holidays create gaps in the data.
-
-- **The reporting triangle at scale.**
-As soon as we stratify by age group, region, or pathogen, we have many reporting triangles at once, often sharing structure (for example, a common day-of-week effect) that we would like to model jointly.
 
 ::: {.callout-note}
 ## Take 5 minutes
@@ -116,14 +133,14 @@ There is no single right answer, but the changes add up quickly.
 - You would need to keep the reporting probabilities on each day summing to one, which is awkward once they vary by date.
 - Each addition makes the Stan model longer, slower to fit, and harder to debug and test.
 
-This is the point at which writing and maintaining a bespoke model stops being the best use of our time.
-A general, tested framework that already implements these features lets us focus on the modelling choices rather than the implementation.
+None of this is impossible, and writing it yourself remains a reasonable option.
+But it is the point at which reaching for a general, tested framework that already implements these features lets us focus on the modelling choices rather than the implementation.
 :::
 
 # Introducing `epinowcast`
 
 [`epinowcast`](https://package.epinowcast.org/) [@epinowcastPackage2024] is a Bayesian framework for real-time infectious disease surveillance.
-It is a direct generalisation of the joint nowcasting model we built: it works from the reporting triangle and jointly estimates the expected counts and the reporting process, but it makes each component far more flexible and exposes them through a formula interface rather than hand-written Stan code.
+It is *one* of several tools for this kind of modelling (we point to others at the end of the session), and it is a direct generalisation of the joint nowcasting model we built: it works from the reporting triangle and jointly estimates the expected counts and the reporting process, but it makes each component far more flexible and exposes them through a formula interface rather than hand-written Stan code.
 
 `epinowcast` decomposes the problem into modular pieces, each of which mirrors something we have already seen.
 
@@ -139,36 +156,118 @@ We are treating `epinowcast` as a tool here rather than dissecting its internals
 The mapping back to the bespoke model is deliberate: if you understand the joint nowcasting session, you already understand what `epinowcast` is doing, just with more flexible components.
 :::
 
-# A worked example: Germany COVID-19 hospitalisations
+# Simulating data with a complex reporting process
 
-`epinowcast` ships with a real dataset, `germany_covid19_hosp`, of COVID-19 hospitalisation counts in Germany.
-These data show exactly the complications described above, including a pronounced day-of-week reporting pattern, which makes them a good example for a more realistic reporting process.
+Rather than reach for a real dataset, we simulate data the same way we have throughout the course, so that we know the truth we are trying to recover.
+We build directly on the reporting-triangle simulation from the [joint nowcasting session](joint-nowcasting), then add a realistic reporting complication on top: a **day-of-week reporting effect**.
 
-## The data
+First we generate the symptom-onset time series exactly as before, from the shared infection process.
 
-We can load the data and look at its structure without fitting anything.
-
-```{r load-data}
-#| eval: false
-library("epinowcast")
-library("data.table")
-
-germany_hosp <- germany_covid19_hosp
-head(germany_hosp)
+```{r simulate-onsets}
+gen_time_pmf <- make_gen_time_pmf()
+ip_pmf <- make_ip_pmf()
+onset_df <- simulate_onsets(
+  make_daily_infections(infection_times), ip_pmf
+)
+cutoff <- 71
+head(onset_df)
 ```
 
-The dataset is in the long format that `epinowcast` expects.
+Next we define the reporting delay distribution, as in the joint nowcasting session.
 
-- `reference_date`: the date the event refers to (here, the date of the positive test / hospitalisation).
-- `report_date`: the date on which the count was reported.
-- `confirm`: the cumulative count for that reference date as known on that report date.
-- `location` and `age_group`: stratification variables.
+```{r reporting-delay}
+reporting_delay_pmf <- censored_delay_pmf(
+  rlnorm, max = 15, meanlog = 1, sdlog = 0.5
+)
+```
 
-For this example we take the national, all-ages series.
+Now we add the complication.
+Real systems often report less at weekends, so the number of reports landing on a given day depends on the **day of the week of the report date**, not on the delay alone.
+We capture this with a multiplicative weekly weight, assuming day 0 of our simulation is a Monday.
 
-```{r filter-data}
-#| eval: false
-nat_germany_hosp <- germany_hosp[location == "DE"][age_group == "00+"]
+```{r dow-effect}
+# Multiplicative reporting weight for Mon, Tue, ..., Sun
+# Reporting is suppressed at the weekend (Sat/Sun)
+dow_effect <- c(1, 1, 1, 1, 0.9, 0.4, 0.5)
+```
+
+We then build the reporting triangle just as in the joint nowcasting session, but multiply the reporting probability by the day-of-week weight for each report day before adding Poisson noise.
+
+```{r simulate-triangle}
+reporting_triangle <- onset_df |>
+  filter(day < cutoff) |>
+  mutate(
+    reporting_delay = list(
+      tibble(d = 0:15, reporting_delay = reporting_delay_pmf)
+    )
+  ) |>
+  unnest(reporting_delay) |>
+  mutate(
+    reported_day = day + d,
+    # day of week of the *report* day (0 = Monday)
+    report_dow = reported_day %% 7,
+    dow_weight = dow_effect[report_dow + 1],
+    reported_onsets = rpois(n(), onsets * reporting_delay * dow_weight)
+  )
+tail(reporting_triangle)
+```
+
+As we only observe reports up to the present, we keep just the cells that have been reported by our cutoff.
+
+```{r filter-triangle}
+filtered_triangle <- reporting_triangle |>
+  filter(reported_day <= max(day))
+```
+
+We can see the day-of-week effect clearly if we sum the reports by report day: the totals dip on a regular weekly cycle.
+
+```{r plot-dow}
+reports_by_day <- filtered_triangle |>
+  summarise(reports = sum(reported_onsets), .by = reported_day)
+
+ggplot(reports_by_day, aes(x = reported_day, y = reports)) +
+  geom_col() +
+  labs(x = "Report day", y = "Reports", title = "Reports by report day")
+```
+
+::: {.callout-note}
+## Take 2 minutes
+Look at the plot of reports by report day.
+Where does the weekly dip come from, and why would a model with a delay distribution that depends only on the delay $d$ struggle to reproduce it?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+The dip is a property of the *report date*: fewer reports are processed at weekends, regardless of when the onset occurred.
+Our bespoke $p_{t,d}$ only depends on the delay $d$ since onset, so it has no way to know which calendar day a report lands on.
+To reproduce the weekly pattern the model needs a term that depends on the report date itself, which is exactly the report-date module in `epinowcast`.
+:::
+
+## Putting the data into `epinowcast` format
+
+`epinowcast` expects data in a "long" format with one row per (reference date, report date) pair, where `confirm` is the **cumulative** count for that reference date as known on that report date.
+This is the same reporting triangle we have been using, just with calendar dates instead of integer days and cumulative rather than incremental counts.
+
+We attach arbitrary calendar dates (so that weekends line up with our day-of-week effect) and form the cumulative counts.
+
+```{r to-enw-format}
+# Day 0 of the simulation is a Monday
+ref_date0 <- as.Date("2023-01-02")
+
+enw_long <- filtered_triangle |>
+  transmute(
+    reference_date = ref_date0 + day,
+    report_date = ref_date0 + reported_day,
+    count = reported_onsets
+  ) |>
+  arrange(reference_date, report_date) |>
+  group_by(reference_date) |>
+  mutate(confirm = cumsum(count)) |>
+  ungroup() |>
+  select(reference_date, report_date, confirm)
+
+head(enw_long)
 ```
 
 ::: {.callout-note}
@@ -184,41 +283,23 @@ Each `reference_date` is a row of the triangle, each `report_date` gives a colum
 `epinowcast` works with the cumulative counts and converts them into the reporting triangle internally during preprocessing.
 :::
 
-## Preparing a retrospective nowcast
+# A worked example: nowcasting with a day-of-week effect
 
-To mimic a real-time nowcast we pretend we are standing at a particular date with only the data reported by then, and we keep the later data aside so we can check the nowcast against what was eventually reported.
+We now hand this simulated data to `epinowcast`.
+The remaining chunks in this section use `epinowcast` and so are not run when the site is built; install the package (see the setup callout) to run them yourself.
 
-```{r prepare-data}
-#| eval: false
-# Pretend we are standing at this date with only data reported by then
-retro_germany <- nat_germany_hosp |>
-  enw_filter_report_dates(latest_date = "2021-08-01") |>
-  enw_filter_reference_dates(include_days = 40)
-
-# The eventually-reported counts, kept aside to check the nowcast against
-latest_obs <- nat_germany_hosp |>
-  enw_filter_report_dates(latest_date = "2021-08-21") |>
-  enw_latest_data()
-```
-
-`epinowcast` then preprocesses the data into its internal reporting-triangle representation, where we also choose the maximum delay we will model.
+`epinowcast` preprocesses the data into its internal reporting-triangle representation, where we also choose the maximum delay we will model.
 
 ```{r preprocess}
 #| eval: false
-pobs <- enw_preprocess_data(retro_germany, max_delay = 30)
+library("epinowcast")
+library("data.table")
+
+pobs <- enw_preprocess_data(as.data.table(enw_long), max_delay = 15)
 pobs
 ```
 
-## Specifying and fitting the nowcast
-
-Now we specify the model.
-We will start from a model that captures the day-of-week reporting effect, which is the most visible complication in these data.
-
-We build three modules.
-
-- The **expectation** module models the expected hospitalisations over time with a random walk by week, the same multiplicative-growth idea as our geometric random walk.
-- The **reference** module models the delay distribution; here we keep it simple with a single parametric delay.
-- The **report** module adds a day-of-week effect on the report date, which our bespoke model could not easily express.
+Now we specify the model as three modules, each mapping back to a choice we made in the joint nowcasting session.
 
 ```{r modules}
 #| eval: false
@@ -245,10 +326,11 @@ Which module corresponds to $\lambda_{t}$ and which to $p_{t,d}$, and what is ge
 - `enw_reference()` plays the role of the delay distribution $p_{t,d}$.
 Here `~ 1` keeps it constant over time, exactly as in our bespoke model, but we could let it vary by writing, for example, `rw(week)` here too.
 - The genuinely new piece is `enw_report(~ (1 | day_of_week))`: a reporting effect that depends on the *report* date rather than the delay, which is awkward to add to the hand-rolled model but is a one-line change here.
+This is the term that absorbs the weekly dip we built into the simulation.
 :::
 
 We then fit the model.
-This is the step that compiles and samples a Stan model, so it is slow; it is marked `eval: false` in this draft.
+This is the step that compiles and samples a Stan model, so it is slow; it is marked `eval: false` here.
 
 ```{r fit}
 #| eval: false
@@ -259,7 +341,8 @@ nowcast <- epinowcast(
   report = report_module,
   fit = enw_fit_opts(
     save_warmup = FALSE, pp = TRUE,
-    chains = 2, iter_warmup = 500, iter_sampling = 500
+    chains = 2, parallel_chains = 2,
+    iter_warmup = 500, iter_sampling = 500
   )
 )
 ```
@@ -269,22 +352,37 @@ The `enw_fit_opts()` call controls sampling in the same way the arguments to `nf
 We use a small number of iterations here purely to keep the example quick; a real analysis would use more.
 :::
 
-## Inspecting and plotting the nowcast
-
 Once fitted, the `epinowcast` object has plotting and summary methods.
-Plotting against the eventually-reported data lets us see how well the nowcast filled in the recent, incomplete counts.
+Plotting shows the nowcast for the recent, incomplete reference dates alongside the counts available at the nowcast date.
 
 ```{r plot-nowcast}
 #| eval: false
-plot(nowcast, latest_obs = latest_obs)
+plot(nowcast)
 ```
 
-As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete, and the day-of-week reporting effect is now absorbed by the model rather than distorting the nowcast.
+As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete.
+The difference here is that the day-of-week reporting effect is now absorbed by the model rather than distorting the nowcast.
+
+# Other reporting complications
+
+We have worked through a day-of-week effect end to end.
+The other complications from the start of the session are handled by the same modular idea: each is a change to one formula, not a new model.
+Rather than code every one, here is how you would approach them and a couple of short exercises.
+
+- **Time-varying delays.**
+Put structure on the *reference* module so the delay distribution can drift over the outbreak, for example `enw_reference(~ rw(week), data = pobs)`.
+- **Delays that vary by strata.**
+Add the stratifying variable to the relevant module formula, for example a fixed or random effect of age group on the reference module, so each stratum can have its own delay while borrowing strength across strata.
+- **Weekly or batched reporting.**
+This is another report-date pattern: counts arrive in lumps on particular report days, which a report-date model can represent.
+- **Missing and late reporting.**
+`epinowcast` has dedicated support for missing reference dates and can model the proportion of reports that are eventually observed, rather than assuming every report arrives within the maximum delay.
 
 ::: {.callout-note}
-## Take 3 minutes
+## Take 5 minutes
 We modelled the delay distribution as constant over time with `enw_reference(~ 1, ...)`.
-How would you let the delay distribution change over the outbreak, and why might that matter for these data?
+Sketch how you would let the delay distribution change over the outbreak, and say why that might matter.
+What would you change in our *simulation* above to generate data with a time-varying delay to test it on?
 :::
 
 ::: {.callout-note collapse="true"}
@@ -293,21 +391,39 @@ How would you let the delay distribution change over the outbreak, and why might
 You can put structure on the reference module just as on the expectation module, for example `enw_reference(~ rw(week), data = pobs)` to let the delay distribution drift week to week.
 This matters when reporting speed changes over time, for instance when a system is overwhelmed during a wave and delays lengthen, or improves as processes are streamlined.
 A fixed delay distribution would then mis-estimate how much of the recent data is still missing, biasing the nowcast.
-This is exactly the time-varying-delay complication that was hard to add to our bespoke model and is a one-line change here.
+
+To simulate it, you would let the parameters of `reporting_delay_pmf` depend on the onset `day` (for example, slowly increasing `meanlog`) instead of using one fixed PMF for every day, then rebuild the triangle as before.
+:::
+
+::: {.callout-note}
+## Take 5 minutes
+Suppose you also had the data split by two age groups, and you suspected reporting was slower in one of them.
+Which module would you change, and what would be the advantage of fitting both age groups in one `epinowcast` model rather than two separate nowcasts?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+You would add age group to the *reference* module so the delay distribution can differ by group.
+Fitting both groups jointly lets a sparse group borrow strength from the other through shared (partially pooled) structure, which is more stable than fitting each group on its own, especially when counts are low.
 :::
 
 # Going further
 
-This draft only scratches the surface of what `epinowcast` can do.
-A few directions to explore once the basics are comfortable:
+This session only scratches the surface of what `epinowcast` can do, and `epinowcast` is only one of several tools for this kind of modelling.
 
-- **Stratified nowcasting.** Fit many reporting triangles at once (for example by age group or region) with partially pooled effects, so that sparse strata borrow strength from the others.
-- **Richer delay and reporting models.** Combine time-varying delays, day-of-week effects, and parametric or non-parametric delay distributions in the same model.
-- **Joint nowcasting and $R_t$ estimation.** Use a renewal-based expectation model so that the nowcast and the reproduction number are estimated together, generalising the joint model from the [joint nowcasting session](joint-nowcasting).
-- **Evaluation.** Score nowcasts across many dates using proper scoring rules, as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting).
+`epinowcast` has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:
 
-The [`epinowcast` package website](https://package.epinowcast.org/) [@epinowcastPackage2024] has vignettes working through each of these, including a fuller treatment of the Germany hospitalisations example.
-For the methodological background to generative nowcasting models of this kind, see [@lisonGenerativeBayesianModeling2024], and for a comparison of nowcasting methods used in practice see [@wolfframCollaborativeNowcastingCOVID192023].
+- The [`epinowcast` package website](https://package.epinowcast.org/) [@epinowcastPackage2024], including its [model description](https://package.epinowcast.org/articles/model.html) and the [getting started vignette](https://package.epinowcast.org/articles/epinowcast.html).
+- Its case studies and vignettes work through stratified nowcasting (many reporting triangles at once with partially pooled effects), richer delay and reporting models, joint nowcasting with $R_t$ estimation (a renewal-based expectation model, generalising the joint model from the [joint nowcasting session](joint-nowcasting)), and evaluation of nowcasts with proper scoring rules (as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting)).
+
+`epinowcast` is not the only option, and the right tool depends on the problem.
+
+- The bespoke Stan models we built in this course remain a perfectly good choice when you understand the reporting process and want full control.
+- The [`baselinenowcast`](https://baselinenowcast.epinowcast.org) package implements simple multiplicative nowcasting methods that make useful benchmarks.
+- A range of other methods and frameworks are used in practice; the collaborative nowcasting comparison in [@wolfframCollaborativeNowcastingCOVID192023] surveys several and discusses what drives differences in their performance.
+
+For the methodological background to generative nowcasting models of this kind, see [@lisonGenerativeBayesianModeling2024].
 
 # Wrap up
 
