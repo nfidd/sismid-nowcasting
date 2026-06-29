@@ -8,7 +8,7 @@ This is the **nowcasting** course, taught in the first half of the SISMID week.
 It is paired with the companion [forecasting & evaluation course](https://nfidd.github.io/sismid-forecasting/).
 
 The schedule follows the standard SISMID day: modules run 09.00–10.30, 11.00–12.30, 13.30–15.00 and 15.30–17.00, with coffee breaks at 10.30 and 15.00 and lunch 12.30–13.30.
-Session lengths follow the times these sessions actually take in the [nfidd](https://nfidd.github.io/nfidd) course; the remaining time is left free for new or expanded material (see the open issues).
+Session lengths follow the times these sessions take in the [nfidd](https://nfidd.github.io/nfidd) course; remaining time is left free for new or expanded material (see the open issues).
 
 # Day 1 — Monday 13 July: Delays and the renewal equation
 
@@ -59,7 +59,7 @@ Monday: 15.30–17.00
 -   [Practice](../sessions/R-estimation-and-the-renewal-equation): using the renewal equation to estimate $R_t$
 -   Wrap up
 
-# Day 2 — Tuesday 14 July: Nowcasting
+# Day 2 — Tuesday 14 July: Nowcasting and bridging to forecasting
 
 Tuesday: 09.00–09.15 — Day 1 review
 
@@ -93,36 +93,29 @@ Tuesday: 13.30–15.00
 
 *Coffee break 15.00–15.30*
 
-## Free: additional session
+## Session 8: Combining nowcasting and forecasting
 
 Tuesday: 15.30–17.00
 
--   This module is currently unallocated — it is the slot where the nfidd course teaches forecasting, which here belongs to the companion forecasting course.
--   It is held open for a new or expanded nowcasting session; see the open issues for candidates (e.g. a research-talks/real-world session or extra content).
+-   [Introduction](../sessions/slides/forecasting-nowcasting): why combine nowcasting and forecasting?
+-   [Practice](../sessions/forecasting-nowcasting): connecting nowcasting and forecasting, building up to a forecast from the renewal model
+-   Wrap up
 
-# Day 3 — Wednesday 15 July: Bridging to forecasting and real-world methods
+# Day 3 — Wednesday 15 July: Real-world methods and wrap-up
 
 Wednesday: 09.00–09.15 — Day 2 review
 
-## Session 8: Combining nowcasting and forecasting
-
-Wednesday: 09.15–10.15
-
--   [Introduction](../sessions/slides/forecasting-nowcasting): why combine nowcasting and forecasting?
--   [Practice](../sessions/forecasting-nowcasting): connecting nowcasting and forecasting
--   Wrap up
-
-*Coffee break 10.30–11.00*
-
 ## Session 9: Summary and discussion
 
-Wednesday: 11.00–11.30
+Wednesday: 09.15–09.45
 
 -   [Summary](../sessions/slides/closing) of the course
 -   Final discussion and [further reading](../sessions/end-of-course-summary-and-discussion)
 
 ## Session 10: Methods in the real world
 
-Wednesday: 11.30–12.30
+Wednesday: 09.45–10.30
 
 -   [Methods in the real world](../sessions/methods-in-the-real-world): presentations and discussion on real-world uses of nowcasts and reproduction number estimates
+
+*The course finishes by the Wednesday-midday handover to the forecasting course; the remaining Wednesday-morning time is held open for a new or expanded session (see the open issues).*
