@@ -92,23 +92,23 @@ Tuesday: 13.30–15.00
 
 *Coffee break 15.00–15.30*
 
-## Session 8: Jointly fitting multiple data streams
+## Session 8: Modelling complex reporting processes
 
 Tuesday: 15.30–17.00
 
--   Combining multiple data sources by jointly fitting the renewal model to several parallel streams (cases, deaths and a simple wastewater signal), and exploring data conflict.
--   *New session — being added in a separate PR; the links will be wired in once it merges.*
+-   Modelling more complex reporting processes (e.g. day-of-week effects and richer delay and reporting structures) using `epinowcast`.
+-   *New session — a draft is being added in a separate PR; the link will be wired in once it merges.*
 
 # Day 3 — Wednesday 15 July: Real-world methods and wrap-up
 
 Wednesday: 09.00–09.15 — Day 2 review
 
-## Session 9: Modelling complex reporting processes
+## Session 9: Jointly fitting multiple data streams
 
 Wednesday: 09.15–10.30
 
--   Modelling more complex reporting processes (e.g. day-of-week effects and richer delay and reporting structures) using `epinowcast`.
--   *New session — a draft is being added in a separate PR; the link will be wired in once it merges.*
+-   Combining multiple data sources by jointly fitting the renewal model to several parallel streams (cases, deaths and a simple wastewater signal), and exploring data conflict.
+-   *New session — being added in a separate PR; the links will be wired in once it merges.*
 
 *Coffee break 10.30–11.00*
 
