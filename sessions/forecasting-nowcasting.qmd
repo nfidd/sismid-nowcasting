@@ -102,7 +102,7 @@ Some methods (particularly Bayesian generative models) make this connection expl
 # Simulating data for our analysis
 
 We'll start by generating synthetic data that mimics the challenges we face in real-time epidemic analysis.
-This builds on the approach from the [joint nowcasting session](sessions/joint-nowcasting), but now we'll also create a dataset filtered at a two-week forecast horizon for evaluation (i.e. the data that we would ultimately observe for the two weeks after the forecast date).
+This builds on the approach from the [joint nowcasting session](joint-nowcasting), but now we'll also create a dataset filtered at a two-week forecast horizon for evaluation (i.e. the data that we would ultimately observe for the two weeks after the forecast date).
 
 ::: {.callout-note}
 ## Beyond simulated onsets: other surveillance data
@@ -137,7 +137,7 @@ First, let's generate our simulated onset dataset as we did in previous sessions
 gen_time_pmf <- make_gen_time_pmf()
 ip_pmf <- make_ip_pmf()
 onset_df <- simulate_onsets(
-  make_daily_infections(infection_times), gen_time_pmf, ip_pmf
+  make_daily_infections(infection_times), ip_pmf
 )
 head(onset_df)
 
@@ -304,14 +304,14 @@ For the more complex models we might also consider using approximtate fitting me
 ::: {.callout-tip}
 ## Take 2 minutes
 
-How does this model differ from the one we used in the [Rt estimation session](sessions/R-estimation-and-the-renewal-equation)?
+How does this model differ from the one we used in the [Rt estimation session](R-estimation-and-the-renewal-equation)?
 
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
-- The model is the same as the one we used in the [Rt estimation session](sessions/R-estimation-and-the-renewal-equation), but with an additional block where we generate the forecast for additional days beyond the observation period. 
+- The model is the same as the one we used in the [Rt estimation session](R-estimation-and-the-renewal-equation), but with an additional block where we generate the forecast for additional days beyond the observation period. 
 To do this we need to regenerate the Rt samples for the additional days, and then use these to generate infections and onsets.
 
 :::
@@ -413,10 +413,10 @@ Examine the complete data approach:
 In this session, we'll explore different ways to combine nowcasting and forecasting.
 Building on methods from our earlier sessions, you could construct pipeline approaches using:
 
-- **Delay distribution estimation**: Methods from the [biases in delay distributions session](sessions/biases-in-delay-distributions) to estimate reporting delays from individual-level data
-- **Simple nowcasting**: The geometric random walk nowcasting model from the [nowcasting concepts session](sessions/nowcasting) 
+- **Delay distribution estimation**: Methods from the [biases in delay distributions session](biases-in-delay-distributions) to estimate reporting delays from individual-level data
+- **Simple nowcasting**: The geometric random walk nowcasting model from the [nowcasting concepts session](nowcasting) 
 - **Multiplicative baseline methods**: Simple CDF-based scaling approaches using tools like [`baselinenowcast`](https://baselinenowcast.epinowcast.org)
-- **Reproduction number estimation**: Methods from the [R estimation session](sessions/R-estimation-and-the-renewal-equation) applied to the nowcasted data
+- **Reproduction number estimation**: Methods from the [R estimation session](R-estimation-and-the-renewal-equation) applied to the nowcasted data
 
 Each component can be developed and validated independently, making pipeline approaches more modular and sometimes easier to debug.
 The trade-off is that uncertainty may not propagate correctly between components, and the assumptions of each component may not be consistent with each other.
@@ -424,7 +424,7 @@ The trade-off is that uncertainty may not propagate correctly between components
 As we'll see, joint models that estimate nowcasts and forecasts together can address these limitations, but come with their own challenges in terms of complexity and computational requirements.
 :::
 
-We start by fitting a geometric random walk nowcast to the reporting triangle data, as we did in the [joint nowcasting session](sessions/joint-nowcasting).
+We start by fitting a geometric random walk nowcast to the reporting triangle data, as we did in the [joint nowcasting session](joint-nowcasting).
 
 First, we load the joint nowcasting model:
 
@@ -560,7 +560,7 @@ Compare this pipeline approach to the complete data approach:
 
 **How might model mismatch between the geometric and renewal models affect results?**
 
-- The geometric random walk and renewal equation represent different generative processes [@lisonGenerativeBayesianModeling2024], which can lead to inconsistencies as we saw in the [joint nowcasting session](sessions/joint-nowcasting).
+- The geometric random walk and renewal equation represent different generative processes [@lisonGenerativeBayesianModeling2024], which can lead to inconsistencies as we saw in the [joint nowcasting session](joint-nowcasting).
 - This mismatch can create systematic biases and unrealistic uncertainty quantification.
 
 :::

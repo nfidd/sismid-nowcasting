@@ -4,7 +4,7 @@ title: "Getting started"
 
 ## What is NFIDD?
 
-NFIDD (Nowcasting and Forecasting Infectious Disease Dynamics) is an MIT-licensed library of [sessions](course-info/sessions) for learning about nowcasting and forecasting of infectious disease surveillance data.
+NFIDD (Nowcasting and Forecasting Infectious Disease Dynamics) is an MIT-licensed library of [sessions](reference/sessions) for learning about nowcasting and forecasting of infectious disease surveillance data.
 This is the **nowcasting** course, which forms the first half of the [SISMID](https://sismid.sph.emory.edu/) week (Monday to Wednesday midday).
 A companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) covers the second half of the week.
 This course is a living resource designed to help epidemiologists, public health professionals, and researchers understand and apply real-time analysis methods to infectious disease surveillance data.
@@ -27,7 +27,7 @@ Each session in this course uses R code for demonstration. All the content is se
 
 If you choose the local setup option, here's what you'll need to do:
 
-1.  Install R and RStudio
+1.  Install R and RStudio (use the Visual Editor for best notebook experience)
 2.  Install the `nfidd.nowcasting` R package
 3.  Install cmdstan
 4.  Download course materials (if using the hybrid approach you may not need to do this)

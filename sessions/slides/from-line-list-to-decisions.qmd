@@ -33,7 +33,7 @@ Hans Rosling, Liberia, 2014
 
 ### Aim of this course:
 
-How can we use data typically collected for other purposes to answer questions like
+How can we use data typically collected in an outbreak to answer questions like
 
 - what **is** the number of cases now? (*nowcasting*)
 - is it rising/falling and by how much? (*$R_t$ estimation*)
