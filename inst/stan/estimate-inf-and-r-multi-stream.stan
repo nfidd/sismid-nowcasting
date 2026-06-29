@@ -32,10 +32,10 @@ parameters {
   real<lower = 0> init_R;          // initial reproduction number
   array[n-1] real rw_noise;        // random walk noise
   real<lower = 0> rw_sd;           // random walk standard deviation
-  real<lower = 0, upper = 1> ascertainment; // proportion of infections reported as cases
+  real<lower = 0, upper = 1> ascertainment; // proportion of infections reported
   real<lower = 0, upper = 1> ifr;  // infection fatality ratio
   real<lower = 0> ww_scale;        // wastewater scaling (signal per infection)
-  real<lower = 0> ww_sigma;        // wastewater observation standard deviation (log scale)
+  real<lower = 0> ww_sigma;        // wastewater obs sd (log scale)
 }
 
 transformed parameters {
@@ -69,7 +69,7 @@ model {
   ww_scale ~ normal(1, 1) T[0, ];
   ww_sigma ~ normal(0, 0.5) T[0, ];
 
-  // joint likelihood: each stream contributes its own term off the shared process
+  // joint likelihood: each stream contributes its own term off infections
   cases ~ poisson(exp_cases);
   deaths ~ poisson(exp_deaths);
   ww ~ normal(log(exp_ww), ww_sigma);

@@ -266,7 +266,8 @@ r_posterior <- posteriors |>
 ggplot(r_posterior, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  labs(title = "Estimated Rt", subtitle = "Joint model fit to all three streams")
+  labs(title = "Estimated Rt",
+       subtitle = "Joint model fit to all three streams")
 ```
 
 ::: callout-tip
