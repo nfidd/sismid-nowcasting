@@ -24,6 +24,7 @@ Imports:
     tidybayes
 Suggests:
     covr,
+    epinowcast,
     ggplot2,
     knitr,
     lintr,
@@ -36,6 +37,8 @@ Suggests:
     testthat (>= 3.0.0)
 Remotes:
     stan-dev/cmdstanr
+Additional_repositories:
+    https://epinowcast.r-universe.dev
 Encoding: UTF-8
 Language: en-GB
 LazyData: true
