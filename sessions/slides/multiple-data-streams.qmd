@@ -97,24 +97,20 @@ A shared process, a swappable observation model per stream — so we can **build
 ### Three streams from one trajectory
 
 ```{r streams, echo = FALSE, fig.width = 9, fig.height = 4.2}
-gen_time_pmf <- censored_delay_pmf(rgamma, max = 14, shape = 4, rate = 1)
-gen_time_pmf <- gen_time_pmf[-1]
-gen_time_pmf <- gen_time_pmf / sum(gen_time_pmf)
-
-n <- 80
-R <- c(rep(1.6, 30), rep(0.8, n - 30))
-## larger I0 here is purely so the illustrative death counts are visible
-infections <- renewal(200, R, gen_time_pmf)
+## reuse the same shared infections the course uses elsewhere
+infections <- make_daily_infections(infection_times)$infections
+n <- length(infections)
 
 case_delay  <- censored_delay_pmf(rgamma, max = 10, shape = 3,  rate = 1)
 death_delay <- censored_delay_pmf(rgamma, max = 21, shape = 16, rate = 1)
 ww_delay    <- censored_delay_pmf(rgamma, max = 10, shape = 2,  rate = 1)
 
+## scalings chosen only so the illustrative count streams are visible
 obs <- tibble(
   day = seq_len(n),
   infections = infections,
   cases  = rpois(n, 0.4  * convolve_with_delay(infections, case_delay)),
-  deaths = rpois(n, 0.01 * convolve_with_delay(infections, death_delay)),
+  deaths = rpois(n, 0.05 * convolve_with_delay(infections, death_delay)),
   ww     = rnorm(n, log(2 * convolve_with_delay(infections, ww_delay)), 0.2)
 )
 
@@ -208,10 +204,10 @@ This loop *is* the modelling workflow.
 
 ## `r fontawesome::fa("laptop-code", "white")` Your Turn {background-color="#447099" transition="fade-in"}
 
-1. Simulate three parallel streams from one shared infection trajectory
+1. Simulate parallel streams from one shared infection trajectory
 2. Fit each stream alone, then link them through the shared infections
 3. Recover infections and $R_t$ from the joint fit
-4. Make the deaths conflict, and see how the joint model surfaces it
+4. Make the deaths conflict, see the joint model surface it, then resolve it by modelling the mechanism
 
 #
 
