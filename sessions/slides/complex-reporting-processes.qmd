@@ -1,0 +1,146 @@
+---
+title: "Modelling complex reporting processes"
+author: "Nowcasting and forecasting of infectious disease dynamics"
+engine: knitr
+format:
+  revealjs:
+    output: slides/complex-reporting-processes.html
+    footer: "Modelling complex reporting processes"
+    chalkboard: true
+    slide-level: 3
+---
+
+### The model we have so far {.smaller}
+
+In the [joint nowcasting session](../joint-nowcasting) we modelled each cell of the reporting triangle as
+
+$$
+  n_{t,d} \mid \lambda_{t}, p_{t,d} \sim \text{Poisson}\left(\lambda_{t} \times p_{t,d}\right)
+$$
+
+- $\lambda_{t}$: expected onsets on day $t$ (a daily random walk)
+- $p_{t,d}$: probability of an onset on day $t$ being reported with delay $d$
+- a **single** delay distribution, the same on every day
+
+Ideal for *learning*, and fine when the reporting process is simple.
+
+### Real reporting is messier {.smaller}
+
+A single, fixed delay cannot capture:
+
+- **Day-of-week effects** (fewer onsets, or fewer reports, at weekends)
+- **Time-varying delays** (delays drift as a system gains or loses capacity)
+- **Weekly / batched reporting** (data released weekly, not daily)
+- **Strata** (delays differ by age, region, ...)
+- **Missing reference dates**
+
+> *[Diagram placeholder: reporting triangle with a day-of-week dip overlaid on the report-date axis]*
+
+### What would this cost in bespoke Stan? {.smaller}
+
+To add a day-of-week effect *and* a time-varying delay by hand:
+
+- Turn the delay vector into a matrix $p_{t,d}$, times a report-date factor $w_{(t+d)\bmod 7}$
+- A random walk on the delay parameters (`meanlog[t]`, `sdlog[t]`) with priors
+- Re-impose the per-date sum-to-one constraint every day
+- More parameters, bigger `transformed parameters`, slower gradients, more to test
+
+Possible, but this is where a tested framework earns its place.
+
+### `epinowcast`: one flexible tool {.smaller}
+
+[`epinowcast`](https://package.epinowcast.org/) is a Bayesian framework for real-time surveillance.
+
+- A direct generalisation of our joint model: triangle in, counts + reporting out
+- Each component is a **module**, specified with an R **formula**
+- *One* of several tools (we point to others at the end)
+
+::: {.callout-tip}
+If you understand the joint nowcasting session, you already understand what `epinowcast` is doing, just with more flexible components.
+:::
+
+### The same model, as modules {.smaller}
+
+```{mermaid}
+flowchart LR
+  E["Expectation<br/>enw_expectation()<br/>λ_t"] --> N["Nowcast"]
+  R["Reference date<br/>enw_reference()<br/>p_t,d"] --> N
+  P["Report date<br/>enw_report()<br/>report effects"] --> N
+  O["Observation<br/>enw_obs()<br/>likelihood"] --> N
+```
+
+Each piece mirrors something we built by hand; adding a feature is a one-line formula change.
+
+### Mapping back to the bespoke model {.smaller}
+
+| Bespoke model | `epinowcast` module |
+|---|---|
+| $\lambda_{t}$ random walk | `enw_expectation(~ rw(day))` |
+| $p_{t,d}$ delay distribution | `enw_reference(~ 1)` |
+| report-date effects | `enw_report(~ ...)` |
+| Poisson likelihood | `enw_obs(family = "poisson")` |
+
+The course model is just these modules; everything else is an extension of one of them.
+
+### Day-of-week effects {.smaller}
+
+Two *different* weekly patterns, on different dates:
+
+- **Reference date**: events truly happen at different rates by day of week
+  → goes in the **expectation** module
+- **Report date**: the system processes reports at different rates by day of week
+  → goes in the **report** module
+
+```r
+enw_expectation(~ rw(day) + day_of_week)   # reference-side
+enw_report(~ (1 | day_of_week))            # report-side
+```
+
+> *[Diagram placeholder: two timelines — onsets thinned at weekends vs reports thinned at weekends]*
+
+### Time-varying delay {.smaller}
+
+Delays *may* lengthen under strain and shorten with spare capacity.
+
+```r
+enw_reference(~ rw(week))   # delay drifts week to week
+```
+
+::: {.callout-warning}
+We simulate a roughly linear drift, but fitting a matching linear trend would be *cheating*: in reality we do not know the functional form.
+Choose a **flexible** model (a random walk) instead of baking in what you simulated.
+:::
+
+### Weekly (batched) reporting {.smaller}
+
+Data are often *reported* weekly even though events happen daily.
+
+```r
+weekly <- enw_aggregate_cumulative(enw_long, timestep = "week")
+enw_preprocess_data(weekly, max_delay = 3, timestep = "week")
+```
+
+- The reporting schedule is a property of the **data**, not the model
+- The same expectation and delay modules apply, just on a weekly timestep
+
+### Others, same idea {.smaller}
+
+Each is a change to one formula, not a new model:
+
+- **Strata** (age, region): `enw_reference(~ (1 | age_group))` — own delay per stratum, partial pooling across strata
+- **Missing reference dates**: a dedicated `enw_missing()` module
+
+::: {.callout-note}
+`epinowcast` is one tool among several. Bespoke Stan models, `baselinenowcast` benchmarks, and other frameworks all have their place; the right choice depends on the problem.
+:::
+
+## `r fontawesome::fa("laptop-code", "white")` Your Turn {background-color="#447099" transition="fade-in"}
+
+1. Reproduce the joint nowcasting model in `epinowcast`
+2. Add day-of-week reporting effects
+3. Let the delay vary over time
+4. Fit weekly (batched) reporting with a reporting schedule
+
+#
+
+[Return to the session](../complex-reporting-processes)
