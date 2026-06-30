@@ -10,6 +10,15 @@ format:
     slide-level: 3
 ---
 
+```{r setup, include = FALSE}
+library("nfidd.nowcasting")
+library("dplyr")
+library("tidyr")
+library("ggplot2")
+set.seed(123)
+theme_set(theme_minimal(base_size = 16))
+```
+
 ### One outbreak, several views
 
 So far: estimate $R_t$ from a *single* observed time series.
@@ -26,42 +35,106 @@ Each is a delayed, scaled view of the *same* infections.
 
 Our target is unchanged: recover the latent **infections** and **$R_t$**, as timely and as well-anchored as we can.
 
-No single stream gives a clean view of both.
+. . .
+
+- **Cases** track the *timing* of recent infections, but carry reporting noise and tell us only an ascertained fraction.
+- **Deaths** are sparser and badly lagged, so they say little about the present, but anchor the longer-term level.
+- **Wastewater** is independent of care-seeking, but indirect and on its own scale.
+
+Alone, none pins down both the infection *level* and $R_t$.
 
 . . .
 
-So the question is not just *"can we fit several streams?"* but:
-
 > What does each stream add, and what happens when they pull in different directions?
+
+### What is wastewater surveillance? {.smaller}
+
+Measuring pathogen RNA shed into sewage — a **population-level** signal.
+
+Why people are interested:
+
+- Does **not** depend on testing, care-seeking, or ascertainment
+- Can **lead** case reports, and picks up **asymptomatic** infection
+- Relatively **cheap** at scale (one sample covers a whole catchment)
+
+. . .
+
+Challenges: it is **noisy** and **indirect**, and needs **scaling / normalisation** before it can be compared to infections.
+
+This is why it is attractive as a third, parallel stream.
 
 ### Don't reach for the whole model at once
 
-Fitting several streams is one step in a wider **modelling workflow**: build, check, compare, revise.
+Fitting several streams is one step in a wider **modelling workflow**.
 
-We let that workflow drive how we develop the model.
+A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model — never a single leap to the final model.
+
+> *[Placeholder: cover of Aki Vehtari et al.'s Bayesian workflow book — to be added]*
+
+We let that general idea drive how we develop this model.
 
 ### A workflow for infectious disease modelling
 
-![A workflow for infectious disease modelling. Figure by Sam Abbott (MIT licence).](figures/workflow-diagram.png)
+The infectious-disease-specific instance of that loop:
 
-### The ideal model is modular
+![A workflow for infectious disease modelling. Figure by Sam Abbott (MIT licence).](figures/workflow-diagram.png){height="460px"}
 
-Reading the workflow from the bottom-left:
+### Reading the workflow, bottom-left up
 
+::: {.incremental}
 1. **Question & estimands** — infections and $R_t$
 2. **Process model** — one shared renewal process
 3. **Data source selection** — what each stream measures, and its biases
 4. **Observation model per source** — a delay + a scaling + a likelihood
 5. **Data integration** — *how* to combine them (the key choice)
-6. **Inference, checking, revision** — conflict and identifiability feed back
+6. **Inference, checking & iteration** — fit, check (PPCs, conflict), revise
+:::
 
 . . .
 
 A shared process, a swappable observation model per stream — so we can **build it in parts**.
 
-### Parallel observation of shared infections
+### Three streams from one trajectory
 
-Every stream is its own convolution *of the shared latent infections*; conditionally independent given $I$.
+```{r streams, echo = FALSE, fig.width = 9, fig.height = 4.2}
+gen_time_pmf <- censored_delay_pmf(rgamma, max = 14, shape = 4, rate = 1)
+gen_time_pmf <- gen_time_pmf[-1]
+gen_time_pmf <- gen_time_pmf / sum(gen_time_pmf)
+
+n <- 80
+R <- c(rep(1.6, 30), rep(0.8, n - 30))
+## larger I0 here is purely so the illustrative death counts are visible
+infections <- renewal(200, R, gen_time_pmf)
+
+case_delay  <- censored_delay_pmf(rgamma, max = 10, shape = 3,  rate = 1)
+death_delay <- censored_delay_pmf(rgamma, max = 21, shape = 16, rate = 1)
+ww_delay    <- censored_delay_pmf(rgamma, max = 10, shape = 2,  rate = 1)
+
+obs <- tibble(
+  day = seq_len(n),
+  infections = infections,
+  cases  = rpois(n, 0.4  * convolve_with_delay(infections, case_delay)),
+  deaths = rpois(n, 0.01 * convolve_with_delay(infections, death_delay)),
+  ww     = rnorm(n, log(2 * convolve_with_delay(infections, ww_delay)), 0.2)
+)
+
+obs |>
+  pivot_longer(c(infections, cases, deaths, ww),
+               names_to = "stream", values_to = "value") |>
+  mutate(stream = factor(stream,
+    levels = c("infections", "cases", "deaths", "ww"),
+    labels = c("Infections (latent)", "Cases", "Deaths", "Wastewater (log)"))) |>
+  ggplot(aes(day, value)) +
+  geom_line(linewidth = 0.8, colour = "#447099") +
+  facet_wrap(~stream, scales = "free_y", nrow = 1) +
+  labs(x = "Day", y = NULL)
+```
+
+Each stream is a delayed, rescaled echo of the same infection curve.
+
+### Parallel observation of shared infections {.smaller}
+
+*One* way to combine them: every stream is its own convolution *of the shared latent infections*, conditionally independent given $I$.
 
 $$
 \text{cases}_t \sim f\big(\text{convolve}(I, p_\text{cases})\big), \quad
@@ -77,13 +150,7 @@ flowchart TD
     I -->|delay + scaling| W["Wastewater"]
 ```
 
-### Parallel, not sequential
-
-**Parallel** (what we use): every stream looks *directly* at the shared infections $I$.
-
-**Sequential**: chain one stream off another, e.g. $\text{deaths}_t \sim g(\text{convolve}(\text{cases}, p))$.
-
-We keep infections as the *one* shared quantity that every stream informs.
+Infections become the *one* shared quantity that every stream informs.
 
 ### Build it in parts
 
@@ -126,12 +193,14 @@ It surfaces in three linked ways:
 2. **Tension in the shared infections** (distorted, more uncertain)
 3. **Degraded sampling** (divergences, low ESS, high `rhat`)
 
-### What to do about conflict
+### Resolving conflict
 
-Conflict is *information*, not noise to average away.
+A shared latent process *surfaces* conflict and gives a compromise — it does **not** resolve it.
+
+Genuine resolution = model the *reason* the streams disagree:
 
 - **Diagnose, don't average** — which stream, which assumption?
-- **Relax the offending assumption** — e.g. time-varying ascertainment/IFR
+- **Relax the offending assumption** — e.g. time-varying ascertainment / IFR
 - **Compare models** — does the conflict resolve?
 - **Down-weight or drop** — last resort, only once you know *why*
 
