@@ -554,7 +554,9 @@ The diagnostics for the conflicting fit are usually a little worse (larger `rhat
 
 ## What should a modeller do about conflict?
 
-When streams genuinely conflict, the answer is rarely to average them blindly: the compromise is faithful to no stream and, as we have seen, can be actively misleading about $R_t$.
+It is worth being clear about what the shared latent process does and does not do here.
+Sharing one infection process across streams *surfaces* a conflict (the symptoms above) and yields a single compromise estimate, but it does not *resolve* the disagreement: the compromise is faithful to no stream and, as we have seen, can be actively misleading about $R_t$.
+Genuine resolution comes from modelling the *reason* the streams disagree -- extending the model to explain the differing biases or observation processes -- not from averaging the streams together.
 Conflict is *information*: it is the workflow's feedback arrow sending us back to revise the model rather than to trust the fit.
 A reasonable sequence is:
 
