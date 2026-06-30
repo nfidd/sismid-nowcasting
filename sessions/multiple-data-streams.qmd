@@ -95,7 +95,7 @@ That modularity is what lets us **build it in parts**, which is what we do next:
 ::: callout-note
 ## Parallel (joint) vs sequential modelling
 
-The "data integration choices" box hides an important decision, and the distinction matters.
+The "data integration choices" box hides a decision about how the streams relate to each other.
 
 In a **parallel** model -- the approach we use in this session -- every stream is its own convolution *of the shared latent infections*, and the streams are *conditionally independent given those infections*.
 Schematically:
@@ -114,6 +114,18 @@ $$
 $$
 
 chaining deaths off cases instead of off the shared infections.
+
+**Which should you choose?**
+The choice hinges on whether the streams are better seen as independent observations of a shared process, or as a genuine causal chain you trust.
+
+-   A **parallel** model is appropriate when each stream is an independent (noisy) window on the same underlying infections, as cases and deaths usually are.
+    It is the right default in that case: the streams jointly inform the infections, borrow strength from one another, and propagate uncertainty coherently, with no single stream privileged.
+-   A **sequential** model is appropriate only when one stream genuinely *derives* from another in a way you trust (for example, if deaths really were generated from the *observed* cases).
+    It is simpler, but it conditions on a possibly incomplete or biased upstream stream.
+
+These choices have different consequences for the answer.
+In a **sequential** model any bias or under-reporting in the upstream stream flows straight into the downstream estimate; because the upstream is treated as known, those errors cannot be corrected and the downstream uncertainty is understated.
+In a **parallel** model all streams jointly inform the shared infections with propagated uncertainty, and genuine disagreement is not silently absorbed: it shows up as misfit you can diagnose, which is exactly the conflict we examine later in this session.
 
 We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every stream informs.
 :::
