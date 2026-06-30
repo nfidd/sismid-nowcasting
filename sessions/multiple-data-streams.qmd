@@ -257,8 +257,8 @@ base_data <- list(
 )
 ```
 
-A small helper keeps the rest of the session tidy: it switches the requested streams on, fits the model, and uses the same sampler settings throughout.
-As in the previous session we increase `max_treedepth` and provide initial values to help the sampler, because this is a more complex model.
+A small helper switches the requested streams on, fits the model, and uses the same sampler settings throughout.
+As in the [joint nowcasting session](joint-nowcasting), this is a relatively complex model with a difficult-to-explore posterior, so we increase `max_treedepth`, raise `adapt_delta` to `0.95`, and provide initial values to help the sampler.
 
 ```{r fit_helper}
 fit_streams <- function(use_cases, use_deaths, use_ww, data = base_data) {
@@ -266,7 +266,9 @@ fit_streams <- function(use_cases, use_deaths, use_ww, data = base_data) {
     use_cases = use_cases, use_deaths = use_deaths, use_ww = use_ww
   ))
   nfidd_sample(
-    mod, data = data, max_treedepth = 12,
+    mod, data = data,
+    adapt_delta = 0.95,
+    max_treedepth = 12,
     init = \() list(init_R = 1, rw_sd = 0.01)
   )
 }
