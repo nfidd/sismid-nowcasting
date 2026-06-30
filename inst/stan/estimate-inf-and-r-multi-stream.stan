@@ -12,6 +12,13 @@ data {
   int gen_time_max;     // maximum generation time
   array[gen_time_max] real gen_time_pmf; // pmf of generation time distribution
 
+  // per-stream switches: set to 1 to fit a stream, 0 to leave it out.
+  // This lets the SAME model fit one stream on its own, two streams linked
+  // together, or all three jointly, so we can build the model up in parts.
+  int<lower = 0, upper = 1> use_cases;
+  int<lower = 0, upper = 1> use_deaths;
+  int<lower = 0, upper = 1> use_ww;
+
   // stream 1: cases (infection-to-report delay, ascertainment)
   array[n] int cases;
   int<lower = 1> case_delay_max;
@@ -69,8 +76,17 @@ model {
   ww_scale ~ normal(1, 1) T[0, ];
   ww_sigma ~ normal(0, 0.5) T[0, ];
 
-  // joint likelihood: each stream contributes its own term off infections
-  cases ~ poisson(exp_cases);
-  deaths ~ poisson(exp_deaths);
-  ww ~ normal(log(exp_ww), ww_sigma);
+  // joint likelihood: each stream contributes its own term off infections,
+  // and only the streams we switch on are added. Because the streams are
+  // conditionally independent given the infections, the joint log-likelihood
+  // is simply the sum of the per-stream terms.
+  if (use_cases) {
+    cases ~ poisson(exp_cases);
+  }
+  if (use_deaths) {
+    deaths ~ poisson(exp_deaths);
+  }
+  if (use_ww) {
+    ww ~ normal(log(exp_ww), ww_sigma);
+  }
 }
