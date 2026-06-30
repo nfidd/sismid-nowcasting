@@ -473,18 +473,66 @@ If we forced a fixed delay when the true delay was lengthening, the model would 
 This is the same flexibility we used for the expectation module, applied to the delay instead.
 :::
 
+# Extending the model: weekly (batched) reporting
+
+For our third worked example the data are *reported* less often than they occur.
+Many surveillance systems release updates weekly rather than daily, so counts arrive in weekly batches even though events happen every day.
+`epinowcast` supports this directly through a non-daily timestep, documented for the [`enw_aggregate_cumulative()`](https://package.epinowcast.org/reference/enw_aggregate_cumulative.html) converter and the `timestep` argument of [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html); we build on that rather than inventing our own scheme.
+
+We reuse the course reporting triangle and aggregate it to a weekly reporting schedule with `enw_aggregate_cumulative()`, which sums both reference and report dates into weekly steps.
+
+```{r weekly-aggregate}
+weekly_long <- enw_aggregate_cumulative(enw_long, timestep = "week")
+head(weekly_long)
+```
+
+We then preprocess with a weekly timestep, so `epinowcast` knows the reporting schedule is weekly rather than daily.
+With a weekly timestep the maximum delay is now counted in weeks, so we model up to three weeks of delay.
+
+```{r weekly-preprocess}
+weekly_pobs <- enw_preprocess_data(
+  weekly_long, max_delay = 3, timestep = "week"
+)
+plot(weekly_pobs)
+```
+
+The model is the course model again; only the timestep of the data has changed.
+
+```{r weekly-fit, message = FALSE, results = "hide"}
+weekly_nowcast <- epinowcast(
+  weekly_pobs,
+  expectation = enw_expectation(~ rw(week), data = weekly_pobs),
+  reference = enw_reference(~ 1, data = weekly_pobs),
+  obs = enw_obs(family = "poisson", data = weekly_pobs),
+  fit = fit_opts_hard
+)
+```
+
+```{r weekly-result-plot}
+weekly_latest <- enw_latest_data(weekly_long)
+plot(weekly_nowcast, latest_obs = weekly_latest)
+```
+
+::: {.callout-note}
+## Take 3 minutes
+We did not change the model formulas at all here, only `timestep = "week"` in preprocessing.
+Why is the reporting schedule a property of the *data* rather than of the model, and what would go wrong if we treated weekly data as if it were daily?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+The reporting schedule describes *when reports arrive*, which is a feature of how the data were collected, so it belongs to the data and its timestep.
+The same expectation and delay modules apply whether the data are daily or weekly; `epinowcast` just maps the delay onto the chosen timestep.
+If we treated weekly batches as daily we would tell the model that almost every day had zero reports with occasional spikes, badly misrepresenting the delay distribution and the completeness of recent data.
+:::
+
 # Other reporting complications
 
-We have worked through two complications end to end.
-The others from the start of the session are handled by the same modular idea: each is a change to one formula, not a new model.
-We give the formula sketches here rather than fitting every one, but they slot into exactly the same `epinowcast()` call.
-
-- **Delays that vary by strata.**
-Add the stratifying variable to the relevant module formula, for example a random effect of age group on the reference module (`enw_reference(~ (1 | age_group), data = pobs)`), so each stratum can have its own delay while borrowing strength across strata.
-- **Weekly or batched reporting.**
-This is another report-date pattern: counts arrive in lumps on particular report days, which a report-date model can represent.
-- **Missing and late reporting.**
-`epinowcast` has dedicated support for missing reference dates and can model the proportion of reports that are eventually observed, rather than assuming every report arrives within the maximum delay.
+We have worked through three complications end to end: a day-of-week effect, a time-varying delay, and weekly reporting.
+Other complications are handled by the same modular idea, each a change to one formula rather than a new model.
+Two worth knowing about are delays that vary by strata (for example age or region), which add the stratifying variable to a module formula such as `enw_reference(~ (1 | age_group), data = pobs)` so each stratum has its own delay while borrowing strength across strata, and missing reference dates, which `epinowcast` models with a dedicated module.
+We link the relevant documentation for both in *Going further* below rather than fitting them here.
 
 ::: {.callout-note}
 ## Take 5 minutes
@@ -506,8 +554,17 @@ This session only scratches the surface of what `epinowcast` can do, and `epinow
 `epinowcast` has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:
 
 - The [`epinowcast` package website](https://package.epinowcast.org/) [@epinowcastPackage2024], including its [model description](https://package.epinowcast.org/articles/model.html) and the [getting started vignette](https://package.epinowcast.org/articles/epinowcast.html).
+
+To go deeper on the topics we covered, the relevant reference pages are:
+
+- **Reporting schedule (weekly or batched reporting):** [`enw_aggregate_cumulative()`](https://package.epinowcast.org/reference/enw_aggregate_cumulative.html) and the `timestep` argument of [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html).
+- **Day-of-week and other report-date effects:** the [`enw_report()`](https://package.epinowcast.org/reference/enw_report.html) report-date module.
+- **Time-varying delay (reference-date effects):** the [`enw_reference()`](https://package.epinowcast.org/reference/enw_reference.html) reference-date module.
+- **Delays that vary by strata:** the [hierarchical age-stratified nowcasting case study](https://package.epinowcast.org/articles/germany-age-stratified-nowcasting.html), which fits many reporting triangles at once with partially pooled effects.
+- **Missing reference dates:** the [`enw_missing()`](https://package.epinowcast.org/reference/enw_missing.html) module.
 - The [plotting reference](https://package.epinowcast.org/reference/plot.epinowcast.html) for more ways to visualise a fit than the default `plot()` we used here.
-- Its case studies and vignettes work through stratified nowcasting (many reporting triangles at once with partially pooled effects), richer delay and reporting models, joint nowcasting with $R_t$ estimation (a renewal-based expectation model, generalising the joint model from the [joint nowcasting session](joint-nowcasting)), and evaluation of nowcasts with proper scoring rules (as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting)).
+
+Its case studies and vignettes also work through joint nowcasting with $R_t$ estimation (a renewal-based expectation model, generalising the joint model from the [joint nowcasting session](joint-nowcasting)), and evaluation of nowcasts with proper scoring rules (as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting)).
 
 `epinowcast` is not the only option, and the right tool depends on the problem.
 
