@@ -208,17 +208,19 @@ make_data <- function(cases, deaths, ww,
 }
 ```
 
-A second helper switches the requested streams on, fits the model, and uses the same sampler settings throughout.
-As in the [joint nowcasting session](joint-nowcasting), this is a relatively complex model with a difficult-to-explore posterior, so we increase `max_treedepth`, raise `adapt_delta` to `0.95`, and provide initial values to help the sampler.
+A second helper switches the requested streams on and fits the model.
+We provide initial values to help the sampler, and expose `adapt_delta`: the multi-stream *joint* fits have a more difficult posterior, so for those we raise `adapt_delta` to `0.95`, the same lever used in the [joint nowcasting session](joint-nowcasting).
+The single-stream diagnostic fits are easier, so they use the course-standard default.
 
 ```{r fit_helper}
-fit_streams <- function(data, use_cases, use_deaths, use_ww) {
+fit_streams <- function(data, use_cases, use_deaths, use_ww,
+                        adapt_delta = 0.8) {
   data <- c(data, list(
     use_cases = use_cases, use_deaths = use_deaths, use_ww = use_ww
   ))
   nfidd_sample(
     mod, data = data,
-    adapt_delta = 0.95,
+    adapt_delta = adapt_delta,
     max_treedepth = 12,
     init = \() list(init_R = 1, rw_sd = 0.01)
   )
@@ -324,7 +326,9 @@ Each stream works on its own, so we can now make the **data integration choice**
 Both cases and deaths look directly at the *same* latent infections, each through its own delay and scaling, and their likelihood terms are added.
 
 ```{r fit_two, results = 'hide', message = FALSE}
-fit_cd <- fit_streams(cd_data, use_cases = 1, use_deaths = 1, use_ww = 0)
+fit_cd <- fit_streams(
+  cd_data, use_cases = 1, use_deaths = 1, use_ww = 0, adapt_delta = 0.95
+)
 ```
 
 By linking the timely cases with the stable (if delayed) deaths, the two streams together should constrain the infection trajectory better than either alone.
@@ -408,7 +412,9 @@ ggplot(ww_inf, aes(x = day)) +
 Adding a stream is now just another integration step: switch wastewater on alongside cases and deaths.
 
 ```{r fit_all, results = 'hide', message = FALSE}
-fit <- fit_streams(full_data, use_cases = 1, use_deaths = 1, use_ww = 1)
+fit <- fit_streams(
+  full_data, use_cases = 1, use_deaths = 1, use_ww = 1, adapt_delta = 0.95
+)
 ```
 
 ```{r fit_summary}
@@ -507,7 +513,7 @@ We refit the same joint, three-stream model -- still assuming a *constant* death
 data_conflict <- full_data
 data_conflict$deaths <- obs_conflict$deaths
 fit_conflict <- fit_streams(
-  data_conflict, use_cases = 1, use_deaths = 1, use_ww = 1
+  data_conflict, use_cases = 1, use_deaths = 1, use_ww = 1, adapt_delta = 0.95
 )
 ```
 
