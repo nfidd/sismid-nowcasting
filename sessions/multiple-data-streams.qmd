@@ -86,7 +86,7 @@ Reading the diagram from the bottom-left, an ideal model for our question is ass
 2.  **Process model.** A single shared epidemic process. We reuse the renewal equation with a geometric random walk on $R_t$ from the [previous session](R-estimation-and-the-renewal-equation), so there is *one* infection trajectory underneath everything.
 3.  **Data source selection.** Catalogue the streams available to us (cases, deaths, wastewater) and, crucially, what each one measures and how it is biased.
 4.  **Observation model per source.** For *each* stream, a delay (infection to observation) and a scaling (what fraction of infections, on what scale) and a likelihood. These are separate sub-models, one per data source.
-5.  **Data integration choices.** How to combine those per-stream observation models. This is the heart of the session, and the diagram flags two things about it: the *choice* of how to integrate sources, and a feedback arrow warning that *conflict between data sources reveals model misspecification*.
+5.  **Data integration choices.** How to combine those per-stream observation models. The diagram flags two things about this step: the *choice* of how to integrate sources, and a feedback arrow warning that *conflict between data sources reveals model misspecification*.
 6.  **Inference, checking and revision.** Fit the model, check it against each stream, and let identifiability problems or conflict between sources send us back to revise it.
 
 The ideal model, then, is *modular*: a shared process model with a separate, swappable observation model for each data source, combined by an explicit integration choice.
@@ -406,8 +406,8 @@ In the workflow this is the "identifiability" feedback arrow: a problem we can e
 
 # When streams conflict
 
-Combining streams is powerful when they tell a consistent story.
-But real surveillance streams can *disagree*, and it is worth being precise about what that means in this model.
+Combining streams works well when they tell a consistent story, but real surveillance streams can *disagree*.
+It is worth being precise about what that means in this model.
 This is the feedback arrow in the workflow that we singled out earlier: *conflict between data sources reveals model misspecification*.
 
 ## What does it mean for streams to conflict?
