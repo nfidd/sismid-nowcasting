@@ -10,6 +10,22 @@ format:
     slide-level: 3
 ---
 
+```{r setup, include = FALSE}
+library("dplyr")
+library("tidyr")
+library("ggplot2")
+set.seed(1)
+days <- 0:41
+ref_dow_effect <- c(1, 1, 1, 1, 0.95, 0.7, 0.7)
+rep_dow_effect <- c(1, 1, 1, 1, 0.9, 0.4, 0.5)
+base <- 100 * dnorm(days, mean = 20, sd = 9) /
+  max(dnorm(days, mean = 20, sd = 9)) + 20
+weekend_fill <- scale_fill_manual(
+  values = c("FALSE" = "grey40", "TRUE" = "#c0392b"),
+  labels = c("Weekday", "Weekend"), name = NULL
+)
+```
+
 ### The model we have so far {.smaller}
 
 In the [joint nowcasting session](../joint-nowcasting) we modelled each cell of the reporting triangle as
@@ -34,7 +50,15 @@ A single, fixed delay cannot capture:
 - **Strata** (delays differ by age, region, ...)
 - **Missing reference dates**
 
-> *[Diagram placeholder: reporting triangle with a day-of-week dip overlaid on the report-date axis]*
+```{r reports-dip, echo = FALSE, fig.width = 7, fig.height = 3.2}
+tibble(day = days, reports = base * rep_dow_effect[(days %% 7) + 1]) |>
+  ggplot(aes(day, reports, fill = (day %% 7) >= 4)) +
+  geom_col() +
+  weekend_fill +
+  labs(x = "Report day", y = "Reports") +
+  theme_minimal(base_size = 16) +
+  theme(legend.position = "top")
+```
 
 ### What would this cost in bespoke Stan? {.smaller}
 
@@ -96,7 +120,23 @@ enw_expectation(~ rw(day) + day_of_week)   # reference-side
 enw_report(~ (1 | day_of_week))            # report-side
 ```
 
-> *[Diagram placeholder: two timelines — onsets thinned at weekends vs reports thinned at weekends]*
+```{r dow-effects, echo = FALSE, fig.width = 8, fig.height = 2.8}
+tibble(day = days, base = base) |>
+  mutate(
+    `Reference-date effect\n(onsets at weekends)` =
+      base * ref_dow_effect[(day %% 7) + 1],
+    `Report-date effect\n(reports at weekends)` =
+      base * rep_dow_effect[(day %% 7) + 1]
+  ) |>
+  pivot_longer(-c(day, base), names_to = "effect", values_to = "value") |>
+  ggplot(aes(day, value, fill = (day %% 7) >= 4)) +
+  geom_col() +
+  facet_wrap(~effect) +
+  weekend_fill +
+  labs(x = "Day", y = "Count") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+```
 
 ### Time-varying delay {.smaller}
 
