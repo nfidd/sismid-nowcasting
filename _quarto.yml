@@ -18,6 +18,8 @@ website:
   navbar:
     left:
       - getting-started.qmd
+      - text: "Timetable"
+        href: timetable.qmd
       - sidebar:sessions
       - sidebar:reference
       - authors.qmd
