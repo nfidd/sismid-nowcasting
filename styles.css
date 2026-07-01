@@ -28,3 +28,13 @@ h3.optional::after, h4.optional::after {
   font-weight: normal;
   opacity: 0.7;
 }
+
+/* Timetable: span the full page width and keep every row on a single line */
+.timetable table {
+  width: 100%;
+}
+
+.timetable th,
+.timetable td {
+  white-space: nowrap;
+}
