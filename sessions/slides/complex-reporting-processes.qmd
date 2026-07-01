@@ -85,12 +85,39 @@ If you understand the joint nowcasting session, you already understand what `epi
 
 ### The same model, as modules {.smaller}
 
-```{mermaid}
-flowchart LR
-  E["Expectation<br/>enw_expectation()<br/>λ_t"] --> N["Nowcast"]
-  R["Reference date<br/>enw_reference()<br/>p_t,d"] --> N
-  P["Report date<br/>enw_report()<br/>report effects"] --> N
-  O["Observation<br/>enw_obs()<br/>likelihood"] --> N
+```{=html}
+<div style="display:flex;justify-content:center;margin-top:0.4em;">
+<svg viewBox="0 0 880 330" width="100%" style="max-width:820px;font-family:inherit;" role="img" aria-label="Four epinowcast modules — expectation, reference date, report date and observation — combine into one nowcast.">
+  <defs>
+    <marker id="cr-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7b"/>
+    </marker>
+  </defs>
+  <g stroke="#5b6b7b" stroke-width="2" fill="none" marker-end="url(#cr-arrow)">
+    <path d="M322,44 C450,44 520,150 600,161"/>
+    <path d="M322,124 C440,124 500,158 600,164"/>
+    <path d="M322,204 C440,204 500,170 600,168"/>
+    <path d="M322,284 C450,284 520,180 600,171"/>
+  </g>
+  <g text-anchor="middle">
+    <rect x="22" y="15" width="300" height="58" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="172" y="40" font-size="16" font-weight="600" fill="#1d2b3a">Expectation</text>
+    <text x="172" y="61" font-size="13.5" font-family="monospace" fill="#41586e">enw_expectation()</text>
+    <rect x="22" y="95" width="300" height="58" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="172" y="120" font-size="16" font-weight="600" fill="#1d2b3a">Reference date</text>
+    <text x="172" y="141" font-size="13.5" font-family="monospace" fill="#41586e">enw_reference()</text>
+    <rect x="22" y="175" width="300" height="58" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="172" y="200" font-size="16" font-weight="600" fill="#1d2b3a">Report date</text>
+    <text x="172" y="221" font-size="13.5" font-family="monospace" fill="#41586e">enw_report()</text>
+    <rect x="22" y="255" width="300" height="58" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="172" y="280" font-size="16" font-weight="600" fill="#1d2b3a">Observation</text>
+    <text x="172" y="301" font-size="13.5" font-family="monospace" fill="#41586e">enw_obs()</text>
+    <rect x="600" y="114" width="220" height="100" rx="10" fill="#2c7fb8" stroke="#1d5a86" stroke-width="1.5"/>
+    <text x="710" y="158" font-size="19" font-weight="600" fill="#ffffff">Nowcast</text>
+    <text x="710" y="182" font-size="13.5" fill="#dbeaf5">counts + reporting</text>
+  </g>
+</svg>
+</div>
 ```
 
 Each piece mirrors something we built by hand; adding a feature is a one-line formula change.
