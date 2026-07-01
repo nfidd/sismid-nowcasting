@@ -27,7 +27,7 @@ It is paired with the companion [forecasting & evaluation course](https://nfidd.
 | | 12.30–13.30 | *Lunch* | |
 | | 13.30–15.00 | Session 7 · Combining nowcasting & forecasting | [Slides](sessions/slides/forecasting-nowcasting), [Practice](sessions/forecasting-nowcasting) |
 | | 15.00–15.30 | *Coffee break* | |
-| | 15.30–17.00 | Session 8 · Jointly fitting multiple data streams | *new session — links to be added once its PR merges* |
+| | 15.30–17.00 | Session 8 · Jointly fitting multiple data streams | [Slides](sessions/slides/multiple-data-streams), [Practice](sessions/multiple-data-streams) |
 | **Wed 15 Jul** | 09.00–09.15 | Day 2 review | |
 | | 09.15–10.30 | Session 9 · Modelling complex reporting processes | *new session — links to be added once its PR merges* |
 | | 10.30–11.00 | *Coffee break* | |

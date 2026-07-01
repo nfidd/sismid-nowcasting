@@ -77,7 +77,7 @@ We let that general idea drive how we develop this model.
 
 The infectious-disease-specific instance of that loop:
 
-![A workflow for infectious disease modelling. Figure by Sam Abbott (MIT licence).](figures/workflow-diagram.png){height="460px"}
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="460px"}
 
 ### Reading the workflow, bottom-left up
 

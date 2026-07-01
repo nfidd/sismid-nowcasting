@@ -78,7 +78,7 @@ The question for this session is therefore not just "can we fit several streams?
 Fitting several data streams is not a one-off trick: it is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026].
 We will let that workflow drive how we develop the model in this session, so it is worth looking at it before we write any code.
 
-![A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again -- model checking, identifiability and conflict between data sources all feed revisions. Figure by Sam Abbott, reproduced from the `a-workflow-for-infectious-disease-modelling` repository [@abbottWorkflowInfectiousDisease2026] under the MIT licence.](figures/workflow-diagram.png)
+![A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again -- model checking, identifiability and conflict between data sources all feed revisions. Figure by Abbott et al., reproduced from the `a-workflow-for-infectious-disease-modelling` repository [@abbottWorkflowInfectiousDisease2026] under the MIT licence.](figures/workflow-diagram.png)
 
 Reading the diagram from the bottom-left, an ideal model for our question is assembled from a small number of pieces, and the rest of this session walks through them in order:
 
