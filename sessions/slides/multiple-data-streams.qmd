@@ -137,13 +137,39 @@ $$
 \text{deaths}_t \sim g\big(\text{convolve}(I, p_\text{deaths})\big)
 $$
 
-```{mermaid}
-%%| fig-width: 9
-flowchart TD
-    R["Rt (geometric random walk)"] --> I["Shared latent infections I"]
-    I -->|delay + ascertainment| C["Cases"]
-    I -->|delay + IFR| D["Deaths"]
-    I -->|delay + scaling| W["Wastewater"]
+```{=html}
+<div style="display:flex;justify-content:center;margin-top:0.4em;">
+<svg viewBox="0 0 880 380" width="100%" style="max-width:800px;font-family:inherit;" role="img" aria-label="A shared latent infection process drives cases, deaths and wastewater, each through its own delay and scaling.">
+  <defs>
+    <marker id="mds-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7b"/>
+    </marker>
+  </defs>
+  <g stroke="#5b6b7b" stroke-width="2" fill="none" marker-end="url(#mds-arrow)">
+    <path d="M440,74 L440,142"/>
+    <path d="M400,200 C300,238 205,244 162,284"/>
+    <path d="M440,202 L440,284"/>
+    <path d="M480,200 C580,238 685,244 728,284"/>
+  </g>
+  <g font-size="13.5" fill="#374553" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">
+    <text x="243" y="250">delay + ascertainment</text>
+    <text x="470" y="250">delay + IFR</text>
+    <text x="648" y="250">delay + scaling</text>
+  </g>
+  <g text-anchor="middle">
+    <rect x="318" y="22" width="244" height="52" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="53" font-size="16" fill="#1d2b3a">R<tspan baseline-shift="sub" font-size="11">t</tspan> (geometric random walk)</text>
+    <rect x="303" y="146" width="274" height="56" rx="9" fill="#2c7fb8" stroke="#1d5a86" stroke-width="1.5"/>
+    <text x="440" y="180" font-size="16.5" font-weight="600" fill="#ffffff">Shared latent infections I</text>
+    <rect x="62" y="286" width="200" height="56" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="162" y="320" font-size="16" fill="#1d2b3a">Cases</text>
+    <rect x="340" y="286" width="200" height="56" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="320" font-size="16" fill="#1d2b3a">Deaths</text>
+    <rect x="628" y="286" width="200" height="56" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="728" y="320" font-size="16" fill="#1d2b3a">Wastewater</text>
+  </g>
+</svg>
+</div>
 ```
 
 Infections become the *one* shared quantity that every stream informs.
