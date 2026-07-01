@@ -17,7 +17,7 @@ It is paired with the companion [forecasting & evaluation course](https://nfidd.
 | | 11.30–12.30 | Session 2 · Biases in delay distributions | [Slides](sessions/slides/introduction-to-biases-in-epidemiological-delays), [Practice](sessions/biases-in-delay-distributions) |
 | | 12.30–13.30 | *Lunch* | |
 | | 13.30–14.00 | Session 2 · Biases in delay distributions (cont.) | |
-| | 14.00–14.45 | Session 3 · Modelling the data-generating process | [Slides](sessions/slides/convolutions), [Practice](sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic) |
+| | 14.00–15:00 | Session 3 · Modelling the data-generating process | [Slides](sessions/slides/convolutions), [Practice](sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic) |
 | | 15.00–15.30 | *Coffee break* | |
 | | 15.30–17.00 | Session 4 · $R_t$ estimation & the renewal equation | [Slides](sessions/slides/introduction-to-reproduction-number), [Practice](sessions/R-estimation-and-the-renewal-equation) |
 | **Tue 14 Jul** | 09.00–09.15 | Day 1 review | |
