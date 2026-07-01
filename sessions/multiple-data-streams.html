@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Jointly fitting multiple data streams – SISMID: Nowcasting</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../nfidd-favicon.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-51ec0baac84c74459878fd0df95b10e6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-85585e03464b8122d6e45615df21cdfa.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-51ec0baac84c74459878fd0df95b10e6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+<meta property="og:title" content="Jointly fitting multiple data streams – SISMID: Nowcasting">
+<meta property="og:description" content="Nowcasting infectious disease dynamics - SISMID">
+<meta property="og:image" content="https://nfidd.github.io/sismid-nowcasting/sessions/multiple-data-streams_files/figure-html/recovered_scale-1.png">
+<meta property="og:site_name" content="SISMID: Nowcasting">
+<meta property="og:image:height" content="960">
+<meta property="og:image:width" content="1344">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">SISMID: Nowcasting</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../getting-started.html"> 
+<span class="menu-text">Getting started</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../timetable.html"> 
+<span class="menu-text">Timetable</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sessions" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sessions</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-sessions">    
+        <li>
+    <a class="dropdown-item" href="../sessions/introduction-and-course-overview.html">
+ <span class="dropdown-text">Introduction and course overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/delay-distributions.html">
+ <span class="dropdown-text">Delay distributions</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/biases-in-delay-distributions.html">
+ <span class="dropdown-text">Biases in delay distributions</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic.html">
+ <span class="dropdown-text">Using delay distributions to model the data generating process</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/R-estimation-and-the-renewal-equation.html">
+ <span class="dropdown-text"><span class="math inline">\(R_t\)</span> estimation and the renewal equation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/nowcasting.html">
+ <span class="dropdown-text">Nowcasting concepts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/joint-nowcasting.html">
+ <span class="dropdown-text">Nowcasting with an unknown reporting delay</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/forecasting-nowcasting.html">
+ <span class="dropdown-text">Combining nowcasting and forecasting</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/complex-reporting-processes.html">
+ <span class="dropdown-text">Modelling complex reporting processes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/multiple-data-streams.html">
+ <span class="dropdown-text">Jointly fitting multiple data streams</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/methods-in-the-real-world.html">
+ <span class="dropdown-text">Methods in the real world</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/end-of-course-summary-and-discussion.html">
+ <span class="dropdown-text">End of course summary and discussion</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-reference" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Reference</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-reference">    
+        <li>
+    <a class="dropdown-item" href="../reference/learning_objectives.html">
+ <span class="dropdown-text">Learning outcomes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/help.html">
+ <span class="dropdown-text">Getting help</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/further_reading.html">
+ <span class="dropdown-text">Further reading</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/stan.html">
+ <span class="dropdown-text">Stan Reference</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/using-our-stan-models.html">
+ <span class="dropdown-text">Using our Stan models</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/model-index.html">
+ <span class="dropdown-text">Stan model index</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../authors.html"> 
+<span class="menu-text">Authors</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/nfidd/sismid-nowcasting"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../sessions/multiple-data-streams.html">Jointly fitting multiple data streams</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/introduction-and-course-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction and course overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/delay-distributions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Delay distributions</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/biases-in-delay-distributions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Biases in delay distributions</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Using delay distributions to model the data generating process</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/R-estimation-and-the-renewal-equation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="math inline">\(R_t\)</span> estimation and the renewal equation</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/nowcasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Nowcasting concepts</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/joint-nowcasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Nowcasting with an unknown reporting delay</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/forecasting-nowcasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Combining nowcasting and forecasting</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/complex-reporting-processes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Modelling complex reporting processes</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/multiple-data-streams.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Jointly fitting multiple data streams</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/methods-in-the-real-world.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Methods in the real world</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/end-of-course-summary-and-discussion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">End of course summary and discussion</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#slides" id="toc-slides" class="nav-link" data-scroll-target="#slides">Slides</a></li>
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives">Objectives</a></li>
+  </ul></li>
+  <li><a href="#the-question-we-are-trying-to-answer" id="toc-the-question-we-are-trying-to-answer" class="nav-link" data-scroll-target="#the-question-we-are-trying-to-answer">The question we are trying to answer</a></li>
+  <li><a href="#what-would-the-ideal-model-look-like" id="toc-what-would-the-ideal-model-look-like" class="nav-link" data-scroll-target="#what-would-the-ideal-model-look-like">What would the ideal model look like?</a></li>
+  <li><a href="#simulating-a-shared-infection-trajectory" id="toc-simulating-a-shared-infection-trajectory" class="nav-link" data-scroll-target="#simulating-a-shared-infection-trajectory">Simulating a shared infection trajectory</a></li>
+  <li><a href="#building-the-model-in-parts" id="toc-building-the-model-in-parts" class="nav-link" data-scroll-target="#building-the-model-in-parts">Building the model in parts</a>
+  <ul class="collapse">
+  <li><a href="#part-1-simulate-and-fit-cases-and-deaths-on-their-own" id="toc-part-1-simulate-and-fit-cases-and-deaths-on-their-own" class="nav-link" data-scroll-target="#part-1-simulate-and-fit-cases-and-deaths-on-their-own">Part 1: simulate and fit cases and deaths on their own</a></li>
+  <li><a href="#part-2-link-cases-and-deaths-through-the-shared-infections" id="toc-part-2-link-cases-and-deaths-through-the-shared-infections" class="nav-link" data-scroll-target="#part-2-link-cases-and-deaths-through-the-shared-infections">Part 2: link cases and deaths through the shared infections</a></li>
+  <li><a href="#part-3-introduce-wastewater-and-fit-it-on-its-own" id="toc-part-3-introduce-wastewater-and-fit-it-on-its-own" class="nav-link" data-scroll-target="#part-3-introduce-wastewater-and-fit-it-on-its-own">Part 3: introduce wastewater and fit it on its own</a></li>
+  <li><a href="#part-4-add-wastewater-to-the-stack" id="toc-part-4-add-wastewater-to-the-stack" class="nav-link" data-scroll-target="#part-4-add-wastewater-to-the-stack">Part 4: add wastewater to the stack</a></li>
+  </ul></li>
+  <li><a href="#when-streams-conflict" id="toc-when-streams-conflict" class="nav-link" data-scroll-target="#when-streams-conflict">When streams conflict</a>
+  <ul class="collapse">
+  <li><a href="#what-does-it-mean-for-streams-to-conflict" id="toc-what-does-it-mean-for-streams-to-conflict" class="nav-link" data-scroll-target="#what-does-it-mean-for-streams-to-conflict">What does it mean for streams to conflict?</a></li>
+  <li><a href="#fitting-the-constant-scaling-model-to-conflicting-streams" id="toc-fitting-the-constant-scaling-model-to-conflicting-streams" class="nav-link" data-scroll-target="#fitting-the-constant-scaling-model-to-conflicting-streams">Fitting the constant-scaling model to conflicting streams</a></li>
+  <li><a href="#how-the-joint-model-surfaces-conflict" id="toc-how-the-joint-model-surfaces-conflict" class="nav-link" data-scroll-target="#how-the-joint-model-surfaces-conflict">How the joint model surfaces conflict</a></li>
+  <li><a href="#what-should-a-modeller-do-about-conflict" id="toc-what-should-a-modeller-do-about-conflict" class="nav-link" data-scroll-target="#what-should-a-modeller-do-about-conflict">What should a modeller do about conflict?</a></li>
+  </ul></li>
+  <li><a href="#going-further" id="toc-going-further" class="nav-link" data-scroll-target="#going-further">Going further</a>
+  <ul class="collapse">
+  <li><a href="#scope" id="toc-scope" class="nav-link" data-scroll-target="#scope">Scope</a></li>
+  <li><a href="#challenge" id="toc-challenge" class="nav-link" data-scroll-target="#challenge">Challenge</a></li>
+  <li><a href="#methods-in-practice" id="toc-methods-in-practice" class="nav-link" data-scroll-target="#methods-in-practice">Methods in practice</a></li>
+  </ul></li>
+  <li><a href="#wrap-up" id="toc-wrap-up" class="nav-link" data-scroll-target="#wrap-up">Wrap up</a>
+  <ul class="collapse">
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/nfidd/sismid-nowcasting/blob/main/sessions/multiple-data-streams.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/nfidd/sismid-nowcasting/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Jointly fitting multiple data streams</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>So far we have estimated the reproduction number from a <em>single</em> observed time series. In reality we often observe an outbreak through <em>several</em> surveillance streams at once: confirmed cases, deaths, and a wastewater signal, each a delayed, scaled view of the same underlying epidemic.</p>
+<p>Rather than reach straight for a model that swallows all of these at once, in this session we follow a modelling <em>workflow</em>. We start from the question we are trying to answer, sketch what an ideal model would look like, and then <em>build that model up in parts</em>: fitting each data source on its own, linking two together through a shared latent infection process, and finally exposing what happens when streams disagree. This is the modelling idea behind tools such as <code>epidemia</code>, which jointly models cases and deaths from a shared renewal process <span class="citation" data-cites="bhattSemiMechanisticBayesianModeling2020">(<a href="#ref-bhattSemiMechanisticBayesianModeling2020" role="doc-biblioref">Bhatt et al. 2020</a>)</span>.</p>
+<section id="slides" class="level2">
+<h2 class="anchored" data-anchor-id="slides">Slides</h2>
+<ul>
+<li><a href="slides/multiple-data-streams">Jointly fitting multiple data streams</a></li>
+</ul>
+</section>
+<section id="objectives" class="level2">
+<h2 class="anchored" data-anchor-id="objectives">Objectives</h2>
+<p>The aim of this session is to develop a joint model of several surveillance streams the way a modeller actually would: question first, then an ideal model, then building it up one stream at a time, checking what each step buys us and what happens when streams conflict.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Setup
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<section id="source-file" class="level2">
+<h2 class="anchored" data-anchor-id="source-file">Source file</h2>
+<p>The source file of this session is located at <code>sessions/multiple-data-streams.qmd</code>.</p>
+</section>
+<section id="libraries-used" class="level2">
+<h2 class="anchored" data-anchor-id="libraries-used">Libraries used</h2>
+<p>In this session we will use the <code>nfidd.nowcasting</code> package to access stan models and helper functions, the <code>dplyr</code> and <code>tidyr</code> packages for data wrangling, the <code>ggplot2</code> library for plotting, the <code>tidybayes</code> package for extracting results of the inference, and the <code>purrr</code> package for <a href="https://adv-r.hadley.nz/fp.html">functional programming</a>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"nfidd.nowcasting"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidyr"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidybayes"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"purrr"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The best way to interact with the material is via the <a href="https://docs.posit.co/ide/user/ide/guide/documents/visual-editor.html">Visual Editor</a> of RStudio.</p>
+</div>
+</div>
+</section>
+<section id="initialisation" class="level2">
+<h2 class="anchored" data-anchor-id="initialisation">Initialisation</h2>
+<p>We set a random seed for reproducibility. Setting this ensures that you should get exactly the same results on your computer as we do. We also set an option that makes <code>cmdstanr</code> show line numbers when printing model code. This is not strictly necessary but will help us talk about the models.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">cmdstanr_print_line_numbers =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">cmdstanr_warn_inits =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="the-question-we-are-trying-to-answer" class="level1">
+<h1>The question we are trying to answer</h1>
+<p>Before reaching for a model it is worth being explicit about what we want from it. Our <strong>research question and target estimands</strong> are the same as in earlier sessions: we want to recover the latent infection trajectory and the reproduction number <span class="math inline">\(R_t\)</span> that drives it, in as timely and as well-anchored a way as possible.</p>
+<p>No single data stream gives us a perfect view of those quantities.</p>
+<ul>
+<li><strong>Confirmed cases</strong> are timely but depend on testing and reporting, and only a fraction of infections are ever ascertained.</li>
+<li><strong>Deaths</strong> are a more stable signal but arrive with a long delay and capture only a small, severity-dependent fraction of infections.</li>
+<li>A <strong>wastewater</strong> signal does not depend on people seeking care at all, but it measures something more indirect (shed pathogen concentration) on its own scale.</li>
+</ul>
+<p>The promise of using them together is that the timely-but-noisy streams sharpen our estimate of the recent trajectory while the stable-but-delayed streams anchor the longer-term level. The question for this session is therefore not just “can we fit several streams?” but “what does each stream add, and what happens when they pull in different directions?”.</p>
+</section>
+<section id="what-would-the-ideal-model-look-like" class="level1">
+<h1>What would the ideal model look like?</h1>
+<p>Fitting several data streams is not a one-off trick: it is one step in a wider, iterative workflow for building, checking and comparing infectious disease models <span class="citation" data-cites="abbottWorkflowInfectiousDisease2026">(<a href="#ref-abbottWorkflowInfectiousDisease2026" role="doc-biblioref"><span class="nocase">Abbott et al.</span> 2026</a>)</span>. We will let that workflow drive how we develop the model in this session, so it is worth looking at it before we write any code.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/workflow-diagram.png" class="img-fluid figure-img"></p>
+<figcaption>A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again – model checking, identifiability and conflict between data sources all feed revisions. Figure by Abbott et al., reproduced from the <code>a-workflow-for-infectious-disease-modelling</code> repository <span class="citation" data-cites="abbottWorkflowInfectiousDisease2026">(<a href="#ref-abbottWorkflowInfectiousDisease2026" role="doc-biblioref"><span class="nocase">Abbott et al.</span> 2026</a>)</span> under the MIT licence.</figcaption>
+</figure>
+</div>
+<p>Reading the diagram from the bottom-left, an ideal model for our question is assembled from a small number of pieces, and the rest of this session walks through them in order:</p>
+<ol type="1">
+<li><strong>Research question and target estimands.</strong> We fixed these above: latent infections and <span class="math inline">\(R_t\)</span>.</li>
+<li><strong>Process model.</strong> A single shared epidemic process. We reuse the renewal equation with a geometric random walk on <span class="math inline">\(R_t\)</span> from the <a href="R-estimation-and-the-renewal-equation">previous session</a>, so there is <em>one</em> infection trajectory underneath everything.</li>
+<li><strong>Data source selection.</strong> Catalogue the streams available to us (cases, deaths, wastewater) and what each one measures and how it is biased.</li>
+<li><strong>Observation model per source.</strong> For <em>each</em> stream, a delay (infection to observation) and a scaling (what fraction of infections, on what scale) and a likelihood. These are separate sub-models, one per data source.</li>
+<li><strong>Data integration choices.</strong> How to combine those per-stream observation models. The diagram flags two things about this step: the <em>choice</em> of how to integrate sources, and a feedback arrow warning that <em>conflict between data sources reveals model misspecification</em>.</li>
+<li><strong>Inference, checking and revision.</strong> Fit the model, check it against each stream, and let identifiability problems or conflict between sources send us back to revise it.</li>
+</ol>
+<p>The ideal model, then, is <em>modular</em>: a shared process model with a separate, swappable observation model for each data source, combined by an explicit integration choice. That modularity is what lets us <strong>build it in parts</strong>, which is what we do next: fit each observation model on its own, make the integration choice that links them, then stress-test that choice.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Parallel (joint) vs sequential modelling
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The “data integration choices” box hides a decision about how the streams relate to each other.</p>
+<p>In a <strong>parallel</strong> model – the approach we use in this session – every stream is its own convolution <em>of the shared latent infections</em>, and the streams are <em>conditionally independent given those infections</em>. Schematically:</p>
+<p><span class="math display">\[
+\text{cases}_t \sim f\big(\text{convolve}(I, p_\text{cases})\big), \qquad \text{deaths}_t \sim g\big(\text{convolve}(I, p_\text{deaths})\big)
+\]</span></p>
+<p>Both cases and deaths look <em>directly</em> at the same infections <span class="math inline">\(I\)</span>, each through their own delay distribution <span class="math inline">\(p\)</span>. Once we condition on <span class="math inline">\(I\)</span>, knowing the cases tells us nothing extra about the deaths: all the shared information flows through the infections.</p>
+<p>In a <strong>sequential</strong> model, by contrast, one stream is modelled as a convolution <em>of another stream</em> rather than of the infections, for example</p>
+<p><span class="math display">\[
+\text{deaths}_t \sim g\big(\text{convolve}(\text{cases}, p)\big),
+\]</span></p>
+<p>chaining deaths off cases instead of off the shared infections.</p>
+<p><strong>Which should you choose?</strong> The choice hinges on whether the streams are better seen as independent observations of a shared process, or as a genuine causal chain you trust.</p>
+<ul>
+<li>A <strong>parallel</strong> model is appropriate when each stream is an independent (noisy) window on the same underlying infections, as cases and deaths usually are. It is the right default in that case: the streams jointly inform the infections, borrow strength from one another, and propagate uncertainty coherently, with no single stream privileged.</li>
+<li>A <strong>sequential</strong> model is appropriate only when one stream genuinely <em>derives</em> from another in a way you trust (for example, if deaths really were generated from the <em>observed</em> cases). It is simpler, but it conditions on a possibly incomplete or biased upstream stream.</li>
+</ul>
+<p>These choices have different consequences for the answer. In a <strong>sequential</strong> model any bias or under-reporting in the upstream stream flows straight into the downstream estimate; because the upstream is treated as known, those errors cannot be corrected and the downstream uncertainty is understated. In a <strong>parallel</strong> model all streams jointly inform the shared infections with propagated uncertainty, and genuine disagreement is not silently absorbed: it shows up as misfit you can diagnose, which is exactly the conflict we examine later in this session.</p>
+<p>We use the <strong>parallel</strong> formulation throughout, which keeps the infection process as the one shared quantity that every stream informs.</p>
+</div>
+</div>
+</section>
+<section id="simulating-a-shared-infection-trajectory" class="level1">
+<h1>Simulating a shared infection trajectory</h1>
+<p>As in previous sessions we first simulate the data-generating process so that we know the truth we are trying to recover. Rather than invent a new epidemic, we reuse the <em>same</em> simulated infections the course has used throughout, and treat them as the shared latent process that every stream observes.</p>
+<p>We build the generation time and infection time series exactly as in the <a href="R-estimation-and-the-renewal-equation">renewal equation</a> and <a href="nowcasting">nowcasting</a> sessions, from the course <code>infection_times</code> dataset.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>gen_time_pmf <span class="ot">&lt;-</span> <span class="fu">make_gen_time_pmf</span>()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>inf_ts <span class="ot">&lt;-</span> <span class="fu">make_daily_infections</span>(infection_times)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="do">## We take a short window around the epidemic peak so this session -- which fits</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="do">## seven models -- renders quickly, while keeping the full story: a clear rise,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="do">## peak and decline (so Rt genuinely changes) with room for the death-scaling</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="do">## drift we introduce later.</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>infections <span class="ot">&lt;-</span> inf_ts<span class="sc">$</span>infections[<span class="dv">64</span><span class="sc">:</span><span class="dv">104</span>]</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(infections)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>I0 <span class="ot">&lt;-</span> infections[<span class="dv">1</span>]</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>inf_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">day =</span> <span class="fu">seq_len</span>(n), <span class="at">infections =</span> infections)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(inf_df, <span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> infections)) <span class="sc">+</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Shared latent infections"</span>, <span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="st">"Infections"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/shared_infections-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We will layer the observation models on top of these shared infections one stream at a time, simulating each stream only at the point we introduce it.</p>
+</section>
+<section id="building-the-model-in-parts" class="level1">
+<h1>Building the model in parts</h1>
+<p>We now build the ideal model up piece by piece, following the build order the workflow suggests: fit each stream on its own, then integrate.</p>
+<p>To do this without writing (and compiling) a different model for every combination of streams, we use a <em>single</em> Stan model with a switch for each stream. The model extends the random-walk renewal model from the previous session: one shared geometric random walk for <span class="math inline">\(R_t\)</span> drives one shared infection process, each stream adds its own convolution, scaling, and likelihood term, and integer flags (<code>use_cases</code>, <code>use_deaths</code>, <code>use_ww</code>) decide which streams contribute to the likelihood.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">nfidd_cmdstan_model</span>(<span class="st">"estimate-inf-and-r-multi-stream"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mod</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource stan numberLines code-with-copy"><code class="sourceCode stan"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">functions</span> {</span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="co">#include "functions/convolve_with_delay.stan"</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>  <span class="co">#include "functions/renewal.stan"</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="co">#include "functions/geometric_random_walk.stan"</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>}</span>
+<span id="cb5-6"><a href="#cb5-6"></a></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="kw">data</span> {</span>
+<span id="cb5-8"><a href="#cb5-8"></a>  <span class="dt">int</span> n;                <span class="co">// number of days</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a>  <span class="dt">int</span> I0;               <span class="co">// number initially infected</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a></span>
+<span id="cb5-11"><a href="#cb5-11"></a>  <span class="co">// shared latent process</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="dt">int</span> gen_time_max;     <span class="co">// maximum generation time</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>  <span class="dt">array</span>[gen_time_max] <span class="dt">real</span> gen_time_pmf; <span class="co">// pmf of generation time distribution</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a></span>
+<span id="cb5-15"><a href="#cb5-15"></a>  <span class="co">// per-stream switches: set to 1 to fit a stream, 0 to leave it out.</span></span>
+<span id="cb5-16"><a href="#cb5-16"></a>  <span class="co">// This lets the SAME model fit one stream on its own, two streams linked</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a>  <span class="co">// together, or all three jointly, so we can build the model up in parts.</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; use_cases;</span>
+<span id="cb5-19"><a href="#cb5-19"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; use_deaths;</span>
+<span id="cb5-20"><a href="#cb5-20"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; use_ww;</span>
+<span id="cb5-21"><a href="#cb5-21"></a></span>
+<span id="cb5-22"><a href="#cb5-22"></a>  <span class="co">// switch on a time-varying death scaling (a random walk on the IFR) to let</span></span>
+<span id="cb5-23"><a href="#cb5-23"></a>  <span class="co">// the model explain a drifting severity rather than forcing a compromise.</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; tv_death_scale;</span>
+<span id="cb5-25"><a href="#cb5-25"></a></span>
+<span id="cb5-26"><a href="#cb5-26"></a>  <span class="co">// stream 1: cases (infection-to-report delay, ascertainment)</span></span>
+<span id="cb5-27"><a href="#cb5-27"></a>  <span class="dt">array</span>[n] <span class="dt">int</span> cases;</span>
+<span id="cb5-28"><a href="#cb5-28"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; case_delay_max;</span>
+<span id="cb5-29"><a href="#cb5-29"></a>  <span class="dt">array</span>[case_delay_max + <span class="dv">1</span>] <span class="dt">real</span> case_delay_pmf;</span>
+<span id="cb5-30"><a href="#cb5-30"></a></span>
+<span id="cb5-31"><a href="#cb5-31"></a>  <span class="co">// stream 2: deaths (infection-to-death delay, IFR)</span></span>
+<span id="cb5-32"><a href="#cb5-32"></a>  <span class="dt">array</span>[n] <span class="dt">int</span> deaths;</span>
+<span id="cb5-33"><a href="#cb5-33"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; death_delay_max;</span>
+<span id="cb5-34"><a href="#cb5-34"></a>  <span class="dt">array</span>[death_delay_max + <span class="dv">1</span>] <span class="dt">real</span> death_delay_pmf;</span>
+<span id="cb5-35"><a href="#cb5-35"></a></span>
+<span id="cb5-36"><a href="#cb5-36"></a>  <span class="co">// stream 3: wastewater (infection-to-shedding delay, scaling)</span></span>
+<span id="cb5-37"><a href="#cb5-37"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> ww;     <span class="co">// log-scale wastewater concentration</span></span>
+<span id="cb5-38"><a href="#cb5-38"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; ww_delay_max;</span>
+<span id="cb5-39"><a href="#cb5-39"></a>  <span class="dt">array</span>[ww_delay_max + <span class="dv">1</span>] <span class="dt">real</span> ww_delay_pmf;</span>
+<span id="cb5-40"><a href="#cb5-40"></a>}</span>
+<span id="cb5-41"><a href="#cb5-41"></a></span>
+<span id="cb5-42"><a href="#cb5-42"></a><span class="kw">parameters</span> {</span>
+<span id="cb5-43"><a href="#cb5-43"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt; init_R;          <span class="co">// initial reproduction number</span></span>
+<span id="cb5-44"><a href="#cb5-44"></a>  <span class="dt">array</span>[n<span class="dv">-1</span>] <span class="dt">real</span> rw_noise;        <span class="co">// random walk noise</span></span>
+<span id="cb5-45"><a href="#cb5-45"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt; rw_sd;           <span class="co">// random walk standard deviation</span></span>
+<span id="cb5-46"><a href="#cb5-46"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; ascertainment; <span class="co">// proportion of infections reported</span></span>
+<span id="cb5-47"><a href="#cb5-47"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; ifr;  <span class="co">// infection fatality ratio (initial level)</span></span>
+<span id="cb5-48"><a href="#cb5-48"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt; ww_scale;        <span class="co">// wastewater scaling (signal per infection)</span></span>
+<span id="cb5-49"><a href="#cb5-49"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt; ww_sigma;        <span class="co">// wastewater obs sd (log scale)</span></span>
+<span id="cb5-50"><a href="#cb5-50"></a>  <span class="co">// optional random walk on the (log) death scaling, only used when</span></span>
+<span id="cb5-51"><a href="#cb5-51"></a>  <span class="co">// tv_death_scale = 1. Sized to zero otherwise so it costs nothing.</span></span>
+<span id="cb5-52"><a href="#cb5-52"></a>  <span class="dt">array</span>[tv_death_scale ? n - <span class="dv">1</span> : <span class="dv">0</span>] <span class="dt">real</span> ifr_rw_noise;</span>
+<span id="cb5-53"><a href="#cb5-53"></a>  <span class="dt">array</span>[tv_death_scale ? <span class="dv">1</span> : <span class="dv">0</span>] <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt; ifr_rw_sd;</span>
+<span id="cb5-54"><a href="#cb5-54"></a>}</span>
+<span id="cb5-55"><a href="#cb5-55"></a></span>
+<span id="cb5-56"><a href="#cb5-56"></a><span class="kw">transformed parameters</span> {</span>
+<span id="cb5-57"><a href="#cb5-57"></a>  <span class="co">// one shared infection / Rt process feeds every stream</span></span>
+<span id="cb5-58"><a href="#cb5-58"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> R = geometric_random_walk(init_R, rw_noise, rw_sd);</span>
+<span id="cb5-59"><a href="#cb5-59"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> infections = renewal(I0, R, gen_time_pmf);</span>
+<span id="cb5-60"><a href="#cb5-60"></a></span>
+<span id="cb5-61"><a href="#cb5-61"></a>  <span class="co">// death scaling: either constant (ifr) or a geometric random walk starting</span></span>
+<span id="cb5-62"><a href="#cb5-62"></a>  <span class="co">// from ifr, which lets a drifting severity be absorbed rather than forced</span></span>
+<span id="cb5-63"><a href="#cb5-63"></a>  <span class="co">// into the shared infections.</span></span>
+<span id="cb5-64"><a href="#cb5-64"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> death_scale;</span>
+<span id="cb5-65"><a href="#cb5-65"></a>  <span class="cf">if</span> (tv_death_scale) {</span>
+<span id="cb5-66"><a href="#cb5-66"></a>    death_scale = geometric_random_walk(ifr, ifr_rw_noise, ifr_rw_sd[<span class="dv">1</span>]);</span>
+<span id="cb5-67"><a href="#cb5-67"></a>  } <span class="cf">else</span> {</span>
+<span id="cb5-68"><a href="#cb5-68"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span>:n) death_scale[i] = ifr;</span>
+<span id="cb5-69"><a href="#cb5-69"></a>  }</span>
+<span id="cb5-70"><a href="#cb5-70"></a></span>
+<span id="cb5-71"><a href="#cb5-71"></a>  <span class="co">// each stream is a convolution of the SAME infections with its own delay</span></span>
+<span id="cb5-72"><a href="#cb5-72"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> exp_cases;</span>
+<span id="cb5-73"><a href="#cb5-73"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> exp_deaths;</span>
+<span id="cb5-74"><a href="#cb5-74"></a>  <span class="dt">array</span>[n] <span class="dt">real</span> exp_ww;</span>
+<span id="cb5-75"><a href="#cb5-75"></a>  {</span>
+<span id="cb5-76"><a href="#cb5-76"></a>    <span class="dt">array</span>[n] <span class="dt">real</span> case_conv = convolve_with_delay(infections, case_delay_pmf);</span>
+<span id="cb5-77"><a href="#cb5-77"></a>    <span class="dt">array</span>[n] <span class="dt">real</span> death_conv = convolve_with_delay(infections, death_delay_pmf);</span>
+<span id="cb5-78"><a href="#cb5-78"></a>    <span class="dt">array</span>[n] <span class="dt">real</span> ww_conv = convolve_with_delay(infections, ww_delay_pmf);</span>
+<span id="cb5-79"><a href="#cb5-79"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span>:n) {</span>
+<span id="cb5-80"><a href="#cb5-80"></a>      exp_cases[i] = ascertainment * case_conv[i];</span>
+<span id="cb5-81"><a href="#cb5-81"></a>      exp_deaths[i] = death_scale[i] * death_conv[i];</span>
+<span id="cb5-82"><a href="#cb5-82"></a>      exp_ww[i] = ww_scale * ww_conv[i];</span>
+<span id="cb5-83"><a href="#cb5-83"></a>    }</span>
+<span id="cb5-84"><a href="#cb5-84"></a>  }</span>
+<span id="cb5-85"><a href="#cb5-85"></a>}</span>
+<span id="cb5-86"><a href="#cb5-86"></a></span>
+<span id="cb5-87"><a href="#cb5-87"></a><span class="kw">model</span> {</span>
+<span id="cb5-88"><a href="#cb5-88"></a>  <span class="co">// priors</span></span>
+<span id="cb5-89"><a href="#cb5-89"></a>  init_R ~ normal(<span class="dv">1</span>, <span class="fl">0.5</span>) <span class="kw">T</span>[<span class="dv">0</span>, ];</span>
+<span id="cb5-90"><a href="#cb5-90"></a>  rw_noise ~ std_normal();</span>
+<span id="cb5-91"><a href="#cb5-91"></a>  rw_sd ~ normal(<span class="dv">0</span>, <span class="fl">0.05</span>) <span class="kw">T</span>[<span class="dv">0</span>, ];</span>
+<span id="cb5-92"><a href="#cb5-92"></a>  ascertainment ~ beta(<span class="dv">2</span>, <span class="dv">2</span>);</span>
+<span id="cb5-93"><a href="#cb5-93"></a>  ifr ~ beta(<span class="dv">1</span>, <span class="dv">50</span>);</span>
+<span id="cb5-94"><a href="#cb5-94"></a>  ww_scale ~ normal(<span class="dv">1</span>, <span class="dv">1</span>) <span class="kw">T</span>[<span class="dv">0</span>, ];</span>
+<span id="cb5-95"><a href="#cb5-95"></a>  ww_sigma ~ normal(<span class="dv">0</span>, <span class="fl">0.5</span>) <span class="kw">T</span>[<span class="dv">0</span>, ];</span>
+<span id="cb5-96"><a href="#cb5-96"></a>  <span class="cf">if</span> (tv_death_scale) {</span>
+<span id="cb5-97"><a href="#cb5-97"></a>    ifr_rw_noise ~ std_normal();</span>
+<span id="cb5-98"><a href="#cb5-98"></a>    ifr_rw_sd ~ normal(<span class="dv">0</span>, <span class="fl">0.1</span>);   <span class="co">// half-normal via &lt;lower = 0&gt; on the parameter</span></span>
+<span id="cb5-99"><a href="#cb5-99"></a>  }</span>
+<span id="cb5-100"><a href="#cb5-100"></a></span>
+<span id="cb5-101"><a href="#cb5-101"></a>  <span class="co">// joint likelihood: each stream contributes its own term off infections,</span></span>
+<span id="cb5-102"><a href="#cb5-102"></a>  <span class="co">// and only the streams we switch on are added. Because the streams are</span></span>
+<span id="cb5-103"><a href="#cb5-103"></a>  <span class="co">// conditionally independent given the infections, the joint log-likelihood</span></span>
+<span id="cb5-104"><a href="#cb5-104"></a>  <span class="co">// is simply the sum of the per-stream terms.</span></span>
+<span id="cb5-105"><a href="#cb5-105"></a>  <span class="cf">if</span> (use_cases) {</span>
+<span id="cb5-106"><a href="#cb5-106"></a>    cases ~ poisson(exp_cases);</span>
+<span id="cb5-107"><a href="#cb5-107"></a>  }</span>
+<span id="cb5-108"><a href="#cb5-108"></a>  <span class="cf">if</span> (use_deaths) {</span>
+<span id="cb5-109"><a href="#cb5-109"></a>    deaths ~ poisson(exp_deaths);</span>
+<span id="cb5-110"><a href="#cb5-110"></a>  }</span>
+<span id="cb5-111"><a href="#cb5-111"></a>  <span class="cf">if</span> (use_ww) {</span>
+<span id="cb5-112"><a href="#cb5-112"></a>    ww ~ normal(log(exp_ww), ww_sigma);</span>
+<span id="cb5-113"><a href="#cb5-113"></a>  }</span>
+<span id="cb5-114"><a href="#cb5-114"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Familiarise yourself with the model above. Compare it to the random-walk model <code>estimate-inf-and-r-rw</code> from the <a href="R-estimation-and-the-renewal-equation#estimating-r_t-with-a-geometric-random-walk-prior">previous session</a>. Which parts are shared across all three streams, and which parts are specific to each stream? Where in the <code>model</code> block does each stream contribute to the likelihood, and what do the <code>use_*</code> flags do there?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The <code>R</code>, <code>infections</code>, generation time, random walk noise and random walk standard deviation are <em>shared</em>: there is a single latent infection process. Each stream has its own delay PMF, its own scaling parameter (<code>ascertainment</code>, <code>ifr</code>, <code>ww_scale</code>) and its own observation term in the <code>model</code> block. The three likelihood lines (<code>cases ~ poisson(...)</code>, <code>deaths ~ poisson(...)</code>, <code>ww ~ normal(log(...), ww_sigma)</code>) are each guarded by a <code>use_*</code> flag, so we can switch any stream on or off. Because the streams are conditionally independent given the infections, whichever terms are switched on are simply <em>added</em> together to form the joint log-likelihood.</p>
+</div>
+</div>
+</div>
+<p>The Stan model always expects data for all three streams; the <code>use_*</code> flags decide which ones actually enter the likelihood. So that we can build up the data the same way we build up the model, we start with a small helper that assembles the data list for whichever streams we have simulated so far, filling any stream we have not yet introduced with harmless placeholders (they never enter the likelihood while its <code>use_*</code> flag is <code>0</code>).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>make_data <span class="ot">&lt;-</span> <span class="cf">function</span>(cases, deaths, ww,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                      case_delay_pmf, death_delay_pmf, ww_delay_pmf) {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> n,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">I0 =</span> I0,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">gen_time_max =</span> <span class="fu">length</span>(gen_time_pmf),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">gen_time_pmf =</span> gen_time_pmf,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">cases =</span> cases,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">case_delay_max =</span> <span class="fu">length</span>(case_delay_pmf) <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">case_delay_pmf =</span> case_delay_pmf,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">deaths =</span> deaths,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">death_delay_max =</span> <span class="fu">length</span>(death_delay_pmf) <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">death_delay_pmf =</span> death_delay_pmf,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">ww =</span> ww,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">ww_delay_max =</span> <span class="fu">length</span>(ww_delay_pmf) <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">ww_delay_pmf =</span> ww_delay_pmf,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">tv_death_scale =</span> <span class="dv">0</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A second helper switches the requested streams on and fits the model. We provide initial values to help the sampler, and expose <code>adapt_delta</code>: the multi-stream <em>joint</em> fits have a more difficult posterior, so for those we raise <code>adapt_delta</code> to <code>0.95</code>, the same lever used in the <a href="joint-nowcasting">joint nowcasting session</a>. The single-stream diagnostic fits are easier, so they use the course-standard default. To keep this session quick to run we fit <strong>2 chains</strong> and a shorter warmup (<code>iter_warmup = 250</code>, keeping <code>iter_sampling = 500</code>); the models still converge well at these settings.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fit_streams <span class="ot">&lt;-</span> <span class="cf">function</span>(data, use_cases, use_deaths, use_ww,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                        <span class="at">adapt_delta =</span> <span class="fl">0.8</span>, <span class="at">iter_warmup =</span> <span class="dv">250</span>) {</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">c</span>(data, <span class="fu">list</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">use_cases =</span> use_cases, <span class="at">use_deaths =</span> use_deaths, <span class="at">use_ww =</span> use_ww</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">nfidd_sample</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    mod, <span class="at">data =</span> data,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">chains =</span> <span class="dv">2</span>, <span class="at">parallel_chains =</span> <span class="dv">2</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">iter_warmup =</span> iter_warmup, <span class="at">iter_sampling =</span> <span class="dv">500</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">adapt_delta =</span> adapt_delta,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_treedepth =</span> <span class="dv">12</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">init =</span> \() <span class="fu">list</span>(<span class="at">init_R =</span> <span class="dv">1</span>, <span class="at">rw_sd =</span> <span class="fl">0.01</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="part-1-simulate-and-fit-cases-and-deaths-on-their-own" class="level2">
+<h2 class="anchored" data-anchor-id="part-1-simulate-and-fit-cases-and-deaths-on-their-own">Part 1: simulate and fit cases and deaths on their own</h2>
+<p>The first thing the workflow asks of us is an observation model <em>per source</em>. We start with the two count streams. Each is a convolution of the shared infections with its own delay distribution, scaled by a fraction of infections, observed as counts:</p>
+<ul>
+<li><strong>Cases</strong>: a short infection-to-report delay, scaled by an <em>ascertainment</em> fraction (most infections are never confirmed).</li>
+<li><strong>Deaths</strong>: a long infection-to-death delay, scaled by the <em>infection fatality ratio</em> (IFR).</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>case_delay_pmf  <span class="ot">&lt;-</span> <span class="fu">censored_delay_pmf</span>(rgamma, <span class="at">max =</span> <span class="dv">10</span>, <span class="at">shape =</span> <span class="dv">3</span>, <span class="at">rate =</span> <span class="dv">1</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>death_delay_pmf <span class="ot">&lt;-</span> <span class="fu">censored_delay_pmf</span>(rgamma, <span class="at">max =</span> <span class="dv">12</span>, <span class="at">shape =</span> <span class="dv">8</span>, <span class="at">rate =</span> <span class="dv">1</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>ascertainment <span class="ot">&lt;-</span> <span class="fl">0.4</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>ifr <span class="ot">&lt;-</span> <span class="fl">0.1</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>exp_cases  <span class="ot">&lt;-</span> ascertainment <span class="sc">*</span> <span class="fu">convolve_with_delay</span>(infections, case_delay_pmf)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>exp_deaths <span class="ot">&lt;-</span> ifr <span class="sc">*</span> <span class="fu">convolve_with_delay</span>(infections, death_delay_pmf)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>obs <span class="ot">&lt;-</span> inf_df <span class="sc">|&gt;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">cases  =</span> <span class="fu">rpois</span>(n, exp_cases),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">deaths =</span> <span class="fu">rpois</span>(n, exp_deaths)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We can plot the two streams alongside the infections. Each is a delayed, rescaled echo of the same infection curve: deaths peak later than cases.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>obs <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(day, infections, cases, deaths) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>day, <span class="at">names_to =</span> <span class="st">"stream"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> value)) <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>stream, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Shared infections and the two count streams"</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_cd-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Before combining anything, we check that each stream, on its own, can recover the shared infection process through its own delay and scaling. We assemble the data (using a placeholder wastewater stream for now) and fit the cases stream alone, then the deaths stream alone.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">## placeholder wastewater: never enters the likelihood while use_ww = 0</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ww_placeholder_pmf <span class="ot">&lt;-</span> <span class="fu">censored_delay_pmf</span>(rgamma, <span class="at">max =</span> <span class="dv">10</span>, <span class="at">shape =</span> <span class="dv">2</span>, <span class="at">rate =</span> <span class="dv">1</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>cd_data <span class="ot">&lt;-</span> <span class="fu">make_data</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">cases =</span> obs<span class="sc">$</span>cases, <span class="at">deaths =</span> obs<span class="sc">$</span>deaths, <span class="at">ww =</span> <span class="fu">rep</span>(<span class="dv">0</span>, n),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">case_delay_pmf =</span> case_delay_pmf,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">death_delay_pmf =</span> death_delay_pmf,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ww_delay_pmf =</span> ww_placeholder_pmf</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>fit_cases  <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(cd_data, <span class="at">use_cases =</span> <span class="dv">1</span>, <span class="at">use_deaths =</span> <span class="dv">0</span>, <span class="at">use_ww =</span> <span class="dv">0</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>fit_deaths <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(cd_data, <span class="at">use_cases =</span> <span class="dv">0</span>, <span class="at">use_deaths =</span> <span class="dv">1</span>, <span class="at">use_ww =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We extract the estimated infections from each single-stream fit and compare them to the truth.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>single_inf <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  fit_cases  <span class="sc">|&gt;</span> <span class="fu">gather_draws</span>(infections[day]) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">model =</span> <span class="st">"cases only"</span>),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  fit_deaths <span class="sc">|&gt;</span> <span class="fu">gather_draws</span>(infections[day]) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">model =</span> <span class="st">"deaths only"</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(model) <span class="sc">|&gt;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(single_inf, <span class="fu">aes</span>(<span class="at">x =</span> day)) <span class="sc">+</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .value, <span class="at">group =</span> .draw), <span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> inf_df, <span class="fu">aes</span>(<span class="at">y =</span> infections), <span class="at">colour =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>model) <span class="sc">+</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Infections from single-stream fits (grey) vs truth (red)"</span>,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="st">"Infections"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_single-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Take 2 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Compare the two single-stream fits. Which stream pins down the <em>recent</em> part of the infection curve (the right-hand end) more tightly, and why? What does the long infection-to-death delay do to the deaths-only fit near the present?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The cases-only fit constrains the recent infections relatively well, because the infection-to-report delay is short, so recent infections still feed into observed cases. The deaths-only fit is much more uncertain near the present: with a long infection-to-death delay, recent infections have barely begun to show up in deaths, so the most recent infections are informed almost entirely by the prior. Each stream is a valid but partial view of the same infections, which is why combining them is attractive.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="part-2-link-cases-and-deaths-through-the-shared-infections" class="level2">
+<h2 class="anchored" data-anchor-id="part-2-link-cases-and-deaths-through-the-shared-infections">Part 2: link cases and deaths through the shared infections</h2>
+<p>Each stream works on its own, so we can now make the <strong>data integration choice</strong> from the workflow: link the two of them. Both cases and deaths look directly at the <em>same</em> latent infections, each through its own delay and scaling, and their likelihood terms are added.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fit_cd <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  cd_data, <span class="at">use_cases =</span> <span class="dv">1</span>, <span class="at">use_deaths =</span> <span class="dv">1</span>, <span class="at">use_ww =</span> <span class="dv">0</span>, <span class="at">adapt_delta =</span> <span class="fl">0.95</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>By linking the timely cases with the stable (if delayed) deaths, the two streams together should constrain the infection trajectory better than either alone.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>two_inf <span class="ot">&lt;-</span> fit_cd <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(infections[day]) <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>))</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(two_inf, <span class="fu">aes</span>(<span class="at">x =</span> day)) <span class="sc">+</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .value, <span class="at">group =</span> .draw), <span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> inf_df, <span class="fu">aes</span>(<span class="at">y =</span> infections), <span class="at">colour =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Infections, cases + deaths jointly (grey) vs truth (red)"</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Two streams sharing one latent infection process"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_two-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="part-3-introduce-wastewater-and-fit-it-on-its-own" class="level2">
+<h2 class="anchored" data-anchor-id="part-3-introduce-wastewater-and-fit-it-on-its-own">Part 3: introduce wastewater and fit it on its own</h2>
+<p>So far both streams have been counts of people. We now introduce a third, very different stream: <strong>wastewater</strong>.</p>
+<p>Wastewater surveillance measures the concentration of pathogen genetic material (e.g.&nbsp;viral RNA) shed into the sewage system. Because it samples whatever is in the sewer, it is a <em>population-level</em> signal that does not depend on people seeking testing or care, and it picks up infections regardless of whether they are ever ascertained as cases. That makes it an attractive complement to the count streams: it can lead case reports, captures asymptomatic infection, and is relatively cheap to collect at the scale of a whole catchment.</p>
+<p>We model it in a deliberately simple way that mirrors the other streams: the signal is taken to be <strong>proportional to recent infections</strong>, via a short infection-to-shedding delay and a single scaling factor, and observed on the <strong>log scale with log-normal noise</strong> (a single site, with no normalisation or site effects).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ww_delay_pmf <span class="ot">&lt;-</span> <span class="fu">censored_delay_pmf</span>(rgamma, <span class="at">max =</span> <span class="dv">10</span>, <span class="at">shape =</span> <span class="dv">2</span>, <span class="at">rate =</span> <span class="dv">1</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>ww_scale <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>exp_ww <span class="ot">&lt;-</span> ww_scale <span class="sc">*</span> <span class="fu">convolve_with_delay</span>(infections, ww_delay_pmf)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>obs <span class="ot">&lt;-</span> obs <span class="sc">|&gt;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ww =</span> <span class="fu">rnorm</span>(n, <span class="fu">log</span>(exp_ww), <span class="fl">0.2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 2 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The wastewater stream is modelled on the <em>log</em> scale with log-normal noise, whereas cases and deaths are counts with a Poisson model. Why might a log-normal observation model be a more natural choice for a continuous concentration measurement than a count distribution?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A wastewater concentration is a positive, continuous measurement rather than a count of discrete events, so a count distribution does not apply directly. Measurement error in such assays tends to be multiplicative (proportional to the signal) rather than additive, which a log-normal observation model captures well. Dedicated wastewater tools build a much richer shedding and measurement model than ours; see <code>EpiSewer</code> <span class="citation" data-cites="lisonRobustRealtimeEstimation2025 lisonEpiSewer2025">(<a href="#ref-lisonRobustRealtimeEstimation2025" role="doc-biblioref">Lison et al. 2025</a>; <a href="#ref-lisonEpiSewer2025" role="doc-biblioref">Lison 2025</a>)</span> and the CDC <code>ww-inference-model</code> <span class="citation" data-cites="johnsonWwinference2026">(<a href="#ref-johnsonWwinference2026" role="doc-biblioref">Johnson et al. 2026</a>)</span> to go further.</p>
+</div>
+</div>
+</div>
+<p>As with the other streams, we first fit wastewater on its own to check it can recover the shared infections through its delay and scaling. We rebuild the data, now with the real wastewater stream.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>full_data <span class="ot">&lt;-</span> <span class="fu">make_data</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">cases =</span> obs<span class="sc">$</span>cases, <span class="at">deaths =</span> obs<span class="sc">$</span>deaths, <span class="at">ww =</span> obs<span class="sc">$</span>ww,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">case_delay_pmf =</span> case_delay_pmf,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">death_delay_pmf =</span> death_delay_pmf,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ww_delay_pmf =</span> ww_delay_pmf</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>fit_ww <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(full_data, <span class="at">use_cases =</span> <span class="dv">0</span>, <span class="at">use_deaths =</span> <span class="dv">0</span>, <span class="at">use_ww =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>ww_inf <span class="ot">&lt;-</span> fit_ww <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(infections[day]) <span class="sc">|&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>))</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(ww_inf, <span class="fu">aes</span>(<span class="at">x =</span> day)) <span class="sc">+</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .value, <span class="at">group =</span> .draw), <span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> inf_df, <span class="fu">aes</span>(<span class="at">y =</span> infections), <span class="at">colour =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Infections, wastewater only (grey) vs truth (red)"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"A short-delay stream on its own scale"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_ww-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="part-4-add-wastewater-to-the-stack" class="level2">
+<h2 class="anchored" data-anchor-id="part-4-add-wastewater-to-the-stack">Part 4: add wastewater to the stack</h2>
+<p>Adding a stream is now just another integration step: switch wastewater on alongside cases and deaths.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  full_data, <span class="at">use_cases =</span> <span class="dv">1</span>, <span class="at">use_deaths =</span> <span class="dv">1</span>, <span class="at">use_ww =</span> <span class="dv">1</span>, <span class="at">adapt_delta =</span> <span class="fl">0.95</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>fit</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: The ESS has been capped to avoid unstable estimates.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    variable    mean  median   sd  mad      q5     q95 rhat ess_bulk ess_tail
+ lp__        5931.27 5931.57 5.13 5.22 5922.63 5939.13 1.00      331      464
+ init_R         2.54    2.54 0.34 0.32    1.99    3.10 1.00     1588      742
+ rw_noise[1]    2.38    2.39 0.84 0.81    0.93    3.80 1.00     1336      824
+ rw_noise[2]    0.51    0.52 0.88 0.87   -0.91    2.02 1.00     2535      726
+ rw_noise[3]   -0.64   -0.66 0.92 0.91   -2.15    0.87 1.00     3000      850
+ rw_noise[4]   -2.22   -2.20 0.93 0.92   -3.76   -0.78 1.01     2727      540
+ rw_noise[5]   -2.45   -2.47 0.86 0.88   -3.84   -1.01 1.00     2675      777
+ rw_noise[6]   -2.37   -2.35 0.83 0.88   -3.66   -0.99 1.00     2037      719
+ rw_noise[7]   -1.40   -1.40 0.86 0.91   -2.79   -0.02 1.00     1661      807
+ rw_noise[8]   -0.54   -0.52 0.79 0.78   -1.81    0.77 1.00     1824      852
+
+ # showing 10 of 293 rows (change via 'max_rows' argument or 'cmdstanr_max_rows' option)</code></pre>
+</div>
+</div>
+<p>We extract the posterior for the shared infections and reproduction number from the full three-stream fit.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>posteriors <span class="ot">&lt;-</span> fit <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(infections[day], R[day]) <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The infections are now informed by all three streams at once:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>inf_posterior <span class="ot">&lt;-</span> posteriors <span class="sc">|&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.variable <span class="sc">==</span> <span class="st">"infections"</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(inf_posterior, <span class="fu">aes</span>(<span class="at">x =</span> day)) <span class="sc">+</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .value, <span class="at">group =</span> .draw), <span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data =</span> inf_df, <span class="fu">aes</span>(<span class="at">y =</span> infections), <span class="at">colour =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Infections, estimated (grey) and true (red)"</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Joint model fit to cases, deaths and wastewater"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_inf-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>and so is the reproduction number:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>r_posterior <span class="ot">&lt;-</span> posteriors <span class="sc">|&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.variable <span class="sc">==</span> <span class="st">"R"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(r_posterior, <span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> .value, <span class="at">group =</span> .draw)) <span class="sc">+</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Estimated Rt"</span>,</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Joint model fit to all three streams"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_r-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Take 2 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look at the scaling parameters (<code>ascertainment</code>, <code>ifr</code>, <code>ww_scale</code>) in the model summary above. Are they recovered as precisely as <span class="math inline">\(R_t\)</span>? Why might the <em>absolute level</em> of infections be harder to pin down than the <em>trajectory</em> of <span class="math inline">\(R_t\)</span>?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The scaling parameters are recovered much less precisely than <span class="math inline">\(R_t\)</span>. Cases and deaths only constrain the product of infections and their scaling, so multiplying infections by a constant and dividing the scalings by the same constant gives an almost identical fit. The <em>shape</em> of the trajectory – and hence <span class="math inline">\(R_t\)</span> – is well identified by all three streams, but the <em>absolute level</em> is only weakly identified. In the workflow this is the “identifiability” feedback arrow: a problem we can either live with or address by fixing or strongly informing one of these scalings (for example, a literature value for the IFR) to anchor the level.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="when-streams-conflict" class="level1">
+<h1>When streams conflict</h1>
+<p>Combining streams works well when they tell a consistent story, but real surveillance streams can <em>disagree</em>. This is the feedback arrow in the workflow that we singled out earlier: <em>conflict between data sources reveals model misspecification</em>.</p>
+<section id="what-does-it-mean-for-streams-to-conflict" class="level2">
+<h2 class="anchored" data-anchor-id="what-does-it-mean-for-streams-to-conflict">What does it mean for streams to conflict?</h2>
+<p>Because every stream is a delayed, scaled view of the <em>same</em> latent infections, each implicitly carries its own answer to the question “what must the infection trajectory have looked like?”. Two streams <strong>conflict</strong> when those implied trajectories are incompatible: the cases imply infections that are falling while the deaths imply infections that are still rising, say, and no single <span class="math inline">\(R_t\)</span> path can produce both at once.</p>
+<p>Why does this happen in practice? The model assumes each stream is the shared infections convolved with a <em>fixed</em> delay and multiplied by a <em>constant</em> scaling. Conflict is what we see when one of those assumptions is wrong for at least one stream, for example:</p>
+<ul>
+<li><strong>Changing ascertainment.</strong> A change in testing policy or test availability bends the case curve without any change in transmission, so the constant-ascertainment assumption breaks.</li>
+<li><strong>Mis-specified delays.</strong> If the true infection-to-death delay is longer or more dispersed than the PMF we supplied, deaths will appear shifted relative to the infections the other streams imply.</li>
+<li><strong>Mis-specified scalings.</strong> A drifting infection fatality ratio (e.g.&nbsp;with changing age structure or treatment) or a reporting artefact pushes a stream off the level the others support.</li>
+<li><strong>Genuinely different populations.</strong> Streams that sample different groups (e.g.&nbsp;hospital deaths vs community cases) need not share one infection process at all.</li>
+</ul>
+<p>To see conflict in action we give it a concrete <strong>mechanism</strong>: a <em>drifting infection fatality ratio</em>. We re-simulate the deaths from the <em>same</em> shared infections as before, but let the death scaling rise over the second half of the outbreak (as it might if severity increased with age structure or a new variant). Cases and wastewater are unchanged. Under our constant-scaling model the rising deaths therefore <em>look like</em> a rising epidemic, which the flat-scaling cases and wastewater flatly contradict.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="do">## death scaling drifts up over the second half of the outbreak</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>ifr_drift <span class="ot">&lt;-</span> ifr <span class="sc">*</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">20</span>), <span class="fu">seq</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="at">length.out =</span> n <span class="sc">-</span> <span class="dv">20</span>))</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>exp_deaths_conflict <span class="ot">&lt;-</span> ifr_drift <span class="sc">*</span> <span class="fu">convolve_with_delay</span>(infections, death_delay_pmf)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>obs_conflict <span class="ot">&lt;-</span> obs <span class="sc">|&gt;</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">deaths =</span> <span class="fu">rpois</span>(n, exp_deaths_conflict))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="fitting-the-constant-scaling-model-to-conflicting-streams" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-constant-scaling-model-to-conflicting-streams">Fitting the constant-scaling model to conflicting streams</h2>
+<p>We refit the same joint, three-stream model – still assuming a <em>constant</em> death scaling – to this conflicting data, reusing the helpers and just swapping in the conflicting deaths.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>data_conflict <span class="ot">&lt;-</span> full_data</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>data_conflict<span class="sc">$</span>deaths <span class="ot">&lt;-</span> obs_conflict<span class="sc">$</span>deaths</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>fit_conflict <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  data_conflict, <span class="at">use_cases =</span> <span class="dv">1</span>, <span class="at">use_deaths =</span> <span class="dv">1</span>, <span class="at">use_ww =</span> <span class="dv">1</span>, <span class="at">adapt_delta =</span> <span class="fl">0.95</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We compare the <span class="math inline">\(R_t\)</span> estimates from the consistent and conflicting fits.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>r_consistent <span class="ot">&lt;-</span> fit <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(R[day]) <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data =</span> <span class="st">"consistent"</span>)</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>r_conflict <span class="ot">&lt;-</span> fit_conflict <span class="sc">|&gt;</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(R[day]) <span class="sc">|&gt;</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data =</span> <span class="st">"conflicting deaths"</span>)</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(r_consistent, r_conflict),</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> .value, <span class="at">group =</span> .draw, <span class="at">colour =</span> data)</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_brewer</span>(<span class="at">palette =</span> <span class="st">"Set1"</span>) <span class="sc">+</span></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">colour =</span> <span class="fu">guide_legend</span>(<span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="dv">1</span>))) <span class="sc">+</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Rt under consistent vs conflicting streams"</span>) <span class="sc">+</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/plot_conflict-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Take 2 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>How does the <span class="math inline">\(R_t\)</span> estimate change when the deaths stream conflicts with the others? Is the result closer to the “true” declining <span class="math inline">\(R_t\)</span>, the rising signal implied by deaths, or somewhere in between?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The conflicting-deaths fit pulls <span class="math inline">\(R_t\)</span> in the second half of the outbreak <em>upwards</em>, away from the true declining trajectory, towards a compromise between the declining cases/wastewater and the rising deaths. A single shared infection process cannot simultaneously be declining (to match cases and wastewater) and rising (to match deaths), so the model splits the difference. The joint estimate is no longer faithful to any single stream.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="how-the-joint-model-surfaces-conflict" class="level2">
+<h2 class="anchored" data-anchor-id="how-the-joint-model-surfaces-conflict">How the joint model surfaces conflict</h2>
+<p>The <span class="math inline">\(R_t\)</span> comparison above already hints at trouble, but in a real analysis we would not know the truth to compare against. So how would conflict actually announce itself? It shows up in three linked ways, and a principled workflow looks for all of them.</p>
+<p><strong>1. Poor fit to one stream.</strong> The clearest symptom is a <em>posterior predictive check</em>: simulate each stream from the fitted model and overlay it on the data. Because the shared infections are dragged towards a compromise, at least one stream ends up fitted badly. We can extract the expected counts the model implies for each stream (<code>exp_cases</code>, <code>exp_deaths</code>) and compare them to the conflicting data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>exp_draws <span class="ot">&lt;-</span> fit_conflict <span class="sc">|&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(exp_cases[day], exp_deaths[day]) <span class="sc">|&gt;</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.variable, day) <span class="sc">|&gt;</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_qi</span>(.value, <span class="at">.width =</span> <span class="fl">0.9</span>)</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>obs_long <span class="ot">&lt;-</span> obs_conflict <span class="sc">|&gt;</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(day, cases, deaths) <span class="sc">|&gt;</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>day, <span class="at">names_to =</span> <span class="st">"stream"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">.variable =</span> <span class="fu">paste0</span>(<span class="st">"exp_"</span>, stream))</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(exp_draws, <span class="fu">aes</span>(<span class="at">x =</span> day)) <span class="sc">+</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper), <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .value)) <span class="sc">+</span></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> obs_long, <span class="fu">aes</span>(<span class="at">y =</span> value), <span class="at">size =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>.variable, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Posterior predictive fit under conflicting streams"</span>,</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Fitted expectation (line + 90% band) vs observed (points)"</span>,</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/ppc_conflict-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The compromise infection trajectory cannot match both streams: typically the fitted expectation systematically <em>under</em>-shoots the late, rising deaths while <em>over</em>-shooting the declining cases (or vice versa), with the data points drifting outside the predictive band on one or both panels. A consistent run of points on one side of the fitted line for a single stream is the tell-tale sign that that stream is fighting the others.</p>
+<p><strong>2. Tension in the shared latent infections.</strong> Conflict does not stay neatly inside one stream. Because all streams pull on the <em>same</em> infections, an irreconcilable stream distorts the shared trajectory itself – and hence <span class="math inline">\(R_t\)</span>, as we saw – and inflates its uncertainty as the sampler is pulled between two incompatible explanations. A latent quantity that suddenly becomes much more uncertain, or that no longer matches <em>any</em> stream when you propagate it back through the observation models, is a second symptom of conflict.</p>
+<p><strong>3. Degraded sampling.</strong> When the geometry of the posterior is contorted by trying to satisfy contradictory data, the sampler struggles. In practice this surfaces as divergent transitions, low effective sample sizes, or high <code>rhat</code> in the fit summary. It is always worth scanning the diagnostics of the conflicting fit (<code>fit_conflict</code>) and comparing them to the clean fit: sampler complaints are not just a computational nuisance, they can be a signature of a misspecified model.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look at the posterior predictive plot and at the diagnostics of <code>fit_conflict</code> (the <code>rhat</code> and <code>ess_bulk</code> columns in <code>fit_conflict</code>, and any divergence warnings). Which stream is fitted worst, and in which direction does the model miss? Do the sampler diagnostics look worse than for the consistent fit?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-15-contents" aria-controls="callout-15" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-15" class="callout-15-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The deaths panel is fitted worst: the rising deaths in the second half of the outbreak sit <em>above</em> the fitted expectation, because the model has been pulled down towards the declining cases and wastewater. Symmetrically, the late cases tend to sit slightly <em>below</em> their fitted line, because the deaths have tugged the shared infections up. Neither stream is fitted as cleanly as in the consistent case, which is the data-space signature of the <span class="math inline">\(R_t\)</span> compromise. The diagnostics for the conflicting fit are usually a little worse (larger <code>rhat</code>, smaller <code>ess_bulk</code>, occasional divergences) because the posterior is harder to explore when the data cannot be reconciled.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="what-should-a-modeller-do-about-conflict" class="level2">
+<h2 class="anchored" data-anchor-id="what-should-a-modeller-do-about-conflict">What should a modeller do about conflict?</h2>
+<p>It is worth being clear about what the shared latent process does and does not do here. Sharing one infection process across streams <em>surfaces</em> a conflict (the symptoms above) and yields a single compromise estimate, but it does not <em>resolve</em> the disagreement: the compromise is faithful to no stream and, as we have seen, can be actively misleading about <span class="math inline">\(R_t\)</span>. Genuine resolution comes from modelling the <em>reason</em> the streams disagree, not from averaging the streams together.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Options for resolving conflict
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When a principled model check flags conflict between data sources, there are a handful of standard responses <span class="citation" data-cites="presanis2013conflict deangelis2018analysing gelman2020bayesian">(<a href="#ref-presanis2013conflict" role="doc-biblioref">Presanis et al. 2013</a>; <a href="#ref-deangelis2018analysing" role="doc-biblioref">De Angelis and Presanis 2018</a>; <a href="#ref-gelman2020bayesian" role="doc-biblioref">Gelman et al. 2020</a>)</span>:</p>
+<ul>
+<li><strong>Model the differing mechanism.</strong> Extend the model so the suspected source of divergence is explicit – a time-varying ascertainment or IFR, a re-estimated or more dispersed delay, or stream-specific reporting effects. This is the principled default when the streams really do observe the same infections <span class="citation" data-cites="deangelis2018analysing nicholson2022interoperability">(<a href="#ref-deangelis2018analysing" role="doc-biblioref">De Angelis and Presanis 2018</a>; <a href="#ref-nicholson2022interoperability" role="doc-biblioref">Nicholson et al. 2022</a>)</span>.</li>
+<li><strong>Expand or relax the observation model.</strong> Allow overdispersion, or weaken an over-confident likelihood, so a stream is no longer forced onto a level it cannot support.</li>
+<li><strong>Down-weight or drop a stream.</strong> If a stream measures a genuinely different population, or carries an artefact you cannot model, it may be right to exclude it – but only once you understand <em>why</em> <span class="citation" data-cites="presanis2013conflict">(<a href="#ref-presanis2013conflict" role="doc-biblioref">Presanis et al. 2013</a>)</span>.</li>
+<li><strong>Revisit the data.</strong> Conflict is sometimes a data problem (a definition change, a reporting glitch) rather than a model problem, and is best fixed upstream.</li>
+</ul>
+<p>Conflict diagnostics in Bayesian evidence synthesis make this formal: they quantify how much each source disagrees with the rest before deciding what to do <span class="citation" data-cites="presanis2013conflict">(<a href="#ref-presanis2013conflict" role="doc-biblioref">Presanis et al. 2013</a>)</span>.</p>
+</div>
+</div>
+<p>We will <em>do</em> the first of these: model the mechanism behind the divergence. We suspected a drifting death scaling, so we relax the constant-IFR assumption and let the death scaling follow its own random walk over time. The model already has a switch for this, <code>tv_death_scale</code>; setting it to <code>1</code> turns the scalar <code>ifr</code> into a geometric random walk.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>data_resolved <span class="ot">&lt;-</span> data_conflict</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>data_resolved<span class="sc">$</span>tv_death_scale <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>fit_resolved <span class="ot">&lt;-</span> <span class="fu">fit_streams</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  data_resolved, <span class="at">use_cases =</span> <span class="dv">1</span>, <span class="at">use_deaths =</span> <span class="dv">1</span>, <span class="at">use_ww =</span> <span class="dv">1</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>First, does it now fit the deaths? We repeat the posterior predictive check, comparing the constant-scaling and time-varying-scaling fits.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>ppc_for <span class="ot">&lt;-</span> <span class="cf">function</span>(fit, label) {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  fit <span class="sc">|&gt;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">gather_draws</span>(exp_cases[day], exp_deaths[day]) <span class="sc">|&gt;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(.variable, day) <span class="sc">|&gt;</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">median_qi</span>(.value, <span class="at">.width =</span> <span class="fl">0.9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">model =</span> label)</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>resolved_draws <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ppc_for</span>(fit_conflict, <span class="st">"constant scaling"</span>),</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ppc_for</span>(fit_resolved, <span class="st">"time-varying death scaling"</span>)</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(resolved_draws, <span class="fu">aes</span>(<span class="at">x =</span> day)) <span class="sc">+</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper), <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> .value)) <span class="sc">+</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> obs_long, <span class="fu">aes</span>(<span class="at">y =</span> value), <span class="at">size =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(.variable <span class="sc">~</span> model, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Posterior predictive fit: before and after modelling the drift"</span>,</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Fitted expectation (line + 90% band) vs observed (points)"</span>,</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/ppc_resolved-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Letting the death scaling drift lets the deaths panel track the rising data without dragging the shared infections up, so both streams are fitted well at once. We can confirm that <span class="math inline">\(R_t\)</span> no longer chases the deaths, by comparing it to the true declining trajectory the cases and wastewater came from.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>r_resolved <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  fit_conflict <span class="sc">|&gt;</span> <span class="fu">gather_draws</span>(R[day]) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">model =</span> <span class="st">"constant scaling"</span>),</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  fit_resolved <span class="sc">|&gt;</span> <span class="fu">gather_draws</span>(R[day]) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">model =</span> <span class="st">"time-varying death scaling"</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(model) <span class="sc">|&gt;</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.draw <span class="sc">%in%</span> <span class="fu">sample</span>(.draw, <span class="dv">100</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(r_resolved, <span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> .value, <span class="at">group =</span> .draw)) <span class="sc">+</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>model) <span class="sc">+</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Rt before and after modelling the drifting death scaling"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/r_resolved-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>fit_resolved <span class="sc">|&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gather_draws</span>(death_scale[day]) <span class="sc">|&gt;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">median_qi</span>(.value, <span class="at">.width =</span> <span class="fl">0.9</span>) <span class="sc">|&gt;</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> .value)) <span class="sc">+</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> .lower, <span class="at">ymax =</span> .upper), <span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> <span class="fu">tibble</span>(<span class="at">day =</span> <span class="fu">seq_len</span>(n), <span class="at">.value =</span> ifr_drift),</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="st">"red"</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Recovered death scaling (black) vs truth (red)"</span>,</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="st">"Death scaling"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="multiple-data-streams_files/figure-html/recovered_scale-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Compare the two fits. Does the time-varying-scaling model fit <em>both</em> the cases and the deaths? Has <span class="math inline">\(R_t\)</span> returned to the true declining trajectory, and are the sampler diagnostics of <code>fit_resolved</code> better than <code>fit_conflict</code>? Does the recovered death scaling track the drift we built in?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-18-contents" aria-controls="callout-18" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-18" class="callout-18-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Modelling the mechanism reconciles the streams. With a time-varying death scaling the deaths panel is fitted well <em>and</em> the cases panel is no longer distorted, because the rising deaths are now explained by a rising scaling rather than by rising infections. <span class="math inline">\(R_t\)</span> returns to the true declining trajectory, the recovered death scaling tracks the drift we built in, and the sampler diagnostics improve (smaller <code>rhat</code>, larger <code>ess_bulk</code>, fewer or no divergences) because the posterior no longer has to satisfy contradictory data. The lesson: you resolve genuine data conflict by modelling the reason for the divergence, not by hoping the shared latent process will absorb it.</p>
+</div>
+</div>
+</div>
+<p>This loop of building in parts, checking each addition, and letting conflict and identifiability send us back to revise is the core of a principled modelling workflow <span class="citation" data-cites="abbottWorkflowInfectiousDisease2026">(<a href="#ref-abbottWorkflowInfectiousDisease2026" role="doc-biblioref"><span class="nocase">Abbott et al.</span> 2026</a>)</span>.</p>
+</section>
+</section>
+<section id="going-further" class="level1">
+<h1>Going further</h1>
+<section id="scope" class="level2">
+<h2 class="anchored" data-anchor-id="scope">Scope</h2>
+<p>This session extended the <strong>renewal-with-delays</strong> model to multiple parallel streams. We kept it to renewal plus convolutions and did <em>not</em> bring in nowcasting or the reporting triangle: each stream here is assumed fully observed up to the present. Combining this multi-stream approach with the nowcasting models from the <a href="joint-nowcasting">joint nowcasting session</a> is a natural next step.</p>
+</section>
+<section id="challenge" class="level2">
+<h2 class="anchored" data-anchor-id="challenge">Challenge</h2>
+<ul>
+<li>We used a Poisson observation model for both cases and deaths. Reporting is often <em>overdispersed</em>. How would you change the model to use a negative binomial distribution instead, and what extra parameter would that introduce?</li>
+<li>We resolved the conflict by letting the <em>death</em> scaling drift. Following the same pattern as <code>tv_death_scale</code>, how would you add a time-varying <em>ascertainment</em> to absorb a conflict driven by a change in testing policy? Which stream conflicts would that be able to absorb, and which would it not?</li>
+<li>We added the streams one at a time up to the full fit. Use the <code>use_*</code> flags to instead drop one stream at a time from the full fit. How much does each stream contribute to the precision of the <span class="math inline">\(R_t\)</span> estimate near the end of the outbreak?</li>
+</ul>
+</section>
+<section id="methods-in-practice" class="level2">
+<h2 class="anchored" data-anchor-id="methods-in-practice">Methods in practice</h2>
+<ul>
+<li><code>epidemia</code> implements joint renewal-equation models of cases and deaths of the kind introduced here <span class="citation" data-cites="bhattSemiMechanisticBayesianModeling2020">(<a href="#ref-bhattSemiMechanisticBayesianModeling2020" role="doc-biblioref">Bhatt et al. 2020</a>)</span>.</li>
+<li><code>EpiSewer</code> is a Bayesian generative model for estimating transmission dynamics from a wastewater signal, with a carefully specified shedding and measurement model <span class="citation" data-cites="lisonRobustRealtimeEstimation2025 lisonEpiSewer2025">(<a href="#ref-lisonRobustRealtimeEstimation2025" role="doc-biblioref">Lison et al. 2025</a>; <a href="#ref-lisonEpiSewer2025" role="doc-biblioref">Lison 2025</a>)</span>.</li>
+<li>The CDC’s wastewater-informed modelling work jointly fits wastewater concentration data and epidemiological count data to produce nowcasts and forecasts <span class="citation" data-cites="johnsonWwinference2026">(<a href="#ref-johnsonWwinference2026" role="doc-biblioref">Johnson et al. 2026</a>)</span>. Unlike our deliberately single-site example, it combines <em>multiple</em> wastewater sites with hierarchical structure – a multi-site, multi-resolution extension of the ideas in this session.</li>
+</ul>
+</section>
+</section>
+<section id="wrap-up" class="level1">
+<h1>Wrap up</h1>
+<ul>
+<li>Review what you’ve learned in this session with the <a href="../reference/learning_objectives">learning objectives</a></li>
+<li>Share your <a href="../reference/help">questions and thoughts</a></li>
+</ul>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-abbottWorkflowInfectiousDisease2026" class="csl-entry" role="listitem">
+<span class="nocase">Abbott, Sam et al.</span> 2026. <em>A Workflow for Infectious Disease Modelling</em>. Manuscript and code repository. <a href="https://github.com/seabbs/a-workflow-for-infectious-disease-modelling">https://github.com/seabbs/a-workflow-for-infectious-disease-modelling</a>.
+</div>
+<div id="ref-bhattSemiMechanisticBayesianModeling2020" class="csl-entry" role="listitem">
+Bhatt, Samir, Neil Ferguson, Seth Flaxman, Axel Gandy, Swapnil Mishra, and James A. Scott. 2020. <em>Semi-<span>Mechanistic Bayesian Modeling</span> of <span>COVID-19</span> with <span>Renewal Processes</span></em>. arXiv:2012.00394. arXiv. <a href="https://doi.org/10.48550/arXiv.2012.00394">https://doi.org/10.48550/arXiv.2012.00394</a>.
+</div>
+<div id="ref-deangelis2018analysing" class="csl-entry" role="listitem">
+De Angelis, Daniela, and Anne M. Presanis. 2018. <span>“Analysing Multiple Epidemic Data Sources.”</span> <em>arXiv Preprint arXiv:1808.04312</em>. <a href="https://arxiv.org/abs/1808.04312">https://arxiv.org/abs/1808.04312</a>.
+</div>
+<div id="ref-gelman2020bayesian" class="csl-entry" role="listitem">
+Gelman, Andrew, Aki Vehtari, Daniel Simpson, et al. 2020. <span>“Bayesian Workflow.”</span> <em>arXiv Preprint arXiv:2011.01808</em>. <a href="https://arxiv.org/abs/2011.01808">https://arxiv.org/abs/2011.01808</a>.
+</div>
+<div id="ref-johnsonWwinference2026" class="csl-entry" role="listitem">
+Johnson, Kaitlyn, Dylan Morris, Sam Abbott, et al. 2026. <em><span class="nocase">ww-inference-model</span>: <span>Jointly</span> Infer Infection Dynamics from Wastewater Data and Epidemiological Indicators</em>. Centers for Disease Control and Prevention, Center for Forecasting and Outbreak Analytics. <a href="https://github.com/CDCgov/ww-inference-model">https://github.com/CDCgov/ww-inference-model</a>.
+</div>
+<div id="ref-lisonEpiSewer2025" class="csl-entry" role="listitem">
+Lison, Adrian. 2025. <em><span>EpiSewer</span>: <span>Estimate</span> Epidemiological Parameters from Wastewater Measurements</em>. <a href="https://github.com/adrian-lison/EpiSewer">https://github.com/adrian-lison/EpiSewer</a>.
+</div>
+<div id="ref-lisonRobustRealtimeEstimation2025" class="csl-entry" role="listitem">
+Lison, Adrian, Rachel McLeod, Jana S. Huisman, et al. 2025. <span>“Robust Real-Time Estimation of Pathogen Transmission Dynamics from Wastewater.”</span> <em>medRxiv</em>, ahead of print, October. <a href="https://doi.org/10.1101/2025.10.23.25338640">https://doi.org/10.1101/2025.10.23.25338640</a>.
+</div>
+<div id="ref-nicholson2022interoperability" class="csl-entry" role="listitem">
+Nicholson, George, Marta Blangiardo, Sylvia Richardson, and Chris Holmes. 2022. <span>“Interoperability of Statistical Models in Pandemic Preparedness: Principles and Reality.”</span> <em>Statistical Science</em> 37 (2): 183–206. <a href="https://doi.org/10.1214/22-STS854">https://doi.org/10.1214/22-STS854</a>.
+</div>
+<div id="ref-presanis2013conflict" class="csl-entry" role="listitem">
+Presanis, Anne M., David Ohlssen, David J. Spiegelhalter, and Daniela De Angelis. 2013. <span>“Conflict Diagnostics in Directed Acyclic Graphs, with Applications in Bayesian Evidence Synthesis.”</span> <em>Statistical Science</em> 28 (3): 376–97. <a href="https://doi.org/10.1214/13-STS426">https://doi.org/10.1214/13-STS426</a>.
+</div>
+</div>
+
+
+</section>
+</section>
+
+<script data-goatcounter="https://nfidd.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/nfidd\.github\.io\/sismid-nowcasting\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+            // default icon
+            link.classList.add("external");
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/nfidd/sismid-nowcasting/blob/main/sessions/multiple-data-streams.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/nfidd/sismid-nowcasting/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
