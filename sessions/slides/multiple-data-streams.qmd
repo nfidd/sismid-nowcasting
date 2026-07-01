@@ -203,7 +203,40 @@ Streams **conflict** when those implied trajectories can't both come from one $R
 - mis-specified delays or scalings (e.g. drifting IFR)
 - genuinely different populations
 
-> *[Diagram placeholder: cases imply a falling epidemic while deaths imply a rising one; no single shared infection curve can satisfy both.]*
+```{r conflict-fork, echo = FALSE, fig.width = 8.5, fig.height = 4}
+## Schematic: each stream implies its own infection trajectory. Up to the peak
+## they agree; after it the constant-scaling deaths imply a rising epidemic while
+## cases and wastewater imply a falling one -- no single curve can satisfy both.
+day <- 1:40
+peak <- 20
+shared <- 100 * dnorm(day, peak, 7) / max(dnorm(day, peak, 7)) + 5
+cases_implied  <- shared
+deaths_implied <- ifelse(day <= peak, shared, shared[peak] * (1 + 0.05 * (day - peak)))
+
+fork <- tibble(
+  day,
+  `implied by cases + wastewater` = cases_implied,
+  `implied by deaths` = deaths_implied
+) |>
+  pivot_longer(-day, names_to = "stream", values_to = "infections")
+
+gap <- tibble(day, lo = pmin(cases_implied, deaths_implied),
+              hi = pmax(cases_implied, deaths_implied)) |>
+  filter(day >= peak)
+
+ggplot(fork, aes(day, infections, colour = stream)) +
+  geom_ribbon(data = gap, inherit.aes = FALSE,
+              aes(day, ymin = lo, ymax = hi), fill = "#c0392b", alpha = 0.12) +
+  geom_line(linewidth = 1.2) +
+  annotate("text", x = 30, y = 150,
+           label = "no single infection curve\ncan satisfy both",
+           colour = "#c0392b", size = 4.5, lineheight = 0.95) +
+  scale_colour_manual(
+    values = c("implied by cases + wastewater" = "#447099",
+               "implied by deaths" = "#c0392b")) +
+  labs(x = "Day", y = "Implied infections", colour = NULL) +
+  theme(legend.position = "top")
+```
 
 ### Conflict distorts the joint fit
 
