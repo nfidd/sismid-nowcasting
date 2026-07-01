@@ -24,6 +24,8 @@ Imports:
     tidybayes
 Suggests:
     covr,
+    data.table,
+    epinowcast,
     ggplot2,
     knitr,
     lintr,
@@ -35,6 +37,7 @@ Suggests:
     scoringutils,
     testthat (>= 3.0.0)
 Remotes:
+    epinowcast/epinowcast,
     stan-dev/cmdstanr
 Encoding: UTF-8
 Language: en-GB

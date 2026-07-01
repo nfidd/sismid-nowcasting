@@ -21,3 +21,5 @@ site_libs
 # Quarto freeze directory
 _freeze/
 
+
+**/*.quarto_ipynb

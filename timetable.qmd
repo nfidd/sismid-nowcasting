@@ -29,8 +29,9 @@ It is paired with the companion [forecasting & evaluation course](https://nfidd.
 | | 15.00–15.30 | *Coffee break* | |
 | | 15.30–17.00 | Session 8 · Jointly fitting multiple data streams | [Slides](sessions/slides/multiple-data-streams), [Practice](sessions/multiple-data-streams) |
 | **Wed 15 Jul** | 09.00–09.15 | Day 2 review | |
-| | 09.15–10.30 | Session 9 · Modelling complex reporting processes | *new session — links to be added once its PR merges* |
+| | 09.15–10.30 | Session 9 · Modelling complex reporting processes | [Slides](sessions/slides/complex-reporting-processes), [Practice](sessions/complex-reporting-processes) |
 | | 10.30–11.00 | *Coffee break* | |
-| | 11.00–12.00 | Session 10 · Methods in the real world | [Methods in the real world](sessions/methods-in-the-real-world) |
-| | 12.00–12.30 | Session 11 · Summary & discussion | [Summary](sessions/slides/closing), [further reading](sessions/end-of-course-summary-and-discussion) |
+| | 11.00–12.00 | Session 9 · Modelling complex reporting processes (cont.) | |
+| | 12.00–12.15 | Session 10 · Methods in the real world | [Methods in the real world](sessions/methods-in-the-real-world) |
+| | 12.15–12.30 | Session 11 · Summary & discussion | [Summary](sessions/slides/closing), [further reading](sessions/end-of-course-summary-and-discussion) |
 :::
