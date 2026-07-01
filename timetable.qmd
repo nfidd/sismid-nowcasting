@@ -1,0 +1,36 @@
+---
+title: "Timetable"
+comments: false
+toc: false
+---
+
+This is the **Nowcasting** course, taught July 13-15 (the first half of the [SISMID](https://sismid.sph.emory.edu/) week, Monday through Wednesday morning).
+It is paired with the companion [forecasting & evaluation course](https://nfidd.github.io/sismid-forecasting/) which runs from Wednesday midday to Friday, July 15-17.
+
+::: {.column-page .timetable}
+| Day | Time | Session / activity | Content |
+|---|---|---|---|
+| **Mon 13 Jul** | 09.00–10.00 | Session 0 · Introduction & course overview | [Slides](sessions/slides/introduction-to-the-course-and-the-instructors), [Getting started](getting-started), [Course overview](sessions/introduction-and-course-overview), [Motivation](sessions/slides/from-line-list-to-decisions) |
+| | 10.00–10.30 | Session 1 · Delay distributions | [Slides](sessions/slides/introduction-to-epidemiological-delays), [Practice](sessions/delay-distributions) |
+| | 10.30–11.00 | *Coffee break* | |
+| | 11.00–11.30 | Session 1 · Delay distributions (cont.) | |
+| | 11.30–12.30 | Session 2 · Biases in delay distributions | [Slides](sessions/slides/introduction-to-biases-in-epidemiological-delays), [Practice](sessions/biases-in-delay-distributions) |
+| | 12.30–13.30 | *Lunch* | |
+| | 13.30–14.00 | Session 2 · Biases in delay distributions (cont.) | |
+| | 14.00–14.45 | Session 3 · Modelling the data-generating process | [Slides](sessions/slides/convolutions), [Practice](sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic) |
+| | 15.00–15.30 | *Coffee break* | |
+| | 15.30–17.00 | Session 4 · $R_t$ estimation & the renewal equation | [Slides](sessions/slides/introduction-to-reproduction-number), [Practice](sessions/R-estimation-and-the-renewal-equation) |
+| **Tue 14 Jul** | 09.00–09.15 | Day 1 review | |
+| | 09.15–10.30 | Session 5 · Nowcasting concepts | [Slides](sessions/slides/introduction-to-nowcasting), [Practice](sessions/nowcasting) |
+| | 10.30–11.00 | *Coffee break* | |
+| | 11.00–12.30 | Session 6 · Nowcasting with an unknown reporting delay | [Slides](sessions/slides/introduction-to-joint-estimation-of-nowcasting-and-reporting-delays), [Practice](sessions/joint-nowcasting) |
+| | 12.30–13.30 | *Lunch* | |
+| | 13.30–15.00 | Session 7 · Combining nowcasting & forecasting | [Slides](sessions/slides/forecasting-nowcasting), [Practice](sessions/forecasting-nowcasting) |
+| | 15.00–15.30 | *Coffee break* | |
+| | 15.30–17.00 | Session 8 · Jointly fitting multiple data streams | *new session — links to be added once its PR merges* |
+| **Wed 15 Jul** | 09.00–09.15 | Day 2 review | |
+| | 09.15–10.30 | Session 9 · Modelling complex reporting processes | *new session — links to be added once its PR merges* |
+| | 10.30–11.00 | *Coffee break* | |
+| | 11.00–12.00 | Session 10 · Methods in the real world | [Methods in the real world](sessions/methods-in-the-real-world) |
+| | 12.00–12.30 | Session 11 · Summary & discussion | [Summary](sessions/slides/closing), [further reading](sessions/end-of-course-summary-and-discussion) |
+:::
