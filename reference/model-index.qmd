@@ -25,6 +25,8 @@ session_models <- list(
     c("simple-nowcast", "simple-nowcast-rw"),
   "Joint nowcasting with an unknown reporting delay" =
     c("joint-nowcast", "joint-nowcast-with-r"),
+  "Jointly fitting multiple data streams" =
+    c("estimate-inf-and-r-multi-stream"),
   "From nowcasting to forecasting" =
     c("estimate-inf-and-r-rw-forecast")
 )

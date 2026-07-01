@@ -1,0 +1,273 @@
+---
+title: "Jointly fitting multiple data streams"
+author: "Nowcasting and forecasting of infectious disease dynamics"
+engine: knitr
+format:
+  revealjs:
+    output: slides/multiple-data-streams.html
+    footer: "Jointly fitting multiple data streams"
+    chalkboard: true
+    slide-level: 3
+---
+
+```{r setup, include = FALSE}
+library("nfidd.nowcasting")
+library("dplyr")
+library("tidyr")
+library("ggplot2")
+set.seed(123)
+theme_set(theme_minimal(base_size = 16))
+```
+
+### One outbreak, several views
+
+So far: estimate $R_t$ from a *single* observed time series.
+
+In reality we watch an outbreak through *several* streams at once:
+
+- **Cases** — timely, but depend on testing; only a fraction ascertained
+- **Deaths** — stable, but long-delayed and severity-dependent
+- **Wastewater** — does not depend on care-seeking, but indirect and on its own scale
+
+Each is a delayed, scaled view of the *same* infections.
+
+### The question
+
+Our target is unchanged: recover the latent **infections** and **$R_t$**, as timely and as well-anchored as we can.
+
+. . .
+
+- **Cases** track the *timing* of recent infections, but carry reporting noise and tell us only an ascertained fraction.
+- **Deaths** are sparser and badly lagged, so they say little about the present, but anchor the longer-term level.
+- **Wastewater** is independent of care-seeking, but indirect and on its own scale.
+
+Alone, none pins down both the infection *level* and $R_t$.
+
+. . .
+
+> What does each stream add, and what happens when they pull in different directions?
+
+### What is wastewater surveillance? {.smaller}
+
+Measuring pathogen RNA shed into sewage — a **population-level** signal.
+
+Why people are interested:
+
+- Does **not** depend on testing, care-seeking, or ascertainment
+- Can **lead** case reports, and picks up **asymptomatic** infection
+- Relatively **cheap** at scale (one sample covers a whole catchment)
+
+. . .
+
+Challenges: it is **noisy** and **indirect**, and needs **scaling / normalisation** before it can be compared to infections.
+
+This is why it is attractive as a third, parallel stream.
+
+### Don't reach for the whole model at once
+
+Fitting several streams is one step in a wider **modelling workflow**.
+
+A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model — never a single leap to the final model.
+
+> *[Placeholder: cover of Aki Vehtari et al.'s Bayesian workflow book — to be added]*
+
+We let that general idea drive how we develop this model.
+
+### A workflow for infectious disease modelling
+
+The infectious-disease-specific instance of that loop:
+
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="460px"}
+
+### Reading the workflow, bottom-left up
+
+::: {.incremental}
+1. **Question & estimands** — infections and $R_t$
+2. **Process model** — one shared renewal process
+3. **Data source selection** — what each stream measures, and its biases
+4. **Observation model per source** — a delay + a scaling + a likelihood
+5. **Data integration** — *how* to combine them (the key choice)
+6. **Inference, checking & iteration** — fit, check (PPCs, conflict), revise
+:::
+
+. . .
+
+A shared process, a swappable observation model per stream — so we can **build it in parts**.
+
+### Three streams from one trajectory
+
+```{r streams, echo = FALSE, fig.width = 9, fig.height = 4.2}
+## reuse the same shared infections the course uses elsewhere
+infections <- make_daily_infections(infection_times)$infections
+n <- length(infections)
+
+case_delay  <- censored_delay_pmf(rgamma, max = 10, shape = 3,  rate = 1)
+death_delay <- censored_delay_pmf(rgamma, max = 21, shape = 16, rate = 1)
+ww_delay    <- censored_delay_pmf(rgamma, max = 10, shape = 2,  rate = 1)
+
+## scalings chosen only so the illustrative count streams are visible
+obs <- tibble(
+  day = seq_len(n),
+  infections = infections,
+  cases  = rpois(n, 0.4  * convolve_with_delay(infections, case_delay)),
+  deaths = rpois(n, 0.05 * convolve_with_delay(infections, death_delay)),
+  ww     = rnorm(n, log(2 * convolve_with_delay(infections, ww_delay)), 0.2)
+)
+
+obs |>
+  pivot_longer(c(infections, cases, deaths, ww),
+               names_to = "stream", values_to = "value") |>
+  mutate(stream = factor(stream,
+    levels = c("infections", "cases", "deaths", "ww"),
+    labels = c("Infections (latent)", "Cases", "Deaths", "Wastewater (log)"))) |>
+  ggplot(aes(day, value)) +
+  geom_line(linewidth = 0.8, colour = "#447099") +
+  facet_wrap(~stream, scales = "free_y", nrow = 1) +
+  labs(x = "Day", y = NULL)
+```
+
+Each stream is a delayed, rescaled echo of the same infection curve.
+
+### Parallel observation of shared infections {.smaller}
+
+*One* way to combine them: every stream is its own convolution *of the shared latent infections*, conditionally independent given $I$.
+
+$$
+\text{cases}_t \sim f\big(\text{convolve}(I, p_\text{cases})\big), \quad
+\text{deaths}_t \sim g\big(\text{convolve}(I, p_\text{deaths})\big)
+$$
+
+```{=html}
+<div style="display:flex;justify-content:center;margin-top:0.4em;">
+<svg viewBox="0 0 880 380" width="100%" style="max-width:800px;font-family:inherit;" role="img" aria-label="A shared latent infection process drives cases, deaths and wastewater, each through its own delay and scaling.">
+  <defs>
+    <marker id="mds-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7b"/>
+    </marker>
+  </defs>
+  <g stroke="#5b6b7b" stroke-width="2" fill="none" marker-end="url(#mds-arrow)">
+    <path d="M440,74 L440,142"/>
+    <path d="M400,200 C300,238 205,244 162,284"/>
+    <path d="M440,202 L440,284"/>
+    <path d="M480,200 C580,238 685,244 728,284"/>
+  </g>
+  <g font-size="13.5" fill="#374553" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">
+    <text x="243" y="250">delay + ascertainment</text>
+    <text x="470" y="250">delay + IFR</text>
+    <text x="648" y="250">delay + scaling</text>
+  </g>
+  <g text-anchor="middle">
+    <rect x="318" y="22" width="244" height="52" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="53" font-size="16" fill="#1d2b3a">R<tspan baseline-shift="sub" font-size="11">t</tspan> (geometric random walk)</text>
+    <rect x="303" y="146" width="274" height="56" rx="9" fill="#2c7fb8" stroke="#1d5a86" stroke-width="1.5"/>
+    <text x="440" y="180" font-size="16.5" font-weight="600" fill="#ffffff">Shared latent infections I</text>
+    <rect x="62" y="286" width="200" height="56" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="162" y="320" font-size="16" fill="#1d2b3a">Cases</text>
+    <rect x="340" y="286" width="200" height="56" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="320" font-size="16" fill="#1d2b3a">Deaths</text>
+    <rect x="628" y="286" width="200" height="56" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="728" y="320" font-size="16" fill="#1d2b3a">Wastewater</text>
+  </g>
+</svg>
+</div>
+```
+
+Infections become the *one* shared quantity that every stream informs.
+
+### Build it in parts
+
+One Stan model, three `use_*` switches — fit any subset of streams:
+
+1. **Each stream on its own** — does it recover infections through its delay and scaling?
+2. **Link two streams** — cases + deaths share one infection process
+3. **Add the third** — wastewater too; infections and $R_t$ informed by all
+4. **Stress-test** — what happens when streams *conflict*?
+
+### What each stream buys you
+
+- **Cases** pin down the *recent* trajectory (short delay)
+- **Deaths** are uncertain near the present (long delay), but anchor the level
+- Together they constrain infections better than either alone
+
+. . .
+
+But the *absolute level* stays weakly identified: streams constrain infections $\times$ scaling, not each separately. (The workflow's **identifiability** arrow.)
+
+### When streams conflict
+
+Each stream implies its own answer to *"what did infections look like?"*.
+
+Streams **conflict** when those implied trajectories can't both come from one $R_t$ path:
+
+- changing ascertainment (testing policy)
+- mis-specified delays or scalings (e.g. drifting IFR)
+- genuinely different populations
+
+```{r conflict-fork, echo = FALSE, fig.width = 8.5, fig.height = 4}
+## Schematic: each stream implies its own infection trajectory. Up to the peak
+## they agree; after it the constant-scaling deaths imply a rising epidemic while
+## cases and wastewater imply a falling one -- no single curve can satisfy both.
+day <- 1:40
+peak <- 20
+shared <- 100 * dnorm(day, peak, 7) / max(dnorm(day, peak, 7)) + 5
+cases_implied  <- shared
+deaths_implied <- ifelse(day <= peak, shared, shared[peak] * (1 + 0.05 * (day - peak)))
+
+fork <- tibble(
+  day,
+  `implied by cases + wastewater` = cases_implied,
+  `implied by deaths` = deaths_implied
+) |>
+  pivot_longer(-day, names_to = "stream", values_to = "infections")
+
+gap <- tibble(day, lo = pmin(cases_implied, deaths_implied),
+              hi = pmax(cases_implied, deaths_implied)) |>
+  filter(day >= peak)
+
+ggplot(fork, aes(day, infections, colour = stream)) +
+  geom_ribbon(data = gap, inherit.aes = FALSE,
+              aes(day, ymin = lo, ymax = hi), fill = "#c0392b", alpha = 0.12) +
+  geom_line(linewidth = 1.2) +
+  annotate("text", x = 30, y = 150,
+           label = "no single infection curve\ncan satisfy both",
+           colour = "#c0392b", size = 4.5, lineheight = 0.95) +
+  scale_colour_manual(
+    values = c("implied by cases + wastewater" = "#447099",
+               "implied by deaths" = "#c0392b")) +
+  labs(x = "Day", y = "Implied infections", colour = NULL) +
+  theme(legend.position = "top")
+```
+
+### Conflict distorts the joint fit
+
+A single shared $I$ can't be both falling (cases, wastewater) and rising (deaths), so the model **splits the difference** — and $R_t$ is faithful to no stream.
+
+It surfaces in three linked ways:
+
+1. **Poor fit to one stream** (posterior predictive check)
+2. **Tension in the shared infections** (distorted, more uncertain)
+3. **Degraded sampling** (divergences, low ESS, high `rhat`)
+
+### Resolving conflict
+
+A shared latent process *surfaces* conflict and gives a compromise — it does **not** resolve it.
+
+Genuine resolution = model the *reason* the streams disagree:
+
+- **Diagnose, don't average** — which stream, which assumption?
+- **Relax the offending assumption** — e.g. time-varying ascertainment / IFR
+- **Compare models** — does the conflict resolve?
+- **Down-weight or drop** — last resort, only once you know *why*
+
+This loop *is* the modelling workflow.
+
+## `r fontawesome::fa("laptop-code", "white")` Your Turn {background-color="#447099" transition="fade-in"}
+
+1. Simulate parallel streams from one shared infection trajectory
+2. Fit each stream alone, then link them through the shared infections
+3. Recover infections and $R_t$ from the joint fit
+4. Make the deaths conflict, see the joint model surface it, then resolve it by modelling the mechanism
+
+#
+
+[Return to the session](../multiple-data-streams)
