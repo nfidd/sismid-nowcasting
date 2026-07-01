@@ -123,7 +123,7 @@ It is *one* of several tools for this kind of modelling (we point to others at t
 - An **observation** model for the likelihood linking expected to observed counts (the analogue of our Poisson likelihood for $n_{t,d}$).
 
 Each piece is specified with an R formula, so adding a day-of-week effect or a time-varying delay is a one-line change rather than a rewrite of the model.
-Under the hood `epinowcast` still builds and fits a Stan model.
+Internally, `epinowcast` still builds and fits a Stan model.
 
 ::: {.callout-tip}
 We are treating `epinowcast` as a tool here rather than dissecting its internals.
