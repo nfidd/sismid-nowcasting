@@ -244,11 +244,11 @@ Each is a convolution of the shared infections with its own delay distribution, 
 -   **Deaths**: a long infection-to-death delay, scaled by the *infection fatality ratio* (IFR).
 
 ```{r simulate_cd}
-case_delay_pmf  <- censored_delay_pmf(rgamma, max = 10, shape = 3,  rate = 1)
-death_delay_pmf <- censored_delay_pmf(rgamma, max = 14, shape = 16, rate = 1)
+case_delay_pmf  <- censored_delay_pmf(rgamma, max = 10, shape = 3, rate = 1)
+death_delay_pmf <- censored_delay_pmf(rgamma, max = 12, shape = 8, rate = 1)
 
 ascertainment <- 0.4
-ifr <- 0.01
+ifr <- 0.1
 
 exp_cases  <- ascertainment * convolve_with_delay(infections, case_delay_pmf)
 exp_deaths <- ifr * convolve_with_delay(infections, death_delay_pmf)
