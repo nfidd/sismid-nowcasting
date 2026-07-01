@@ -141,7 +141,11 @@ We build the generation time and infection time series exactly as in the [renewa
 gen_time_pmf <- make_gen_time_pmf()
 
 inf_ts <- make_daily_infections(infection_times)
-infections <- inf_ts$infections
+## We take a short window around the epidemic peak so this session -- which fits
+## seven models -- renders quickly, while keeping the full story: a clear rise,
+## peak and decline (so Rt genuinely changes) with room for the death-scaling
+## drift we introduce later.
+infections <- inf_ts$infections[64:104]
 n <- length(infections)
 I0 <- infections[1]
 
@@ -211,15 +215,18 @@ make_data <- function(cases, deaths, ww,
 A second helper switches the requested streams on and fits the model.
 We provide initial values to help the sampler, and expose `adapt_delta`: the multi-stream *joint* fits have a more difficult posterior, so for those we raise `adapt_delta` to `0.95`, the same lever used in the [joint nowcasting session](joint-nowcasting).
 The single-stream diagnostic fits are easier, so they use the course-standard default.
+To keep this session quick to run we fit **2 chains** and a shorter warmup (`iter_warmup = 250`, keeping `iter_sampling = 500`); the models still converge well at these settings.
 
 ```{r fit_helper}
 fit_streams <- function(data, use_cases, use_deaths, use_ww,
-                        adapt_delta = 0.8) {
+                        adapt_delta = 0.8, iter_warmup = 250) {
   data <- c(data, list(
     use_cases = use_cases, use_deaths = use_deaths, use_ww = use_ww
   ))
   nfidd_sample(
     mod, data = data,
+    chains = 2, parallel_chains = 2,
+    iter_warmup = iter_warmup, iter_sampling = 500,
     adapt_delta = adapt_delta,
     max_treedepth = 12,
     init = \() list(init_R = 1, rw_sd = 0.01)
@@ -238,7 +245,7 @@ Each is a convolution of the shared infections with its own delay distribution, 
 
 ```{r simulate_cd}
 case_delay_pmf  <- censored_delay_pmf(rgamma, max = 10, shape = 3,  rate = 1)
-death_delay_pmf <- censored_delay_pmf(rgamma, max = 21, shape = 16, rate = 1)
+death_delay_pmf <- censored_delay_pmf(rgamma, max = 14, shape = 16, rate = 1)
 
 ascertainment <- 0.4
 ifr <- 0.01
@@ -498,7 +505,7 @@ Under our constant-scaling model the rising deaths therefore *look like* a risin
 
 ```{r simulate_conflict}
 ## death scaling drifts up over the second half of the outbreak
-ifr_drift <- ifr * c(rep(1, 39), seq(1, 4, length.out = n - 39))
+ifr_drift <- ifr * c(rep(1, 20), seq(1, 4, length.out = n - 20))
 exp_deaths_conflict <- ifr_drift * convolve_with_delay(infections, death_delay_pmf)
 
 obs_conflict <- obs |>
