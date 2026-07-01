@@ -56,7 +56,7 @@ While examples often use outbreak scenarios for clarity, participants should con
 - understanding of the difference between parallel (conditionally independent given infections) and sequential modelling of streams
 - familiarity with extending the renewal-with-delays model to several parallel observation streams with their own delays, scalings and likelihoods
 - understanding of the joint estimation of $R_t$ and infections from cases, deaths and a wastewater signal
-- awareness of the data-conflict problem and how a shared latent process reconciles disagreeing streams
+- awareness of the data-conflict problem and how a shared latent process maybe used to reconcile disagreeing streams
 
 ## Combining nowcasting and forecasting (bridge to the forecasting course)
 
