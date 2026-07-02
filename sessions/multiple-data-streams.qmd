@@ -155,6 +155,17 @@ ggplot(inf_df, aes(x = day, y = infections)) +
   labs(title = "Shared latent infections", x = "Day", y = "Infections")
 ```
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: one shared infection process
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/renewal-equation.html?embed=mechanic" title="the renewal equation interactive" loading="lazy" style="width:100%;height:750px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Drive one epidemic with R(t) and a generation interval to see the single shared trajectory every stream in this session observes.
+:::
+
 We will layer the observation models on top of these shared infections one stream at a time, simulating each stream only at the point we introduce it.
 
 # Building the model in parts
@@ -273,6 +284,17 @@ obs |>
   labs(title = "Shared infections and the two count streams",
        x = "Day", y = NULL)
 ```
+
+::: {.callout-tip .optional collapse="true"}
+## Interactive: from infections to a stream
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/convolutions.html?embed=sum" title="convolutions interactive" loading="lazy" style="width:100%;height:750px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Slide the flipped delay kernel across the shared infections, multiply, and sum to trace out the delayed, rescaled echo each stream observes.
+:::
 
 Before combining anything, we check that each stream, on its own, can recover the shared infection process through its own delay and scaling.
 We assemble the data (using a placeholder wastewater stream for now) and fit the cases stream alone, then the deaths stream alone.

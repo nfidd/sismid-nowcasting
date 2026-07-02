@@ -316,6 +316,17 @@ To do this we need to regenerate the Rt samples for the additional days, and the
 
 :::
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: forecasting by projecting R(t)
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/renewal-equation.html?embed=mechanic" title="the renewal equation interactive" loading="lazy" style="width:100%;height:750px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Keep driving R(t) forward past the data to see how projecting the renewal process turns an estimation model into a forecast.
+:::
+
 Now we fit the model to estimate Rt and forecast:
 
 ```{r complete-data-fit, results = 'hide', message = FALSE}
