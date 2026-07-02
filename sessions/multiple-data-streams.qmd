@@ -41,7 +41,7 @@ library("tidybayes")
 library("purrr")
 ```
 
-::: callout-tip
+::: {.callout-tip}
 The best way to interact with the material is via the [Visual Editor](https://docs.posit.co/ide/user/ide/guide/documents/visual-editor.html) of RStudio.
 :::
 
@@ -92,7 +92,7 @@ Reading the diagram from the bottom-left, an ideal model for our question is ass
 The ideal model, then, is *modular*: a shared process model with a separate, swappable observation model for each data source, combined by an explicit integration choice.
 That modularity is what lets us **build it in parts**, which is what we do next: fit each observation model on its own, make the integration choice that links them, then stress-test that choice.
 
-::: callout-note
+::: {.callout-note}
 ## Parallel (joint) vs sequential modelling
 
 The "data integration choices" box hides a decision about how the streams relate to each other.
@@ -169,7 +169,7 @@ mod <- nfidd_cmdstan_model("estimate-inf-and-r-multi-stream")
 mod
 ```
 
-::: callout-tip
+::: {.callout-tip}
 ## Take 5 minutes
 
 Familiarise yourself with the model above.
@@ -311,7 +311,7 @@ ggplot(single_inf, aes(x = day)) +
        x = "Day", y = "Infections")
 ```
 
-::: callout-tip
+::: {.callout-tip}
 ## Take 2 minutes
 
 Compare the two single-stream fits.
@@ -373,7 +373,7 @@ obs <- obs |>
   mutate(ww = rnorm(n, log(exp_ww), 0.2))
 ```
 
-::: callout-note
+::: {.callout-note}
 ## Take 2 minutes
 
 The wastewater stream is modelled on the *log* scale with log-normal noise, whereas cases and deaths are counts with a Poisson model.
@@ -461,7 +461,7 @@ ggplot(r_posterior, aes(x = day, y = .value, group = .draw)) +
        subtitle = "Joint model fit to all three streams")
 ```
 
-::: callout-tip
+::: {.callout-tip}
 ## Take 2 minutes
 
 Look at the scaling parameters (`ascertainment`, `ifr`, `ww_scale`) in the model summary above.
@@ -550,7 +550,7 @@ ggplot(
   theme(legend.position = "bottom")
 ```
 
-::: callout-tip
+::: {.callout-tip}
 ## Take 2 minutes
 
 How does the $R_t$ estimate change when the deaths stream conflicts with the others?
@@ -610,7 +610,7 @@ When the geometry of the posterior is contorted by trying to satisfy contradicto
 In practice this surfaces as divergent transitions, low effective sample sizes, or high `rhat` in the fit summary.
 It is always worth scanning the diagnostics of the conflicting fit (`fit_conflict`) and comparing them to the clean fit: sampler complaints are not just a computational nuisance, they can be a signature of a misspecified model.
 
-::: callout-tip
+::: {.callout-tip}
 ## Take 5 minutes
 
 Look at the posterior predictive plot and at the diagnostics of `fit_conflict` (the `rhat` and `ess_bulk` columns in `fit_conflict`, and any divergence warnings).
@@ -633,7 +633,7 @@ It is worth being clear about what the shared latent process does and does not d
 Sharing one infection process across streams *surfaces* a conflict (the symptoms above) and yields a single compromise estimate, but it does not *resolve* the disagreement: the compromise is faithful to no stream and, as we have seen, can be actively misleading about $R_t$.
 Genuine resolution comes from modelling the *reason* the streams disagree, not from averaging the streams together.
 
-::: callout-note
+::: {.callout-note}
 ## Options for resolving conflict
 
 When a principled model check flags conflict between data sources, there are a handful of standard responses [@presanis2013conflict; @deangelis2018analysing; @gelman2020bayesian]:
@@ -720,7 +720,7 @@ fit_resolved |>
        x = "Day", y = "Death scaling")
 ```
 
-::: callout-tip
+::: {.callout-tip}
 ## Take 5 minutes
 
 Compare the two fits.
