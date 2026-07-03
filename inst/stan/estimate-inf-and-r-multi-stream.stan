@@ -2,6 +2,32 @@ functions {
   #include "functions/convolve_with_delay.stan"
   #include "functions/renewal.stan"
   #include "functions/geometric_random_walk.stan"
+
+  // Renewal equation with a seeded initial history. The shared renewal()
+  // starts from a single scalar I0, which is fine at the start of an epidemic
+  // but collapses to near zero when (as here) we start mid-outbreak: the first
+  // few days only "see" that single seed through a truncated generation-time
+  // window. This variant instead takes a full initial history (`seed`, one
+  // value per day) so the convolution window is complete from the first
+  // observed day and the estimated infections start at the right level. The
+  // recursion is otherwise identical to renewal().
+  array[] real renewal_seeded(array[] real seed, array[] real R,
+                              array[] real gen_time) {
+    int seed_n = num_elements(seed);
+    int n = num_elements(R);
+    int max_gen_time = num_elements(gen_time); // gen_time starts at day 1
+    array[seed_n + n] real I;
+    I[1:seed_n] = seed;
+    for (i in 1:n) {
+      int t = seed_n + i;                       // current day in full series
+      int first = max(1, t - max_gen_time);
+      int len = t - first;                      // past days contributing
+      array[len] real segment = I[first:(t - 1)];
+      array[len] real gen_pmf = reverse(gen_time[1:len]);
+      I[t] = dot_product(segment, gen_pmf) * R[i];
+    }
+    return I[(seed_n + 1):(seed_n + n)];        // observed window only
+  }
 }
 
 data {
@@ -54,6 +80,11 @@ data {
 }
 
 parameters {
+  // seed for the initial infection history: a level near the start of the
+  // window and an exponential growth rate, used to build a full history over
+  // gen_time_max days so the renewal starts at the right level, not near zero.
+  real<lower = 0> seed_base;       // infections at the start of the window
+  real initial_growth;             // daily (log) growth rate over the seed
   real<lower = 0> init_R;          // initial reproduction number
   array[n-1] real rw_noise;        // random walk noise
   real<lower = 0> rw_sd;           // random walk standard deviation
@@ -73,7 +104,15 @@ parameters {
 transformed parameters {
   // one shared infection / Rt process feeds every stream
   array[n] real R = geometric_random_walk(init_R, rw_noise, rw_sd);
-  array[n] real infections = renewal(I0, R, gen_time_pmf);
+  // seed a full gen_time_max-day initial history by exponential growth, so the
+  // renewal starts at the right level instead of collapsing from a single I0.
+  array[gen_time_max] real seed_infections;
+  for (t in 1:gen_time_max) {
+    seed_infections[t] =
+      seed_base * exp(initial_growth * (t - gen_time_max));
+  }
+  array[n] real infections =
+    renewal_seeded(seed_infections, R, gen_time_pmf);
 
   // death scaling: either constant (ifr) or a geometric random walk starting
   // from ifr, which lets a drifting severity be absorbed rather than forced
@@ -103,6 +142,10 @@ transformed parameters {
 
 model {
   // priors
+  // seed the initial history near the observed starting level I0, with a
+  // weak prior on the initial growth rate.
+  seed_base ~ normal(I0, I0) T[0, ];
+  initial_growth ~ normal(0, 0.2);
   init_R ~ normal(1, 0.5) T[0, ];
   rw_noise ~ std_normal();
   rw_sd ~ normal(0, 0.05) T[0, ];
@@ -116,7 +159,7 @@ model {
   cases_overdispersion ~ normal(0, 1) T[0, ];
   if (tv_death_scale) {
     ifr_rw_noise ~ std_normal();
-    ifr_rw_sd ~ normal(0, 0.1);   // half-normal via <lower = 0> on the parameter
+    ifr_rw_sd ~ normal(0, 0.1);   // half-normal via <lower = 0> on parameter
   }
 
   // joint likelihood: each stream contributes its own term off infections,
@@ -136,5 +179,27 @@ model {
   }
   if (use_ww) {
     ww ~ normal(log(exp_ww), ww_sigma);
+  }
+}
+
+generated quantities {
+  // posterior predictive draws WITH observation error, from each stream's own
+  // likelihood. These are the full predictive distribution (not the expected
+  // signal exp_*), so posterior predictive checks compare like with like:
+  // cases as negative-binomial (or Poisson) counts, deaths as Poisson counts,
+  // wastewater on the log scale as normal draws.
+  array[n] int pp_cases;
+  array[n] int pp_deaths;
+  array[n] real pp_ww;
+  for (i in 1:n) {
+    if (use_nb_cases) {
+      pp_cases[i] = neg_binomial_2_rng(
+        exp_cases[i], inv_square(cases_overdispersion)
+      );
+    } else {
+      pp_cases[i] = poisson_rng(exp_cases[i]);
+    }
+    pp_deaths[i] = poisson_rng(exp_deaths[i]);
+    pp_ww[i] = normal_rng(log(exp_ww[i]), ww_sigma);
   }
 }
