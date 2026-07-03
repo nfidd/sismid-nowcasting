@@ -314,7 +314,8 @@ latest_obs <- enw_latest_data(to_enw_format(reporting_triangle))
 plot(course_nowcast, latest_obs = latest_obs)
 ```
 
-As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete: the nowcast (median and credible intervals) fills in the gap up to the eventually-observed counts (the points), which is exactly the right truncation the nowcast corrects for.
+As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete: the nowcast (median and credible intervals) fills in the gap up to the eventually-observed counts (the points).
+This gap is the right truncation the nowcast corrects for.
 This default plot is the nowcast by *reference* date.
 `epinowcast` can also plot the model's posterior predictions against the data that were reported at the time with `type = "posterior_prediction"`, which we facet by reference date to check the fit within each date's accumulating reports.
 

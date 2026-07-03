@@ -125,7 +125,7 @@ The choice hinges on whether the streams are better seen as independent observat
 
 These choices have different consequences for the answer.
 In a **sequential** model any bias or under-reporting in the upstream stream flows straight into the downstream estimate; because the upstream is treated as known, those errors cannot be corrected and the downstream uncertainty is understated.
-In a **parallel** model all streams jointly inform the shared infections with propagated uncertainty, and genuine disagreement is not silently absorbed: it shows up as misfit you can diagnose, which is exactly the conflict we examine later in this session.
+In a **parallel** model all streams jointly inform the shared infections with propagated uncertainty, and genuine disagreement is not silently absorbed: it shows up as misfit you can diagnose, the conflict we examine later in this session.
 
 We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every stream informs.
 :::
