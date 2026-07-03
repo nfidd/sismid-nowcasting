@@ -169,13 +169,21 @@ This is the same reporting triangle we have been using, just with calendar dates
 We attach arbitrary calendar dates (so that, later, weekends line up with a day-of-week effect) and let `epinowcast`'s own `enw_add_cumulative()` form the cumulative counts from the incident `new_confirm` column, rather than computing the cumulative sum by hand.
 Because we reuse this transformation in each example below, we wrap it in a small helper.
 
+Our simulation already generates every report an onset will ever receive (all delays $d = 0, \ldots, 15$), so `to_enw_format()` formats the *complete* eventually-reported data.
+From that one complete data set we derive the two things we need with `epinowcast`'s own functions rather than truncating by hand:
+
+- the data available **as of the nowcast**, which we fit to, using `enw_filter_report_dates()` to keep only reports that had arrived by the nowcast date;
+- the **eventually-reported** data, which we judge the nowcast against, using `enw_latest_data()` to take the most recent report for each reference date.
+
 ```{r to-enw-helper}
 # Day 0 of the simulation is a Monday
 ref_date0 <- as.Date("2023-01-02")
+# The nowcast is made once reports up to this date are in
+nowcast_date <- ref_date0 + (cutoff - 1)
 
+# Format the complete (eventually-reported) data in epinowcast's long format
 to_enw_format <- function(triangle) {
   triangle |>
-    filter(reported_day <= max(day)) |>
     transmute(
       reference_date = ref_date0 + day,
       report_date = ref_date0 + reported_day,
@@ -186,9 +194,17 @@ to_enw_format <- function(triangle) {
     enw_add_cumulative()
 }
 
-enw_long <- to_enw_format(reporting_triangle)
+# The as-of-nowcast snapshot we fit to: drop reports that arrived later
+enw_long <- enw_filter_report_dates(
+  to_enw_format(reporting_triangle), latest_date = nowcast_date
+)
 head(enw_long)
 ```
+
+::: {.callout-tip}
+`enw_filter_report_dates()` plus `enw_latest_data()` makes the two data sets explicit, which is why we use them here.
+`enw_retrospective()` is a one-shot helper that produces an as-of-nowcast snapshot and its eventual-data comparison together, and is worth knowing about for real analyses.
+:::
 
 ::: {.callout-note}
 ## Take 2 minutes
@@ -211,10 +227,24 @@ Each `reference_date` is a row of the triangle, each `report_date` gives a colum
 pobs <- enw_preprocess_data(enw_long, max_delay = 15)
 ```
 
-The preprocessed object has its own `plot()` method, which shows the reporting triangle we are about to model: each line is a reference date, and the cumulative count climbs as later reports arrive.
+The preprocessed object has its own `plot()` method.
+By default it shows the latest observed notifications by reference date (`type = "obs"`), which is the incomplete picture the nowcast will correct.
 
 ```{r preprocess-plot}
 plot(pobs)
+```
+
+The same method also exposes `epinowcast`'s delay diagnostics through the `type` argument, which are worth inspecting before fitting.
+`type = "delay_cumulative"` shows the empirical cumulative proportion reported by delay, so we can see how quickly reports accumulate and check that our `max_delay` is long enough to capture most of the distribution.
+
+```{r preprocess-delay-cumulative}
+plot(pobs, type = "delay_cumulative")
+```
+
+`type = "delay_fraction"` shows the same information as a heatmap of the fraction reported by delay and reference date, which makes any drift in the delay over time easier to spot.
+
+```{r preprocess-delay-fraction}
+plot(pobs, type = "delay_fraction")
 ```
 
 Now we specify the model.
@@ -276,7 +306,8 @@ Everything that follows is an extension of one of these modules, or the addition
 ## Plotting the nowcast
 
 `epinowcast` objects come with `plot()` and `summary()` methods, so we do not have to extract draws by hand as we did with our bespoke fits.
-To judge the nowcast we want to compare it against what was *eventually* reported, so we build the latest (most complete) version of the data with `enw_latest_data()` and pass it to `plot()` via `latest_obs`.
+To judge the nowcast we want to compare it against what was *eventually* reported, so we take the latest report for each reference date from the complete data with `enw_latest_data()` and pass it to `plot()` via `latest_obs`.
+Building the comparison data from the complete data matters: if we built it from the truncated snapshot we fit to (`enw_long`), the "eventually observed" points would just reproduce the incomplete nowcast-era counts and the plot would not tell us whether the nowcast was any good.
 
 ```{r course-plot}
 latest_obs <- enw_latest_data(to_enw_format(reporting_triangle))
@@ -284,20 +315,29 @@ plot(course_nowcast, latest_obs = latest_obs)
 ```
 
 As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete: the nowcast (median and credible intervals) fills in the gap up to the eventually-observed counts (the points), which is exactly the right truncation the nowcast corrects for.
-The plotting methods are much more flexible than this; see the [`epinowcast` plotting documentation](https://package.epinowcast.org/reference/plot.epinowcast.html) for options such as plotting particular reference dates or the posterior predictive fit.
+This default plot is the nowcast by *reference* date.
+`epinowcast` can also plot the model's posterior predictions against the data that were reported at the time with `type = "posterior_prediction"`, which we facet by reference date to check the fit within each date's accumulating reports.
+
+```{r course-plot-pp}
+plot(course_nowcast, type = "posterior_prediction") +
+  facet_wrap(vars(reference_date), scales = "free")
+```
+
+The plotting methods are more flexible still; see the [`epinowcast` plotting documentation](https://package.epinowcast.org/reference/plot.epinowcast.html) for further options.
 
 # Extending the model: day-of-week effects
 
 Now we add a complication the bespoke model could not handle comfortably.
-Real data carry *two* distinct day-of-week patterns, and it helps to keep them separate.
+A day-of-week pattern can enter the data in *three* distinct places, and it helps to keep them separate because each belongs in a different module.
 
-- A **reference-date** effect: events genuinely happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends.
-- A **report-date** effect: the reporting system processes reports at different rates by day of week, so fewer reports land at weekends regardless of when the onset occurred.
+- A **reference-date effect on the expected counts**: events genuinely happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends. This belongs in `enw_expectation()`.
+- A **reference-date effect on the delay**: the reporting *delay distribution* itself differs by the day of week an event occurred, for example weekend onsets take longer to be reported than weekday onsets. This belongs in `enw_reference()`.
+- A **report-date effect**: the reporting system processes reports at different rates by day of week, so fewer reports land at weekends regardless of when the onset occurred. This belongs in `enw_report()`.
 
-We build a simulation with both, one step at a time, so it is clear how each effect enters the data.
+We build a simulation with all three, one step at a time, so it is clear how each effect enters the data.
 Assume day 0 of the simulation is a Monday, so day of week is `day %% 7` (0 = Monday).
 
-We start from the underlying onsets and apply a **reference-date** day-of-week effect, thinning the expected onsets by a weekly weight on the onset day.
+We start from the underlying onsets and apply a **reference-date** day-of-week effect on the expected counts, thinning the expected onsets by a weekly weight on the onset day.
 
 ```{r dow-reference}
 # Multiplicative weekly weights for Mon, Tue, ..., Sun
@@ -312,15 +352,27 @@ dow_onsets <- onset_df |>
   )
 ```
 
-Next we apply the **reporting delay** to spread each day's onsets over later report days, exactly as in the course model.
+Next we apply the **reporting delay**, but now we let the delay depend on the onset day of week: weekend onsets are reported with a longer delay (a larger `meanlog`) than weekday onsets.
+This is a reference-date effect on the *delay* rather than on the counts.
 
 ```{r dow-delay}
+# Longer delay for weekend onsets (Sat, Sun): a reference-date delay effect
+delay_meanlog_dow <- c(1, 1, 1, 1, 1, 1.4, 1.4)
+
 dow_delayed <- dow_onsets |>
+  rowwise() |>
   mutate(
     reporting_delay = list(
-      tibble(d = 0:15, reporting_delay = reporting_delay_pmf)
+      tibble(
+        d = 0:15,
+        reporting_delay = censored_delay_pmf(
+          rlnorm, max = 15,
+          meanlog = delay_meanlog_dow[ref_dow + 1], sdlog = 0.5
+        )
+      )
     )
   ) |>
+  ungroup() |>
   unnest(reporting_delay) |>
   mutate(reported_day = day + d)
 ```
@@ -348,10 +400,11 @@ ggplot(reports_by_day, aes(x = reported_day, y = reports)) +
   labs(x = "Report day", y = "Reports", title = "Reports by report day")
 ```
 
-The two effects act on different dates.
-The reference-date effect changes *when events happen* (the onset day), so it belongs in the model for the expected counts.
+The three effects act on different things.
+The reference-date effect on the counts changes *when events happen* (the onset day), so it belongs in the model for the expected counts.
+The reference-date effect on the delay changes *how long reporting takes* for events on a given onset day, so it belongs in the delay (reference) module.
 The report-date effect changes *when reports are processed* (the report day), so it belongs in a separate report-date module, which our bespoke $p_{t,d}$ (a function of delay $d$ alone) had no way to express.
-`epinowcast` lets us add both in one model.
+`epinowcast` lets us add all three in one model.
 
 These extended models have a slightly harder posterior, so for them we add `adapt_delta = 0.95` to the fitting options (just as we did for the harder joint model in the [joint nowcasting session](joint-nowcasting)).
 
@@ -366,13 +419,17 @@ fit_opts_hard <- enw_fit_opts(
 ```
 
 ```{r dow-fit, message = FALSE, results = "hide"}
-dow_pobs <- enw_preprocess_data(to_enw_format(dow_triangle), max_delay = 15)
+dow_long <- enw_filter_report_dates(
+  to_enw_format(dow_triangle), latest_date = nowcast_date
+)
+dow_pobs <- enw_preprocess_data(dow_long, max_delay = 15)
 
 dow_nowcast <- epinowcast(
   dow_pobs,
   # Reference-side day-of-week effect on the expected onsets
   expectation = enw_expectation(~ rw(day) + day_of_week, data = dow_pobs),
-  reference = enw_reference(~ 1, data = dow_pobs),
+  # Reference-side day-of-week effect on the delay distribution
+  reference = enw_reference(~ day_of_week, data = dow_pobs),
   # Report-side day-of-week reporting effect
   report = enw_report(~ (1 | day_of_week), data = dow_pobs),
   obs = enw_obs(family = "poisson", data = dow_pobs),
@@ -387,16 +444,18 @@ plot(dow_nowcast, latest_obs = dow_latest)
 
 ::: {.callout-note}
 ## Take 3 minutes
-This model carries two day-of-week terms: `day_of_week` in the expectation module and `(1 | day_of_week)` in the report module.
+This model carries three day-of-week terms: `day_of_week` in the expectation module, `day_of_week` in the reference (delay) module, and `(1 | day_of_week)` in the report module.
 Why are these different effects, and why was the report-date one awkward to add to the hand-rolled Stan model?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
-The two terms act on different dates.
+The three terms act on different parts of the process.
 `day_of_week` in `enw_expectation()` models genuine variation in *when events occur* by reference (onset) day of week.
+`day_of_week` in `enw_reference()` lets the *delay distribution* differ by reference day of week, capturing that (here) weekend onsets are reported more slowly; it changes the shape of the delay for those onset days, not how many onsets there are.
 `(1 | day_of_week)` in `enw_report()` is a random effect on the *report* date, one level per day of the week, scaling how many reports are processed on each calendar day; it absorbs the weekly reporting dip so it does not distort the nowcast of the underlying onsets.
+The two reference-date terms both key on the onset day of week but are still separable because one shifts the level of onsets and the other reshapes their delay; fitted together on this simulation the sampler converges without trouble.
 In the bespoke model the reporting probabilities depended only on the delay $d$ and had to sum to one for each reference date, so making them also depend on the calendar day of the report (while staying a valid distribution) meant restructuring the whole delay component.
 Here each effect is one extra formula on the relevant module.
 :::
@@ -442,7 +501,10 @@ We therefore deliberately choose a *flexible* model, a random walk on the delay 
 :::
 
 ```{r tvd-fit, message = FALSE, results = "hide"}
-tvd_pobs <- enw_preprocess_data(to_enw_format(tvd_triangle), max_delay = 15)
+tvd_long <- enw_filter_report_dates(
+  to_enw_format(tvd_triangle), latest_date = nowcast_date
+)
+tvd_pobs <- enw_preprocess_data(tvd_long, max_delay = 15)
 
 tvd_nowcast <- epinowcast(
   tvd_pobs,
@@ -477,7 +539,15 @@ This is the same flexibility we used for the expectation module, applied to the 
 
 For our third worked example the data are *reported* less often than they occur.
 Many surveillance systems release updates weekly rather than daily, so counts arrive in weekly batches even though events happen every day.
-`epinowcast` supports this directly through a non-daily timestep, documented for the [`enw_aggregate_cumulative()`](https://package.epinowcast.org/reference/enw_aggregate_cumulative.html) converter and the `timestep` argument of [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html); we build on that rather than inventing our own scheme.
+There are two ways to handle this in `epinowcast`, and they trade resolution against simplicity.
+
+- **Weekly reporting of weekly data ("weekly-weekly").** Aggregate everything to a weekly timestep and model a weekly process. This is the simplest and cheapest option, but it can only ever produce weekly nowcasts.
+- **Weekly reporting of daily data ("weekly-daily").** Keep a daily process but tell the model that reports only land once a week, using a *structural* reporting schedule. This recovers daily resolution from weekly reports at a higher computational cost.
+
+We show both here on the same simulated series.
+`epinowcast`'s [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) works through these patterns in full, including a daily benchmark and a scoring comparison; we give the compact version and link there rather than reproducing all of it.
+
+## Weekly-weekly
 
 We reuse the course reporting triangle and aggregate it to a weekly reporting schedule with `enw_aggregate_cumulative()`, which sums both reference and report dates into weekly steps.
 
@@ -508,23 +578,94 @@ weekly_nowcast <- epinowcast(
 )
 ```
 
+As before we compare against the eventually-complete data, aggregated to the same weekly timestep.
+
 ```{r weekly-result-plot}
-weekly_latest <- enw_latest_data(weekly_long)
+weekly_latest <- enw_latest_data(
+  enw_aggregate_cumulative(
+    to_enw_format(reporting_triangle), timestep = "week"
+  )
+)
 plot(weekly_nowcast, latest_obs = weekly_latest)
 ```
 
+## Weekly-daily (structural reporting)
+
+Now we keep the *daily* process but model the fact that reports only arrive once a week.
+The idea is to build a daily grid where the cumulative count is only observed on the reporting day (here Wednesday) and carried forward on the other days, then tell the model which cells are genuine observations.
+We start from the daily reporting triangle we fit to, blank out the non-Wednesday cumulative counts, and let `enw_impute_na_observations()` carry the last Wednesday value forward; `enw_flag_observed_observations()` records which cells are real in a `.observed` column.
+
+```{r weekly-daily-scaffold}
+weekly_rep_data <- enw_complete_dates(enw_long, timestep = "day")
+weekly_rep_data[, day_of_week := weekdays(report_date)]
+weekly_rep_data[
+  , confirm := fifelse(day_of_week == "Wednesday", confirm, NA_real_)
+]
+weekly_rep_data <- weekly_rep_data |>
+  enw_flag_observed_observations() |>
+  enw_impute_na_observations() |>
+  enw_filter_reference_dates_by_report_start() |>
+  enw_add_incidence()
+
+weekly_rep_pobs <- weekly_rep_data |>
+  enw_complete_dates(timestep = "day") |>
+  enw_preprocess_data(max_delay = 15, timestep = "day")
+```
+
+We describe the known Wednesday-only reporting cycle with `enw_dayofweek_structural_reporting()` and pass it to `enw_report()` through its `structural` argument instead of a formula.
+Because most daily cells are imputed rather than observed, we also point the observation model at the `.observed` indicator so the likelihood only uses the real Wednesday reports.
+
+```{r weekly-daily-fit, message = FALSE, results = "hide"}
+# Structural variants need a little less adapt_delta and more tree depth
+fit_opts_structural <- enw_fit_opts(
+  save_warmup = FALSE, pp = TRUE,
+  chains = 4, parallel_chains = 4,
+  iter_warmup = 500, iter_sampling = 500,
+  adapt_delta = 0.9, max_treedepth = 12,
+  show_messages = FALSE, refresh = 0
+)
+
+structural <- enw_dayofweek_structural_reporting(
+  weekly_rep_pobs, day_of_week = "Wednesday"
+)
+
+weekly_daily_nowcast <- epinowcast(
+  weekly_rep_pobs,
+  expectation = enw_expectation(
+    ~ rw(week) + (1 | day_of_week), data = weekly_rep_pobs
+  ),
+  report = enw_report(structural = structural, data = weekly_rep_pobs),
+  obs = enw_obs(
+    family = "poisson", observation_indicator = ".observed",
+    data = weekly_rep_pobs
+  ),
+  fit = fit_opts_structural
+)
+```
+
+The nowcast is now on the daily scale even though reports only arrived weekly, so we compare it against the eventually-complete daily data.
+
+```{r weekly-daily-plot}
+weekly_daily_latest <- enw_latest_data(to_enw_format(reporting_triangle))
+plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest)
+```
+
+The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a harder fit.
+The [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) scores these approaches against a fully daily benchmark if you want to see how much each one gives up.
+
 ::: {.callout-note}
 ## Take 3 minutes
-We did not change the model formulas at all here, only `timestep = "week"` in preprocessing.
-Why is the reporting schedule a property of the *data* rather than of the model, and what would go wrong if we treated weekly data as if it were daily?
+The weekly-weekly model only changed `timestep = "week"` in preprocessing, while the weekly-daily model kept a daily timestep and instead described the reporting schedule with a structural report module.
+Why is the reporting schedule a property of the *data* rather than of the model, and what does the weekly-daily approach buy you over aggregating to weeks?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
 The reporting schedule describes *when reports arrive*, which is a feature of how the data were collected, so it belongs to the data and its timestep.
-The same expectation and delay modules apply whether the data are daily or weekly; `epinowcast` just maps the delay onto the chosen timestep.
-If we treated weekly batches as daily we would tell the model that almost every day had zero reports with occasional spikes, badly misrepresenting the delay distribution and the completeness of recent data.
+The weekly-weekly approach maps both the process and the delay onto a weekly grid, which is simple and cheap but can only produce weekly nowcasts and gives the process model few points to learn from.
+The weekly-daily approach keeps a daily latent process and encodes the once-a-week reporting through the structural report module, so it recovers daily resolution from weekly reports; the cost is a larger daily reporting triangle and a harder fit.
+If we instead treated weekly batches as if they were ordinary daily data we would tell the model that almost every day had zero reports with occasional spikes, badly misrepresenting the delay distribution and the completeness of recent data.
 :::
 
 # Other reporting complications
@@ -554,10 +695,11 @@ This session only scratches the surface of what `epinowcast` can do, and `epinow
 `epinowcast` has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:
 
 - The [`epinowcast` package website](https://package.epinowcast.org/) [@epinowcastPackage2024], including its [model description](https://package.epinowcast.org/articles/model.html) and the [getting started vignette](https://package.epinowcast.org/articles/epinowcast.html).
+- The [model features summary](https://package.epinowcast.org/articles/features.html), a table of everything `epinowcast` currently supports with links to the relevant documentation for each feature.
 
 To go deeper on the topics we covered, the relevant reference pages are:
 
-- **Reporting schedule (weekly or batched reporting):** [`enw_aggregate_cumulative()`](https://package.epinowcast.org/reference/enw_aggregate_cumulative.html) and the `timestep` argument of [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html).
+- **Reporting schedule (weekly or batched reporting):** the [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html), [`enw_aggregate_cumulative()`](https://package.epinowcast.org/reference/enw_aggregate_cumulative.html) and the `timestep` argument of [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html).
 - **Day-of-week and other report-date effects:** the [`enw_report()`](https://package.epinowcast.org/reference/enw_report.html) report-date module.
 - **Time-varying delay (reference-date effects):** the [`enw_reference()`](https://package.epinowcast.org/reference/enw_reference.html) reference-date module.
 - **Delays that vary by strata:** the [hierarchical age-stratified nowcasting case study](https://package.epinowcast.org/articles/germany-age-stratified-nowcasting.html), which fits many reporting triangles at once with partially pooled effects.
