@@ -9,7 +9,7 @@ format:
 ---
 
 ```{r instructors}
-instructors <- c("seabbs", "trobacker", "nickreich")
+instructors <- c("seabbs", "mariahcboudreau", "nickreich")
 ```
 
 ```{r get_contributors}

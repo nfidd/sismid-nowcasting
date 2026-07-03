@@ -12,7 +12,7 @@ In this final session we take a first **taste of forecasting** - predicting futu
 This is the bridge to the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/), which runs in the second half of the week and covers forecasting, forecast evaluation, ensembles, and forecast hubs in much more depth.
 Here we give just enough of a taste to motivate that course and to show why nowcasting and forecasting belong together.
 
-The key idea is that in real-time epidemic analysis nowcasting and forecasting are connected.
+In real-time epidemic analysis nowcasting and forecasting are connected.
 When we want to forecast from the most recent data, we face the problem that this data is incomplete due to reporting delays - exactly the problem nowcasting is designed to solve.
 In this session, we'll explore different approaches to handling this challenge, from simple methods that ignore the problem to joint models.
 
@@ -124,7 +124,7 @@ Real surveillance streams behave differently in ways worth keeping in mind:
 - May combine multiple diseases and reporting locations
 
 The methods in this session adapt to these settings: the joint modelling framework can handle bidirectional revisions with minor modifications, while pipeline approaches may need separate models for upward and downward revisions.
-The key insight is that whether dealing with simple delays or more complex revisions, combining nowcasting and forecasting in a coherent framework improves predictions.
+Whether dealing with simple delays or more complex revisions, combining nowcasting and forecasting improves predictions.
 
 The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) works with real surveillance data of this kind and explores these issues in depth.
 :::
@@ -298,7 +298,7 @@ renewal_model
 
 These models are optimised for readability and not robustness or performance.
 For real-world versions of these models, see the `EpiNow2` and `epinowcast` packages.
-For the more complex models we might also consider using approximtate fitting methods such as variational inference or integrated nested Laplace approximations.
+For the more complex models we might also consider using approximate fitting methods such as variational inference or integrated nested Laplace approximations.
 :::
 
 ::: {.callout-tip}
@@ -398,7 +398,7 @@ Examine the complete data approach:
 ::: {.callout-note collapse="true"}
 ## Solution
 
-- **Forecast starts 14 days before cutoff**: The approach has to start forecasting from day 57 (cutoff - 14) to reach day 71 (cutoff), creating a very longerforecast horizon
+- **Forecast starts 14 days before cutoff**: The approach has to start forecasting from day 57 (cutoff - 14) to reach day 71 (cutoff), creating a longer forecast horizon
 - **Uncertainty grows**: Forecasting over 28+ days (14 to reach cutoff + 14 forecast horizon) leads to very wide prediction intervals when using a random walk for $R_t$
 - **Misses recent transmission changes**: Any changes in $R_t$ in the recent 14 days are completely ignored, potentially missing important epidemiological trends
 - **Assumes perfect completeness**: Assumes data >14 days old is completely reported, which may not be true for all reporting systems
@@ -813,6 +813,13 @@ scores <- sc_forecasts |>
 head(scores)
 ```
 
+The `score()` output reports the CRPS along with a breakdown of it.
+A *proper scoring rule* scores a probabilistic forecast against the eventual observation so that a forecaster minimises their expected score only by reporting what they genuinely believe, rewarding honest forecasts rather than ones tuned to game the metric.
+The *Continuous Ranked Probability Score* (CRPS) is a proper scoring rule that generalises the mean absolute error to full probabilistic forecasts: it measures the difference between the forecast's cumulative distribution and a step function that jumps from zero to one at the observed value, so forecasts that concentrate probability near what is observed score better, and for a single point forecast it reduces to the absolute error.
+Lower is better, it is in the same units as the data, and the guiding principle is to make forecasts as sharp as possible while staying calibrated.
+Its breakdown splits the CRPS into *overprediction* and *underprediction* (the cost of predicting too high or too low) and *dispersion* (the cost of a forecast that is too wide or too narrow).
+The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation) develops the CRPS, proper scoring rules and these components in depth.
+
 ## Overall performance table
 
 We summarise the performance across all forecast horizons:
@@ -893,7 +900,7 @@ Several packages implement these concepts:
 - [`epinowcast`](https://package.epinowcast.org/): Joint nowcasting and forecasting in an efficient framework
 
 Research has demonstrated that joint modelling of data sources provides significant advantages over combining estimates from separate models [@lisonGenerativeBayesianModeling2024] when evaluating multiple nowcast dates.
-In practice, implementations often include hierarchical models for multiple locations, time-varying delays, and ensemble approaches for robustness.
+In practice, implementations often include hierarchical models for multiple locations, time-varying delays, and ensemble approaches.
 
 # Wrap up
 
