@@ -11,7 +11,7 @@ The NFIDD course was developed by the **NFIDD course contributors**:
 The SISMID nowcasting course was adapted by the **SISMID course contributors**:
 
 - [Sam Abbott](https://github.com/seabbs)
-- [Thomas Robacker](https://github.com/trobacker)
+- [Mariah Boudreau](https://github.com/mariahcboudreau)
 - [Nick Reich](https://github.com/nickreich)
 
 ## How to Cite
@@ -37,7 +37,7 @@ If you use materials from this course in your work, please cite:
 
 ```bibtex
 @misc{sismidnowcasting2025,
-  author = {{Sam Abbott, Thomas Robacker, Nick Reich}},
+  author = {{Sam Abbott, Mariah Boudreau, Nick Reich}},
   title = {{SISMID: Nowcasting Infectious Disease Dynamics}},
   year = {2025},
   version = {[VERSION]},
