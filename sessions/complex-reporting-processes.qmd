@@ -616,12 +616,48 @@ There are two ways to handle this in `epinowcast`, and they trade resolution aga
 We show both here on the same simulated series.
 `epinowcast`'s [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) works through these patterns in full, including a daily benchmark and a scoring comparison; we give the compact version and link there rather than reproducing all of it.
 
+The two approaches differ most when the epidemic is changing rapidly near the nowcast date.
+When the most recent, still-incomplete week is rising or falling steeply, collapsing it to a single weekly value discards the within-week trend, and the weekly-weekly model has to extrapolate that fast-moving week from a short weekly random walk with only a handful of points.
+A daily process keeps the resolution and can still track the change.
+
+To make this visible we deliberately place the nowcast in a steep decline, keeping data up to a later date than the rest of the session so the most recent week is falling fast.
+This is a favourable choice made to show where the daily approach helps; we come back to how conditional the benefit is at the end of the section.
+We re-simulate the same reporting process at this later cutoff and leave everything else unchanged.
+
+```{r weekly-changepoint}
+# Position the nowcast in a rapid decline, so the most recent,
+# still-incomplete week is changing fast rather than flat
+weekly_cutoff <- 106
+weekly_nowcast_date <- ref_date0 + (weekly_cutoff - 1)
+weekly_plot_from <- weekly_nowcast_date - 63
+
+# Re-seed so this weekly reporting triangle is reproducible on its own
+set.seed(123)
+weekly_reporting_triangle <- onset_df |>
+  filter(day < weekly_cutoff) |>
+  mutate(
+    reporting_delay = list(
+      tibble(d = 0:15, reporting_delay = reporting_delay_pmf)
+    )
+  ) |>
+  unnest(reporting_delay) |>
+  mutate(
+    reported_day = day + d,
+    reported_onsets = rpois(n(), onsets * reporting_delay)
+  )
+
+weekly_enw_long <- enw_filter_report_dates(
+  to_enw_format(weekly_reporting_triangle),
+  latest_date = weekly_nowcast_date
+)
+```
+
 ## Weekly-weekly
 
-We reuse the course reporting triangle and aggregate it to a weekly reporting schedule with `enw_aggregate_cumulative()`, which sums both reference and report dates into weekly steps.
+We take the change-point reporting triangle and aggregate it to a weekly reporting schedule with `enw_aggregate_cumulative()`, which sums both reference and report dates into weekly steps.
 
 ```{r weekly-aggregate}
-weekly_long <- enw_aggregate_cumulative(enw_long, timestep = "week")
+weekly_long <- enw_aggregate_cumulative(weekly_enw_long, timestep = "week")
 head(weekly_long)
 ```
 
@@ -652,11 +688,11 @@ As before we compare against the eventually-complete data, aggregated to the sam
 ```{r weekly-result-plot}
 weekly_latest <- enw_latest_data(
   enw_aggregate_cumulative(
-    to_enw_format(reporting_triangle), timestep = "week"
+    to_enw_format(weekly_reporting_triangle), timestep = "week"
   )
 )
 plot(weekly_nowcast, latest_obs = weekly_latest) +
-  coord_cartesian(xlim = c(plot_from, nowcast_date))
+  coord_cartesian(xlim = c(weekly_plot_from, weekly_nowcast_date))
 ```
 
 ## Weekly-daily (structural reporting)
@@ -666,7 +702,7 @@ The idea is to build a daily grid where the cumulative count is only observed on
 We start from the daily reporting triangle we fit to, blank out the non-Wednesday cumulative counts, and let `enw_impute_na_observations()` carry the last Wednesday value forward; `enw_flag_observed_observations()` records which cells are real in a `.observed` column.
 
 ```{r weekly-daily-scaffold}
-weekly_rep_data <- enw_complete_dates(enw_long, timestep = "day")
+weekly_rep_data <- enw_complete_dates(weekly_enw_long, timestep = "day")
 weekly_rep_data[, day_of_week := weekdays(report_date)]
 weekly_rep_data[
   , confirm := fifelse(day_of_week == "Wednesday", confirm, NA_real_)
@@ -702,7 +738,9 @@ structural <- enw_dayofweek_structural_reporting(
 weekly_daily_nowcast <- epinowcast(
   weekly_rep_pobs,
   expectation = enw_expectation(
-    ~ rw(week) + (1 | day_of_week), data = weekly_rep_pobs
+    # A daily random walk keeps the daily resolution that lets the model
+    # track within-week change, unlike the weekly-weekly model
+    ~ rw(day) + (1 | day_of_week), data = weekly_rep_pobs
   ),
   report = enw_report(structural = structural, data = weekly_rep_pobs),
   obs = enw_obs(
@@ -716,9 +754,11 @@ weekly_daily_nowcast <- epinowcast(
 The nowcast is now on the daily scale even though reports only arrived weekly, so we compare it against the eventually-complete daily data.
 
 ```{r weekly-daily-plot}
-weekly_daily_latest <- enw_latest_data(to_enw_format(reporting_triangle))
+weekly_daily_latest <- enw_latest_data(
+  to_enw_format(weekly_reporting_triangle)
+)
 plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest) +
-  coord_cartesian(xlim = c(plot_from, nowcast_date))
+  coord_cartesian(xlim = c(weekly_plot_from, weekly_nowcast_date))
 ```
 
 This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly.
@@ -729,14 +769,15 @@ To compare the two directly we can aggregate the daily structural nowcast up to 
 A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.
 
 ```{r weekly-compare}
-# Aggregate the daily structural nowcast up to epinowcast's weekly buckets
-# (each week is the seven days ending on a weekly reference date) so it lines up
-# with the weekly-weekly nowcast, keeping only weeks the daily model covers in
-# full within its recent nowcast window.
-min_ref <- min(enw_long$reference_date, na.rm = TRUE)
+# Aggregate the daily structural nowcast up to epinowcast's weekly buckets so it
+# lines up with the weekly-weekly nowcast. Those weeks end on reference dates a
+# whole number of weeks after day zero, so we bin each daily reference date onto
+# that same grid and keep only weeks the daily model covers in full.
 weekly_daily_samples <- summary(weekly_daily_nowcast, type = "nowcast_samples")
 weekly_daily_samples[
-  , week := reference_date + (6 - as.integer(reference_date - min_ref) %% 7)
+  , week := as.IDate(
+      ref_date0 + 7L * ceiling(as.integer(reference_date - ref_date0) / 7)
+    )
 ]
 full_weeks <- weekly_daily_samples[
   , .(n = uniqueN(reference_date)), by = week
@@ -756,7 +797,9 @@ ww_weekly <- summary(weekly_nowcast, type = "nowcast")[
 ]
 
 obs_weekly <- enw_latest_data(
-  enw_aggregate_cumulative(to_enw_format(reporting_triangle), timestep = "week")
+  enw_aggregate_cumulative(
+    to_enw_format(weekly_reporting_triangle), timestep = "week"
+  )
 )[reference_date %in% full_weeks, .(week = reference_date, observed = confirm)]
 
 ggplot(rbind(wd_weekly, ww_weekly), aes(week, colour = model, fill = model)) +
@@ -768,12 +811,21 @@ ggplot(rbind(wd_weekly, ww_weekly), aes(week, colour = model, fill = model)) +
        colour = NULL, fill = NULL)
 ```
 
-On this simulation the two nowcasts agree closely for the earlier week, but for the most recent week the aggregated daily nowcast is much more uncertain and its median falls below both the weekly-weekly nowcast and the eventual total.
-Reconstructing seven daily values from a single weekly report is a harder problem than nowcasting the week directly, so here the weekly-daily model pays for its daily resolution with wider weekly uncertainty rather than buying extra weekly accuracy.
-The black points are the eventually-observed weekly totals.
+Because the nowcast sits in a steep decline, the two models disagree about the most recent, still-incomplete week (the black points are the eventually-observed totals).
+The weekly-weekly model extrapolates its short weekly random walk and overshoots the falling week, and with only a handful of weekly points its interval is narrow enough to miss the eventual total.
+The weekly-daily model keeps a daily random walk, so it tracks the within-week decline: its central estimate lands close to the eventual total, though its weekly interval is wider because seven daily values are being rebuilt from a single weekly report.
+On the earlier weeks, which are complete and not changing fast, the two agree closely.
 
 The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a harder fit.
 The [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) scores these approaches against a fully daily benchmark if you want to see how much each one gives up.
+
+::: {.callout-warning}
+## The daily advantage is conditional
+This is a favourable snapshot, not a universal result.
+The daily model helps here because the epidemic is changing rapidly right at the nowcast date; when the recent weeks are flat or already reported the two approaches agree, and weekly-weekly is then just as good for far less compute.
+The daily model is also harder to fit and its weekly totals carry more uncertainty, so at a very sharp turn it will not always beat weekly-weekly on the weekly total.
+What it reliably buys is resolution: a daily nowcast that keeps the within-week shape weekly aggregation discards, which matters most exactly when things are changing fast.
+:::
 
 ::: {.callout-note}
 ## Take 3 minutes
@@ -786,7 +838,7 @@ Why is the reporting schedule a property of the *data* rather than of the model,
 
 The reporting schedule describes *when reports arrive*, which is a feature of how the data were collected, so it belongs to the data and its timestep.
 The weekly-weekly approach maps both the process and the delay onto a weekly grid, which is simple and cheap but can only produce weekly nowcasts and gives the process model few points to learn from.
-The weekly-daily approach keeps a daily latent process and encodes the once-a-week reporting through the structural report module, so it recovers daily resolution from weekly reports; the cost is a larger daily reporting triangle and a harder fit.
+The weekly-daily approach keeps a daily latent process and encodes the once-a-week reporting through the structural report module, so it recovers daily resolution from weekly reports and can track within-week change that weekly aggregation smooths over; the cost is a larger daily reporting triangle and a harder fit.
 If we instead treated weekly batches as if they were ordinary daily data we would tell the model that almost every day had zero reports with occasional spikes, badly misrepresenting the delay distribution and the completeness of recent data.
 :::
 
