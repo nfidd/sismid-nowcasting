@@ -480,6 +480,15 @@ plot(dow_nowcast, latest_obs = dow_latest) +
   coord_cartesian(xlim = c(plot_from, nowcast_date))
 ```
 
+As with the course model, we can also check the fit with the posterior-prediction plot, faceted by the most recent reference dates.
+
+```{r dow-plot-pp, fig.height = 7}
+pp_recent <- plot(dow_nowcast, type = "posterior_prediction")
+pp_recent$data <- pp_recent$data[reference_date > nowcast_date - 9]
+pp_recent +
+  facet_wrap(vars(reference_date), scales = "free")
+```
+
 ::: {.callout-note}
 ## Take 3 minutes
 This model carries three day-of-week terms: `day_of_week` in the expectation module, `day_of_week` in the reference (delay) module, and `(1 | day_of_week)` in the report module.
@@ -588,6 +597,15 @@ tvd_nowcast <- epinowcast(
 tvd_latest <- enw_latest_data(to_enw_format(tvd_triangle))
 plot(tvd_nowcast, latest_obs = tvd_latest) +
   coord_cartesian(xlim = c(plot_from, nowcast_date))
+```
+
+As with the course model, we can also check the fit with the posterior-prediction plot, faceted by the most recent reference dates.
+
+```{r tvd-plot-pp, fig.height = 7}
+pp_recent <- plot(tvd_nowcast, type = "posterior_prediction")
+pp_recent$data <- pp_recent$data[reference_date > nowcast_date - 9]
+pp_recent +
+  facet_wrap(vars(reference_date), scales = "free")
 ```
 
 ::: {.callout-note}
