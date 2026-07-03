@@ -398,7 +398,7 @@ Examine the complete data approach:
 ::: {.callout-note collapse="true"}
 ## Solution
 
-- **Forecast starts 14 days before cutoff**: The approach has to start forecasting from day 57 (cutoff - 14) to reach day 71 (cutoff), creating a very longerforecast horizon
+- **Forecast starts 14 days before cutoff**: The approach has to start forecasting from day 57 (cutoff - 14) to reach day 71 (cutoff), creating a longer forecast horizon
 - **Uncertainty grows**: Forecasting over 28+ days (14 to reach cutoff + 14 forecast horizon) leads to very wide prediction intervals when using a random walk for $R_t$
 - **Misses recent transmission changes**: Any changes in $R_t$ in the recent 14 days are completely ignored, potentially missing important epidemiological trends
 - **Assumes perfect completeness**: Assumes data >14 days old is completely reported, which may not be true for all reporting systems
