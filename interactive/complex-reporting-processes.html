@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Day-of-week effects — how three effects combine to shape reported data</title>
+<style>
+  :root{
+    --ref:#2563eb;    /* reference-date effect on onsets / blue */
+    --delay:#f59e0b;  /* reference-date effect on delay / amber */
+    --rep:#0891b2;    /* report-date effect / teal */
+    --obs:#4f46e5;    /* observed reports / indigo */
+    --true:#64748b;   /* underlying smooth onsets / slate */
+    --ink:#1f2933;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --bg:#fbfbfd;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 22px 120px}
+  header.hero{
+    padding:54px 22px 30px; text-align:center;
+    background:linear-gradient(180deg,#eef2ff 0%, var(--bg) 100%);
+    border-bottom:1px solid var(--line);
+  }
+  header.hero h1{font-size:30px; margin:0 0 8px; letter-spacing:-.4px}
+  header.hero p{max-width:720px; margin:0 auto; color:var(--muted)}
+  nav.toc{
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    margin:22px auto 0; max-width:780px;
+  }
+  nav.toc a{
+    text-decoration:none; color:var(--ref); font-weight:600; font-size:14px;
+    border:1px solid #c7d2fe; background:#fff; padding:6px 13px; border-radius:999px;
+  }
+  nav.toc a:hover{background:#eef2ff}
+  section{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; margin:30px 0; box-shadow:0 1px 2px rgba(15,23,42,.04);
+  }
+  section > h2{margin:0 0 4px; font-size:23px; letter-spacing:-.3px}
+  .tagline{color:var(--muted); margin:0 0 18px; font-size:15px}
+  h3{margin:26px 0 8px; font-size:17px}
+  p{margin:10px 0}
+  .fig{
+    border:1px solid var(--line); border-radius:12px; padding:16px 14px 10px;
+    margin:18px 0 6px; background:#fff;
+  }
+  .fig svg{display:block; width:100%; height:auto}
+  .figcap{font-size:13.5px; color:var(--muted); margin:8px 4px 2px}
+  .controls{
+    display:flex; flex-wrap:wrap; gap:12px 22px; align-items:center;
+    margin:8px 4px 2px; padding:14px 16px; background:#f8fafc;
+    border:1px solid var(--line); border-radius:10px; font-size:14px;
+  }
+  .controls label.toggle{
+    display:flex; align-items:flex-start; gap:9px; min-width:250px;
+    cursor:pointer; padding:4px 2px;
+  }
+  .controls input[type=checkbox]{
+    width:18px; height:18px; margin-top:2px; accent-color:var(--obs); cursor:pointer;
+  }
+  .controls .tlab{display:flex; flex-direction:column; gap:1px}
+  .controls .tlab b{font-weight:650}
+  .controls .tlab small{color:var(--muted); font-size:12.5px; line-height:1.35}
+  .swpill{display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px}
+  .readout{
+    display:inline-flex; gap:14px; flex-wrap:wrap; margin:12px 4px 0;
+    font-variant-numeric:tabular-nums;
+  }
+  .readout .chip{
+    background:#f1f5f9; border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px; font-size:14px;
+  }
+  .readout .chip b{font-size:16px}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:13.5px; margin:4px 4px 8px}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .swatch{width:22px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block}
+  .swbox{width:16px; height:14px; border-radius:3px; display:inline-block; vertical-align:middle}
+  .key{background:#eef2ff; border-left:4px solid var(--ref); padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0}
+  .key.teal{background:#ecfeff; border-color:var(--rep)}
+  .key.amber{background:#fffbeb; border-color:var(--delay)}
+  ul{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  code{background:#f1f5f9; padding:1px 6px; border-radius:5px; font-size:14px}
+  footer{text-align:center; color:var(--muted); font-size:13px; margin-top:40px}
+  a{color:var(--ref)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Day-of-week effects in reported data</h1>
+  <p>A weekly pattern can enter surveillance data in <b>three</b> different places. Start from a smooth underlying onset curve and switch each effect on to watch the observed reported series build up its weekly structure.</p>
+  <nav class="toc">
+    <a href="#intro">Three effects</a>
+    <a href="#combine">Combine them</a>
+    <a href="#takeaways">Takeaways</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <h2>The same weekly rhythm, three different causes</h2>
+  <p class="tagline">Each one belongs in a different part of the model</p>
+  <p>Real reporting rarely follows a single fixed delay. One of the most common departures is a <b>day-of-week</b> pattern, and it helps to keep three distinct causes apart because each acts on a different thing and each belongs in a different module of the model.</p>
+  <ul>
+    <li><span class="swpill" style="background:var(--ref)"></span><b style="color:var(--ref)">Reference-date effect on onsets.</b> Events genuinely happen at different rates by day of week — for example fewer onsets are recorded at weekends. This changes <i>when events occur</i>, and belongs in the expectation model.</li>
+    <li><span class="swpill" style="background:var(--delay)"></span><b style="color:var(--delay)">Reference-date effect on the delay.</b> The reporting <i>delay distribution</i> itself differs by the day an event occurred — for example weekend onsets take longer to be reported. This reshapes <i>how long reporting takes</i>, and belongs in the reference (delay) model.</li>
+    <li><span class="swpill" style="background:var(--rep)"></span><b style="color:var(--rep)">Report-date effect.</b> The reporting system processes fewer reports at weekends regardless of when the event occurred. This acts on <i>the day the report lands</i>, and belongs in the report-date model.</li>
+  </ul>
+  <p>The figure below mirrors the simulation in the session: it starts from a smooth underlying onset curve and applies the three effects with the same weekly weights used there.</p>
+</section>
+
+<!-- ============ COMBINE ============ -->
+<section id="combine">
+  <h2>Switch each effect on and watch the reported series build up</h2>
+  <p class="tagline">Grey line: the smooth underlying onsets we would like to recover. Bars: what we actually observe, reported by report day.</p>
+
+  <div class="legend">
+    <span><i class="swatch" style="border-color:var(--true)"></i> underlying onsets (smooth truth)</span>
+    <span><i class="swbox" style="background:var(--obs);opacity:.85"></i> observed reports by report day</span>
+    <span><i class="swbox" style="background:#eef2ff;border:1px solid #c7d2fe"></i> weekend (Sat/Sun)</span>
+  </div>
+
+  <div class="fig">
+    <svg id="dowSvg" viewBox="0 0 720 430" role="img" aria-label="A smooth underlying onset curve shown as a grey line, with the observed reported series shown as bars by report day. Toggling the three day-of-week effects on adds weekly structure to the bars; weekend days are shaded."></svg>
+  </div>
+
+  <div class="controls">
+    <label class="toggle">
+      <input id="tRef" type="checkbox">
+      <span class="tlab"><b><span class="swpill" style="background:var(--ref)"></span>Reference-date effect on onsets</b>
+        <small>fewer onsets on Fri&ndash;Sun (weights 0.95, 0.7, 0.7)</small></span>
+    </label>
+    <label class="toggle">
+      <input id="tDelay" type="checkbox">
+      <span class="tlab"><b><span class="swpill" style="background:var(--delay)"></span>Reference-date effect on the delay</b>
+        <small>weekend onsets reported more slowly (meanlog 1&nbsp;&rarr;&nbsp;1.4)</small></span>
+    </label>
+    <label class="toggle">
+      <input id="tRep" type="checkbox">
+      <span class="tlab"><b><span class="swpill" style="background:var(--rep)"></span>Report-date effect</b>
+        <small>fewer reports processed on Fri&ndash;Sun (weights 0.9, 0.4, 0.5)</small></span>
+    </label>
+  </div>
+  <div class="readout">
+    <span class="chip">effects on: <b id="dCount">0 of 3</b></span>
+    <span class="chip">weekend report dip: <b id="dDip">0%</b></span>
+    <span class="chip">weekly variation in reports: <b id="dCv">0%</b></span>
+  </div>
+  <p class="figcap">With no effects the reports are just a smoothed, delayed copy of the onset curve. Turn on the <span style="color:var(--rep)">report-date effect</span> alone and a clean weekly dip appears on the report axis. Add the two <span style="color:var(--ref)">reference-date</span> effects and the pattern gets richer: onsets themselves dip at weekends, and weekend onsets arrive later, smearing their weekly signature into the following week.</p>
+  <div class="key teal">All three act on different things, so they are separable and each is a one-line addition to the relevant module. That is exactly why a single fixed delay cannot capture them and why the report-date effect had no place in the hand-rolled <code>p<sub>t,d</sub></code>, which was a function of the delay alone.</div>
+</section>
+
+<!-- ============ TAKEAWAYS ============ -->
+<section id="takeaways">
+  <h2>Things worth remembering</h2>
+  <ul>
+    <li><b>Weekly wiggle is not one thing.</b> A day-of-week pattern in the data can come from real variation in events, from a delay that depends on the onset day, or from the reporting system itself — often all three at once.</li>
+    <li><b>Each cause lives in a different module.</b> The reference-date onset effect belongs in the expectation model, the reference-date delay effect in the delay model, and the report-date effect in the report model.</li>
+    <li><b>They are separable.</b> One shifts the level of onsets, one reshapes their delay, and one scales reports on the calendar day they land, so fitting them together lets the model absorb the weekly reporting dip without distorting the nowcast of the underlying onsets.</li>
+  </ul>
+  <footer>Built as a teaching aid for the NFIDD nowcasting course &middot; all figures are interactive and self-contained.</footer>
+</section>
+
+</div>
+
+<script>
+/* ---------- small numerics library (shared with the other NFIDD explainers) ---------- */
+function erf(x){
+  const s = x<0 ? -1 : 1; x = Math.abs(x);
+  const t = 1/(1+0.3275911*x);
+  const y = 1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+function normCdf(x,mu=0,sd=1){ return 0.5*(1+erf((x-mu)/(sd*Math.SQRT2))); }
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function clear(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+
+/* ================= FIGURE : how the three day-of-week effects combine ================= */
+(function(){
+  const svg=document.getElementById("dowSvg");
+  const W=720,H=430, m={l:52,r:18,t:34,b:56};
+  const NDAYS=63, Dmax=15, PEAK=32, SDLOG=0.5;
+  // day 0 is a Monday, so day-of-week is day %% 7 (0 = Monday, 5 = Sat, 6 = Sun)
+  // weekly weights mirror sessions/complex-reporting-processes.qmd exactly
+  const REF_ONSET=[1,1,1,1,0.95,0.7,0.7];        // ref_dow_effect
+  const DELAY_MEANLOG=[1,1,1,1,1,1.4,1.4];       // delay_meanlog_dow
+  const REP_WEIGHT=[1,1,1,1,0.9,0.4,0.5];        // rep_dow_effect
+  const BASE_MEANLOG=1;
+  const ids={ref:document.getElementById("tRef"),
+             delay:document.getElementById("tDelay"),
+             rep:document.getElementById("tRep")};
+
+  // discretised lognormal reporting-delay PMF for d = 0..Dmax, given meanlog
+  function delayPmf(meanlog){
+    const raw=[]; let sum=0;
+    for(let d=0; d<=Dmax; d++){
+      const lo = d<=0 ? 0 : normCdf((Math.log(d)-meanlog)/SDLOG);
+      const hi = normCdf((Math.log(d+1)-meanlog)/SDLOG);
+      const p=Math.max(hi-lo,0); raw.push(p); sum+=p;
+    }
+    return raw.map(p=>p/(sum||1));
+  }
+  // pre-compute the delay PMFs we need
+  const pmfBase=delayPmf(BASE_MEANLOG);
+  const pmfByMeanlog={}; DELAY_MEANLOG.forEach(function(ml){ if(!(ml in pmfByMeanlog)) pmfByMeanlog[ml]=delayPmf(ml); });
+
+  // smooth underlying onsets: asymmetric bump (slightly fatter after the peak)
+  function trueCurve(t){ const w = t<PEAK ? 8.5 : 8.5*1.3; return 100*Math.exp(-0.5*((t-PEAK)/w)**2); }
+
+  function draw(){
+    const refOn=ids.ref.checked, delayOn=ids.delay.checked, repOn=ids.rep.checked;
+    clear(svg);
+
+    // underlying smooth onsets (the truth we would like to recover)
+    const truth=[]; for(let t=0;t<NDAYS;t++) truth.push(trueCurve(t));
+
+    // onsets after the (optional) reference-date onset effect
+    const onsets=[]; for(let t=0;t<NDAYS;t++){ const w = refOn ? REF_ONSET[t%7] : 1; onsets.push(truth[t]*w); }
+
+    // spread each onset day forward over its delay PMF; delay may depend on onset dow
+    const reports=new Array(NDAYS).fill(0);
+    for(let t=0;t<NDAYS;t++){
+      const pmf = delayOn ? pmfByMeanlog[DELAY_MEANLOG[t%7]] : pmfBase;
+      for(let d=0; d<=Dmax; d++){ const r=t+d; if(r>=NDAYS) break; reports[r]+=onsets[t]*pmf[d]; }
+    }
+    // report-date effect scales reports on the day they land
+    if(repOn){ for(let r=0;r<NDAYS;r++) reports[r]*=REP_WEIGHT[r%7]; }
+
+    const ymax=Math.max(Math.max.apply(null,truth), Math.max.apply(null,reports))*1.14;
+    const sx=v=>m.l+(v/(NDAYS-1))*(W-m.l-m.r);
+    const sy=v=>H-m.b-(v/ymax)*(H-m.t-m.b);
+    const bw=(W-m.l-m.r)/NDAYS*0.82;
+
+    // weekend shading (Sat = dow 5, Sun = dow 6)
+    for(let t=0;t<NDAYS;t++){ if(t%7===5){ const x0=sx(t-0.5), x1=sx(Math.min(t+1.5,NDAYS-1)); svg.appendChild(el("rect",{x:x0,y:m.t,width:Math.max(x1-x0,0),height:H-m.t-m.b,fill:"#eef2ff",opacity:.7})); } }
+
+    // gridlines + y axis
+    for(let g=0; g<=100; g+=25){ svg.appendChild(el("line",{x1:m.l,y1:sy(g),x2:W-m.r,y2:sy(g),stroke:"#eef2f7"}));
+      svg.appendChild(el("text",{x:m.l-8,y:sy(g)+4,"text-anchor":"end","font-size":10,fill:"#6b7280"})).textContent=g; }
+    svg.appendChild(el("line",{x1:m.l,y1:sy(0),x2:W-m.r,y2:sy(0),stroke:"#cbd5e1"}));
+
+    // x ticks (weeks)
+    for(let t=0;t<NDAYS;t+=7){ svg.appendChild(el("text",{x:sx(t),y:H-m.b+16,"text-anchor":"middle","font-size":10,fill:"#6b7280"})).textContent=t; }
+    svg.appendChild(el("text",{x:(m.l+W-m.r)/2,y:H-10,"text-anchor":"middle","font-size":12,fill:"#374151"})).textContent="day (0 = Monday) — reference date for onsets, report date for bars";
+    svg.appendChild(el("text",{x:m.l,y:m.t-14,"font-size":13,"font-weight":700,fill:"#1f2933"})).textContent="Underlying onsets vs the reported series you observe";
+
+    // observed report bars
+    for(let r=0;r<NDAYS;r++){ const h=reports[r]; if(h<=0.2) continue;
+      svg.appendChild(el("rect",{x:sx(r)-bw/2,y:sy(h),width:bw,height:Math.max(sy(0)-sy(h),0),fill:"#4f46e5",opacity:.82,rx:1.3})); }
+
+    // underlying smooth onset curve
+    let path=""; for(let t=0;t<NDAYS;t++) path+=(path?" L ":"M ")+sx(t)+" "+sy(truth[t]);
+    svg.appendChild(el("path",{d:path,fill:"none",stroke:"#64748b","stroke-width":2.4,opacity:.85}));
+
+    /* ---- readouts ---- */
+    const n=(refOn?1:0)+(delayOn?1:0)+(repOn?1:0);
+    document.getElementById("dCount").textContent=n+" of 3";
+    // weekend report dip: mean weekend report vs mean weekday report, over the busy middle weeks
+    let wkdSum=0,wkdN=0,wkeSum=0,wkeN=0;
+    for(let r=14;r<49;r++){ const dow=r%7; if(dow===5||dow===6){ wkeSum+=reports[r]; wkeN++; } else { wkdSum+=reports[r]; wkdN++; } }
+    const wkdMean=wkdN?wkdSum/wkdN:0, wkeMean=wkeN?wkeSum/wkeN:0;
+    const dip = wkdMean>0 ? (1-wkeMean/wkdMean) : 0;
+    document.getElementById("dDip").textContent=(dip*100).toFixed(0)+"%";
+    // coefficient of variation of day-of-week means (weekly variation), over busy weeks
+    const byDow=[0,0,0,0,0,0,0], cnt=[0,0,0,0,0,0,0];
+    for(let r=14;r<49;r++){ const dow=r%7; byDow[dow]+=reports[r]; cnt[dow]++; }
+    const means=byDow.map((s,i)=>cnt[i]?s/cnt[i]:0);
+    const gm=means.reduce((a,b)=>a+b,0)/7;
+    const varr=means.reduce((a,b)=>a+(b-gm)*(b-gm),0)/7;
+    const cv = gm>0 ? Math.sqrt(varr)/gm : 0;
+    document.getElementById("dCv").textContent=(cv*100).toFixed(0)+"%";
+  }
+  Object.values(ids).forEach(i=>i.addEventListener("change",draw)); draw();
+})();
+</script>
+<script>
+/* embed mode: ?embed=sectionId[,id2,...] strips the page chrome AND the
+   explanatory prose from the kept sections, leaving only the interactive
+   figures, for inlining in an <iframe> in the course site. Reports height so
+   the host page can auto-size the iframe. */
+(function(){
+  var q=new URLSearchParams(location.search), e=q.get('embed');
+  var KEEP={fig:1,controls:1,readout:1,legend:1,presets:1,figcap:1};
+  if(e){
+    var keep=e.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    ['header.hero','nav.toc','footer'].forEach(function(sel){
+      Array.prototype.forEach.call(document.querySelectorAll(sel),function(n){n.style.display='none';});
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('body > div'),function(d){
+      if(!d.classList.contains('wrap')) d.style.display='none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('section'),function(sec){
+      if(keep.indexOf(sec.id)===-1){ sec.style.display='none'; return; }
+      sec.style.margin='0'; sec.style.border='none'; sec.style.boxShadow='none'; sec.style.padding='2px 2px 8px';
+      Array.prototype.forEach.call(sec.children,function(c){
+        var k=false, cl=c.classList; if(cl){ for(var key in KEEP){ if(cl.contains(key)){k=true;break;} } }
+        if(!k) c.style.display='none';
+      });
+    });
+    var wrap=document.querySelector('.wrap'); if(wrap) wrap.style.padding='0 8px 10px';
+    document.body.style.background='#fff'; document.documentElement.style.background='#fff';
+  }
+  function postH(){ try{ parent.postMessage({nfiddEmbedHeight: Math.ceil(document.body.getBoundingClientRect().height)}, '*'); }catch(_){} }
+  window.addEventListener('load', postH);
+  window.addEventListener('resize', postH);
+  document.addEventListener('input', function(){ setTimeout(postH,60); });
+  document.addEventListener('change', function(){ setTimeout(postH,60); });
+  document.addEventListener('click', function(){ setTimeout(postH,120); });
+  setTimeout(postH,250); setTimeout(postH,1000);
+})();
+</script>
+</body>
+</html>

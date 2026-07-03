@@ -50,12 +50,10 @@ This session uses the development version of `epinowcast` from GitHub, as some o
 You can install it together with `cmdstanr` with:
 
 ```{r install, eval = FALSE}
-install.packages(
-  "cmdstanr",
-  repos = c("https://stan-dev.r-universe.dev", getOption("repos"))
-)
-remotes::install_github("epinowcast/epinowcast")
+pak::pak(c("stan-dev/cmdstanr", "epinowcast/epinowcast"))
 ```
+
+This installs the development version of `epinowcast` from GitHub, matching the course's getting-started install which uses `pak::pak("nfidd/sismid-nowcasting")`.
 
 `epinowcast` compiles its models with `cmdstanr` the first time a model is fitted, which needs a working CmdStan toolchain (the same one used elsewhere in this course).
 Full installation and setup instructions, including how to install CmdStan, are on the [package website](https://package.epinowcast.org/).
@@ -180,6 +178,9 @@ From that one complete data set we derive the two things we need with `epinowcas
 ref_date0 <- as.Date("2023-01-02")
 # The nowcast is made once reports up to this date are in
 nowcast_date <- ref_date0 + (cutoff - 1)
+# Only the most recent dates are nowcast, so we zoom the result plots to a
+# recent window around the nowcast horizon rather than the whole series
+plot_from <- nowcast_date - 35
 
 # Format the complete (eventually-reported) data in epinowcast's long format
 to_enw_format <- function(triangle) {
@@ -309,9 +310,12 @@ Everything that follows is an extension of one of these modules, or the addition
 To judge the nowcast we want to compare it against what was *eventually* reported, so we take the latest report for each reference date from the complete data with `enw_latest_data()` and pass it to `plot()` via `latest_obs`.
 Building the comparison data from the complete data matters: if we built it from the truncated snapshot we fit to (`enw_long`), the "eventually observed" points would just reproduce the incomplete nowcast-era counts and the plot would not tell us whether the nowcast was any good.
 
+Only the most recent dates are actually being nowcast, so we zoom the plot to a recent window around the nowcast horizon with `coord_cartesian()` rather than showing the whole series back to the first calendar date.
+
 ```{r course-plot}
 latest_obs <- enw_latest_data(to_enw_format(reporting_triangle))
-plot(course_nowcast, latest_obs = latest_obs)
+plot(course_nowcast, latest_obs = latest_obs) +
+  coord_cartesian(xlim = c(plot_from, nowcast_date))
 ```
 
 As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete: the nowcast (median and credible intervals) fills in the gap up to the eventually-observed counts (the points).
@@ -401,6 +405,17 @@ ggplot(reports_by_day, aes(x = reported_day, y = reports)) +
   labs(x = "Report day", y = "Reports", title = "Reports by report day")
 ```
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: how day-of-week effects combine
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/complex-reporting-processes.html?embed=combine" title="how day-of-week effects combine interactive" loading="lazy" style="width:100%;height:820px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Start from a smooth underlying onset curve and switch each of the three effects on and off to see how the observed reported series builds up its weekly structure.
+:::
+
 The three effects act on different things.
 The reference-date effect on the counts changes *when events happen* (the onset day), so it belongs in the model for the expected counts.
 The reference-date effect on the delay changes *how long reporting takes* for events on a given onset day, so it belongs in the delay (reference) module.
@@ -440,7 +455,8 @@ dow_nowcast <- epinowcast(
 
 ```{r dow-result-plot}
 dow_latest <- enw_latest_data(to_enw_format(dow_triangle))
-plot(dow_nowcast, latest_obs = dow_latest)
+plot(dow_nowcast, latest_obs = dow_latest) +
+  coord_cartesian(xlim = c(plot_from, nowcast_date))
 ```
 
 ::: {.callout-note}
@@ -492,6 +508,29 @@ tvd_triangle <- onset_df |>
   )
 ```
 
+Before fitting anything, it is worth looking at what this drift actually does to the data.
+For each reference date the mean of the reporting delay distribution is $\sum_d d\, p_{t,d}$, so we can compute it from the simulated per-date delay PMF and average it by reference week to see the delay lengthening over the outbreak.
+
+```{r tvd-show-delay}
+tvd_mean_delay <- tvd_triangle |>
+  summarise(
+    mean_delay = sum(d * reporting_delay) / sum(reporting_delay),
+    .by = c(day)
+  ) |>
+  mutate(reference_week = day %/% 7) |>
+  summarise(mean_delay = mean(mean_delay), .by = reference_week)
+
+ggplot(tvd_mean_delay, aes(x = reference_week, y = mean_delay)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x = "Reference week", y = "Mean reporting delay (days)",
+    title = "The reporting delay drifts upwards over the outbreak"
+  )
+```
+
+The mean delay climbs week on week, which is the feature a single fixed delay cannot represent: later onsets are reported more slowly than earlier ones, so the model has to let the delay change over time to nowcast the recent dates correctly.
+
 This is a property of the *reference* (onset) date, so we put structure on the **reference module** rather than on the report module.
 Where the course model used `enw_reference(~ 1, ...)` for a constant delay, we now let the delay distribution drift week to week with `enw_reference(~ rw(week), ...)`.
 
@@ -499,6 +538,13 @@ Where the course model used `enw_reference(~ 1, ...)` for a constant delay, we n
 We simulated a roughly *linear* drift, so we could fit a model with a matching linear trend on the delay parameters and recover it almost perfectly.
 That would be cheating: in a real analysis we do not know the functional form of the drift, because we did not generate the data.
 We therefore deliberately choose a *flexible* model, a random walk on the delay parameters, that can track a drift without us baking in the exact form we happened to simulate.
+:::
+
+::: {.callout-tip}
+## Time-varying delay versus a rolling window
+A common alternative to a time-varying delay is to estimate a single delay from only the most recent stretch of data, a rolling window.
+The random-walk approach here uses *all* the data with a smoothness prior, so it borrows strength across the whole series while still letting the delay change from week to week.
+A rolling window instead throws away every report outside the window, so it has less data to estimate the delay from and cannot use the earlier reports at all, even though they still say something about how the delay is changing.
 :::
 
 ```{r tvd-fit, message = FALSE, results = "hide"}
@@ -519,7 +565,8 @@ tvd_nowcast <- epinowcast(
 
 ```{r tvd-result-plot}
 tvd_latest <- enw_latest_data(to_enw_format(tvd_triangle))
-plot(tvd_nowcast, latest_obs = tvd_latest)
+plot(tvd_nowcast, latest_obs = tvd_latest) +
+  coord_cartesian(xlim = c(plot_from, nowcast_date))
 ```
 
 ::: {.callout-note}
@@ -587,7 +634,8 @@ weekly_latest <- enw_latest_data(
     to_enw_format(reporting_triangle), timestep = "week"
   )
 )
-plot(weekly_nowcast, latest_obs = weekly_latest)
+plot(weekly_nowcast, latest_obs = weekly_latest) +
+  coord_cartesian(xlim = c(plot_from, nowcast_date))
 ```
 
 ## Weekly-daily (structural reporting)
@@ -648,8 +696,13 @@ The nowcast is now on the daily scale even though reports only arrived weekly, s
 
 ```{r weekly-daily-plot}
 weekly_daily_latest <- enw_latest_data(to_enw_format(reporting_triangle))
-plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest)
+plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest) +
+  coord_cartesian(xlim = c(plot_from, nowcast_date))
 ```
+
+This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly.
+Its recent totals should be similar to, or a little better than, the weekly-weekly nowcast, because it uses the same weekly reports but keeps a daily latent process that borrows strength across days; the payoff is the finer daily granularity that the weekly-weekly model cannot give.
+It will not, however, match a nowcast fitted to genuinely daily reports: the once-a-week reporting still leaves the model less information about within-week timing than daily data would.
 
 The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a harder fit.
 The [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) scores these approaches against a fully daily benchmark if you want to see how much each one gives up.
@@ -692,6 +745,8 @@ Fitting both groups jointly lets a sparse group borrow strength from the other t
 # Going further
 
 This session only scratches the surface of what `epinowcast` can do, and `epinowcast` is only one of several tools for this kind of modelling.
+In fact `epinowcast` can express essentially all of the modelling in this course, from delay estimation and nowcasting through renewal-based $R_t$ estimation to the reporting effects above.
+The main exception is the multi-stream wastewater modelling from the [multiple data streams session](multiple-data-streams), which links several distinct observation processes and is likely outside its current scope.
 
 `epinowcast` has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:
 
