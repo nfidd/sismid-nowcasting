@@ -780,6 +780,7 @@ As in the [renewal equation session](R-estimation-and-the-renewal-equation#estim
 
 We take two snapshots: **day 20**, during the growth phase, and **day 40**, around the peak.
 At each cutoff we fit cases only, deaths only, and the joint model, and compare their real-time $R_t$ (each running only up to its own cutoff) to the truth.
+Unlike the single-stream *level* checks above, these snapshots use the standard (relaxed) scaling priors: $R_t$ is a trend and is identified regardless of the scaling, so we do not need to inform the scale here.
 A small helper truncates the data and fits, reusing the same compiled model on the shorter series.
 
 ```{r realtime_helper}
