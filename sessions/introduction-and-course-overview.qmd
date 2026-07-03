@@ -34,6 +34,7 @@ Both of these processes involve time delays which makes analysing data in real t
 In this course, we first focus on making sense of the delays and biases in the data we are able to access in real time as part of infectious disease surveillance.
 We'll combine this with the process of infectious disease transmission, with the reproduction number as a key component.
 With that, we can start to interpret the present (nowcasting) and predict the future (forecasting).
+We then extend these ideas to more realistic settings: reporting processes that are more complex than a single fixed delay, and jointly fitting multiple surveillance data streams to estimate transmission from several sources at once.
 
 ### Why this course?
 
@@ -74,6 +75,8 @@ Broadly, the intended timeline is:
 -   $R_t$ estimation and the renewal equation
 -   nowcasting, and joint estimation of delays and nowcasts
 -   linking nowcasting and forecasting (bridge to the [forecasting course](https://nfidd.github.io/sismid-forecasting/))
+-   modelling more complex reporting processes with `epinowcast`
+-   jointly fitting multiple surveillance data streams
 
 Let's get started!
 
