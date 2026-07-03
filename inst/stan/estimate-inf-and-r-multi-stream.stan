@@ -23,6 +23,20 @@ data {
   // the model explain a drifting severity rather than forcing a compromise.
   int<lower = 0, upper = 1> tv_death_scale;
 
+  // use an overdispersed (negative binomial) observation model for cases;
+  // deaths stay Poisson and wastewater log-normal. Cases are the timely but
+  // noisiest stream, so overdispersion matters most there.
+  int<lower = 0, upper = 1> use_nb_cases;
+
+  // priors for each stream's scaling, as (mean, sd) pairs. A caller can pass a
+  // TIGHT prior near the truth to a single-stream diagnostic fit (which only
+  // identifies infections x scaling, so needs the scale informed to recover the
+  // level) or a RELAXED prior to the joint fit (where several streams anchor
+  // the level between them).
+  array[2] real ascertainment_p; // ascertainment prior, truncated to [0, 1]
+  array[2] real ifr_p;           // IFR prior, truncated to [0, 1]
+  array[2] real ww_scale_p;      // wastewater scaling prior, truncated to [0, ]
+
   // stream 1: cases (infection-to-report delay, ascertainment)
   array[n] int cases;
   int<lower = 1> case_delay_max;
@@ -47,6 +61,9 @@ parameters {
   real<lower = 0, upper = 1> ifr;  // infection fatality ratio (initial level)
   real<lower = 0> ww_scale;        // wastewater scaling (signal per infection)
   real<lower = 0> ww_sigma;        // wastewater obs sd (log scale)
+  // reciprocal overdispersion for the negative-binomial cases, 1 / sqrt(phi):
+  // near 0 this recovers the Poisson, larger values allow more overdispersion.
+  real<lower = 0> cases_overdispersion;
   // optional random walk on the (log) death scaling, only used when
   // tv_death_scale = 1. Sized to zero otherwise so it costs nothing.
   array[tv_death_scale ? n - 1 : 0] real ifr_rw_noise;
@@ -89,10 +106,14 @@ model {
   init_R ~ normal(1, 0.5) T[0, ];
   rw_noise ~ std_normal();
   rw_sd ~ normal(0, 0.05) T[0, ];
-  ascertainment ~ beta(2, 2);
-  ifr ~ beta(1, 50);
-  ww_scale ~ normal(1, 1) T[0, ];
+  // configurable scaling priors: a tight (mean, sd) near the truth anchors the
+  // level in a single-stream diagnostic fit; a relaxed one lets the streams
+  // pin the level between them in the joint fit.
+  ascertainment ~ normal(ascertainment_p[1], ascertainment_p[2]) T[0, 1];
+  ifr ~ normal(ifr_p[1], ifr_p[2]) T[0, 1];
+  ww_scale ~ normal(ww_scale_p[1], ww_scale_p[2]) T[0, ];
   ww_sigma ~ normal(0, 0.5) T[0, ];
+  cases_overdispersion ~ normal(0, 1) T[0, ];
   if (tv_death_scale) {
     ifr_rw_noise ~ std_normal();
     ifr_rw_sd ~ normal(0, 0.1);   // half-normal via <lower = 0> on the parameter
@@ -103,7 +124,12 @@ model {
   // conditionally independent given the infections, the joint log-likelihood
   // is simply the sum of the per-stream terms.
   if (use_cases) {
-    cases ~ poisson(exp_cases);
+    if (use_nb_cases) {
+      // negative binomial: variance = mu + mu^2 * cases_overdispersion^2
+      cases ~ neg_binomial_2(exp_cases, inv_square(cases_overdispersion));
+    } else {
+      cases ~ poisson(exp_cases);
+    }
   }
   if (use_deaths) {
     deaths ~ poisson(exp_deaths);
