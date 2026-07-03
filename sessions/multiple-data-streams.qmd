@@ -689,6 +689,17 @@ A single shared infection process cannot simultaneously be declining (to match c
 The joint estimate is no longer faithful to any single stream.
 :::
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: when streams conflict
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/data-conflict.html?embed=conflict" title="when surveillance streams conflict interactive" loading="lazy" style="width:100%;height:640px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Drag the death-scaling drift to open a conflict, then let the scaling vary to snap the estimate back onto the truth.
+:::
+
 ## How the joint model surfaces conflict
 
 The $R_t$ comparison above already hints at trouble, but in a real analysis we would not know the truth to compare against.
