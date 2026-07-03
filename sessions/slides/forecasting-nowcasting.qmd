@@ -96,8 +96,8 @@ For each approach:
 ## `r fontawesome::fa("laptop-code", "white")` Your Turn {background-color="#447099" transition="fade-in"}
 
 1. Generate example data with realistic truncation
-2. Implement 4 forecasting approaches (complete data, pipeline, joint)
-3. Compare performance quantitatively
+2. Implement 4 forecasting approaches (complete data, two pipelines, joint)
+3. Compare performance quantitatively with a proper scoring rule (CRPS)
 4. Discuss trade-offs and applications
 
 #
