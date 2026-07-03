@@ -195,10 +195,14 @@ to_enw_format <- function(triangle) {
     enw_add_cumulative()
 }
 
-# The as-of-nowcast snapshot we fit to: drop reports that arrived later
-enw_long <- enw_filter_report_dates(
-  to_enw_format(reporting_triangle), latest_date = nowcast_date
-)
+# The as-of-nowcast snapshot we fit to: drop reports that arrived later, then
+# make the reporting triangle explicitly complete so any reference-date/delay
+# cell that never received a report is filled with a zero rather than left
+# missing. Our simulation is already complete so this changes nothing here, but
+# on real data it guards against gaps in the triangle before preprocessing.
+enw_long <- to_enw_format(reporting_triangle) |>
+  enw_filter_report_dates(latest_date = nowcast_date) |>
+  enw_complete_dates(max_delay = 15, missing_reference = FALSE)
 head(enw_long)
 ```
 
@@ -249,14 +253,17 @@ plot(pobs, type = "delay_fraction")
 ```
 
 Now we specify the model.
-We define each module explicitly so the mapping back to the bespoke model is visible: a daily random walk for the expected counts (matching the daily geometric random walk we built), a single constant delay distribution, and a Poisson observation model.
+We define each module explicitly so the mapping back to the bespoke model is visible: a daily random walk for the expected counts (matching the daily geometric random walk we built), a single delay distribution estimated nonparametrically as a free simplex over delays and held constant over time (matching the free delay PMF we estimated by hand), and a Poisson observation model.
 
 ```{r course-modules}
 # Expected counts lambda_t: a daily random walk (cf. our geometric random walk)
 expectation_module <- enw_expectation(~ rw(day), data = pobs)
 
-# Delay distribution p_{t,d} by reference date: constant over time (cf. fixed p)
-reference_module <- enw_reference(~ 1, data = pobs)
+# Delay distribution p_{t,d} by reference date: a nonparametric free delay
+# (a free simplex over delays), constant over time (cf. our free fixed p)
+reference_module <- enw_reference(
+  parametric = ~ 0, distribution = "none", non_parametric = ~ 1, data = pobs
+)
 
 # Observation model: Poisson, as in n_{t,d} ~ Poisson(lambda_t * p_{t,d})
 obs_module <- enw_obs(family = "poisson", data = pobs)
@@ -297,7 +304,7 @@ Which module corresponds to $\lambda_{t}$, which to $p_{t,d}$, and which to the 
 ## Solution
 
 - `enw_expectation()` plays the role of $\lambda_{t}$: `rw(day)` is a daily random walk on the expected counts, like the geometric random walk we used for onsets.
-- `enw_reference()` plays the role of the delay distribution $p_{t,d}$: `~ 1` keeps it constant over time, exactly as in our bespoke model.
+- `enw_reference()` plays the role of the delay distribution $p_{t,d}$: setting `parametric = ~ 0`, `distribution = "none"` and `non_parametric = ~ 1` estimates a nonparametric free delay (a simplex over delays) held constant over time, matching the free delay PMF we estimated by hand rather than assuming a parametric shape.
 - `enw_obs(family = "poisson")` plays the role of the likelihood $n_{t,d} \sim \text{Poisson}(\lambda_{t} p_{t,d})$.
 
 This is the *same* joint nowcasting model we built by hand, now expressed as a handful of modules.
@@ -322,9 +329,13 @@ As in our bespoke nowcasts, the most recent dates are the most uncertain because
 This gap is the right truncation the nowcast corrects for.
 This default plot is the nowcast by *reference* date.
 `epinowcast` can also plot the model's posterior predictions against the data that were reported at the time with `type = "posterior_prediction"`, which we facet by reference date to check the fit within each date's accumulating reports.
+Faceting by *every* reference date makes each panel too small to read, so we restrict it to the most recent reference dates near the nowcast horizon, which are the ones actually being nowcast.
 
-```{r course-plot-pp}
-plot(course_nowcast, type = "posterior_prediction") +
+```{r course-plot-pp, fig.height = 7}
+# Keep only the recent reference dates so each facet is legible
+pp_recent <- plot(course_nowcast, type = "posterior_prediction")
+pp_recent$data <- pp_recent$data[reference_date > nowcast_date - 9]
+pp_recent +
   facet_wrap(vars(reference_date), scales = "free")
 ```
 
@@ -532,7 +543,7 @@ ggplot(tvd_mean_delay, aes(x = reference_week, y = mean_delay)) +
 The mean delay climbs week on week, which is the feature a single fixed delay cannot represent: later onsets are reported more slowly than earlier ones, so the model has to let the delay change over time to nowcast the recent dates correctly.
 
 This is a property of the *reference* (onset) date, so we put structure on the **reference module** rather than on the report module.
-Where the course model used `enw_reference(~ 1, ...)` for a constant delay, we now let the delay distribution drift week to week with `enw_reference(~ rw(week), ...)`.
+Where the course model held the delay constant over time, we now let the delay distribution drift week to week with `enw_reference(~ rw(week), ...)`.
 
 ::: {.callout-warning}
 We simulated a roughly *linear* drift, so we could fit a model with a matching linear trend on the delay parameters and recover it almost perfectly.
@@ -571,7 +582,7 @@ plot(tvd_nowcast, latest_obs = tvd_latest) +
 
 ::: {.callout-note}
 ## Take 3 minutes
-We changed the delay from `enw_reference(~ 1, ...)` to `enw_reference(~ rw(week), ...)`.
+We changed the delay from one held constant over time to `enw_reference(~ rw(week), ...)`.
 Why does letting the delay vary over time matter for the nowcast, and what would happen if we kept a fixed delay when the true delay was lengthening?
 :::
 
@@ -701,8 +712,55 @@ plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest) +
 ```
 
 This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly.
-Its recent totals should be similar to, or a little better than, the weekly-weekly nowcast, because it uses the same weekly reports but keeps a daily latent process that borrows strength across days; the payoff is the finer daily granularity that the weekly-weekly model cannot give.
-It will not, however, match a nowcast fitted to genuinely daily reports: the once-a-week reporting still leaves the model less information about within-week timing than daily data would.
+Its payoff over the weekly-weekly model is the finer daily granularity: a within-week nowcast recovered from once-a-week reports, which the weekly-weekly model cannot give.
+It will not match a nowcast fitted to genuinely daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.
+
+To compare the two directly we can aggregate the daily structural nowcast up to the same weekly buckets as the weekly-weekly model and plot them against the eventually-observed weekly totals.
+A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.
+
+```{r weekly-compare}
+# Aggregate the daily structural nowcast up to epinowcast's weekly buckets
+# (each week is the seven days ending on a weekly reference date) so it lines up
+# with the weekly-weekly nowcast, keeping only weeks the daily model covers in
+# full within its recent nowcast window.
+min_ref <- min(enw_long$reference_date, na.rm = TRUE)
+weekly_daily_samples <- summary(weekly_daily_nowcast, type = "nowcast_samples")
+weekly_daily_samples[
+  , week := reference_date + (6 - as.integer(reference_date - min_ref) %% 7)
+]
+full_weeks <- weekly_daily_samples[
+  , .(n = uniqueN(reference_date)), by = week
+][n == 7, week]
+
+wd_weekly <- weekly_daily_samples[week %in% full_weeks][
+  , .(total = sum(sample)), by = .(week, .draw)
+][
+  , .(median = median(total), lower = quantile(total, 0.05),
+      upper = quantile(total, 0.95)), by = week
+][, model := "Weekly-daily (aggregated)"]
+
+ww_weekly <- summary(weekly_nowcast, type = "nowcast")[
+  reference_date %in% full_weeks
+][, .(week = reference_date, median = q50, lower = q5, upper = q95)][
+  , model := "Weekly-weekly"
+]
+
+obs_weekly <- enw_latest_data(
+  enw_aggregate_cumulative(to_enw_format(reporting_triangle), timestep = "week")
+)[reference_date %in% full_weeks, .(week = reference_date, observed = confirm)]
+
+ggplot(rbind(wd_weekly, ww_weekly), aes(week, colour = model, fill = model)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, colour = NA) +
+  geom_line(aes(y = median)) +
+  geom_point(aes(y = median)) +
+  geom_point(data = obs_weekly, aes(week, observed), inherit.aes = FALSE) +
+  labs(x = "Week (reference date)", y = "Weekly onsets",
+       colour = NULL, fill = NULL)
+```
+
+On this simulation the two nowcasts agree closely for the earlier week, but for the most recent week the aggregated daily nowcast is much more uncertain and its median falls below both the weekly-weekly nowcast and the eventual total.
+Reconstructing seven daily values from a single weekly report is a harder problem than nowcasting the week directly, so here the weekly-daily model pays for its daily resolution with wider weekly uncertainty rather than buying extra weekly accuracy.
+The black points are the eventually-observed weekly totals.
 
 The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a harder fit.
 The [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) scores these approaches against a fully daily benchmark if you want to see how much each one gives up.
@@ -763,6 +821,19 @@ To go deeper on the topics we covered, the relevant reference pages are:
 - The [plotting reference](https://package.epinowcast.org/reference/plot.epinowcast.html) for more ways to visualise a fit than the default `plot()` we used here.
 
 Its case studies and vignettes also work through joint nowcasting with $R_t$ estimation (a renewal-based expectation model, generalising the joint model from the [joint nowcasting session](joint-nowcasting)), and evaluation of nowcasts with proper scoring rules (as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting)).
+
+::: {.callout-note}
+## Challenge: fit the wrong model on purpose
+A good way to build intuition for these models is to misspecify one deliberately and see how the misspecification shows up.
+Reusing the models and data already defined above, fit the wrong model to each worked example and compare it to the correct one:
+
+- Fit the constant-delay course model (the reference module with no time variation) to the *time-varying-delay* data, and compare its nowcast to the `~ rw(week)` model that lets the delay drift.
+- Fit a model that omits the day-of-week terms to the *day-of-week* data, and compare it to the model that includes them.
+- Fit the model to the weekly data as if it were ordinary daily data, and compare it to the weekly-aware fits.
+
+For each, compare the nowcasts against the eventually-observed data and use a posterior-predictive check (`type = "posterior_prediction"`) to see where the fit breaks down.
+Which misspecifications bite hardest, and how would you detect them from the fit alone if you did not have the eventual data to check against?
+:::
 
 `epinowcast` is not the only option, and the right tool depends on the problem.
 
