@@ -16,6 +16,14 @@ The key idea is that in real-time epidemic analysis nowcasting and forecasting a
 When we want to forecast from the most recent data, we face the problem that this data is incomplete due to reporting delays - exactly the problem nowcasting is designed to solve.
 In this session, we'll explore different approaches to handling this challenge, from simple methods that ignore the problem to joint models.
 
+## Slides
+
+- [Combining nowcasting and forecasting](slides/forecasting-nowcasting)
+
+## Objectives
+
+This session aims to give a taste of forecasting and to show how to combine nowcasting and forecasting to make better predictions when data are subject to reporting delays.
+
 ## A gentle on-ramp: what is forecasting?
 
 If you have not met forecasting before, here is all you need for this session.
@@ -26,14 +34,6 @@ If you have not met forecasting before, here is all you need for this session.
 - To know whether a forecast was any good we **evaluate** it by comparing the predicted distribution against what was eventually observed, using a *proper scoring rule* (we use the Continuous Ranked Probability Score, CRPS, below).
 
 That is the entire forecasting toolkit we need here. The [forecasting course](https://nfidd.github.io/sismid-forecasting/) develops each of these ideas - generative and time-series forecasting models, scoring rules, ensembles, and hubs - in full.
-
-## Slides
-
-- [Combining nowcasting and forecasting](slides/forecasting-nowcasting)
-
-## Objectives
-
-This session aims to give a taste of forecasting and to show how to combine nowcasting and forecasting to make better predictions when data are subject to reporting delays.
 
 ::: {.callout-note collapse="true"}
 
