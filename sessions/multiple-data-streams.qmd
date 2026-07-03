@@ -274,6 +274,17 @@ obs |>
        x = "Day", y = NULL)
 ```
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: one signal, several lenses
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/multiple-data-streams.html?embed=streams" title="multiple data streams interactive" loading="lazy" style="width:100%;height:820px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Drive R(t) to shape the shared infections, then change each stream's delay and scaling: the level and peak timing move, but "Align shapes" collapses every curve onto the one trajectory underneath.
+:::
+
 Before combining anything, we check that each stream, on its own, can recover the shared infection process through its own delay and scaling.
 We assemble the data (using a placeholder wastewater stream for now) and fit the cases stream alone, then the deaths stream alone.
 

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multiple data streams — one signal, several lenses</title>
+<style>
+  :root{
+    --rt:#9333ea;     /* R(t) / purple */
+    --inf:#2563eb;    /* shared infections / blue */
+    --cases:#ea580c;  /* cases / orange */
+    --deaths:#be123c; /* deaths / crimson */
+    --ww:#0891b2;     /* wastewater / teal */
+    --ink:#1f2933;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --bg:#fbfbfd;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 22px 120px}
+  header.hero{
+    padding:54px 22px 30px; text-align:center;
+    background:linear-gradient(180deg,#eff6ff 0%, var(--bg) 100%);
+    border-bottom:1px solid var(--line);
+  }
+  header.hero h1{font-size:30px; margin:0 0 8px; letter-spacing:-.4px}
+  header.hero p{max-width:720px; margin:0 auto; color:var(--muted)}
+  nav.toc{
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    margin:22px auto 0; max-width:780px;
+  }
+  nav.toc a{
+    text-decoration:none; color:var(--inf); font-weight:600; font-size:14px;
+    border:1px solid #c7d2fe; background:#fff; padding:6px 13px; border-radius:999px;
+  }
+  nav.toc a:hover{background:#eff6ff}
+  section{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; margin:30px 0; box-shadow:0 1px 2px rgba(15,23,42,.04);
+  }
+  section > h2{margin:0 0 4px; font-size:23px; letter-spacing:-.3px}
+  .tagline{color:var(--muted); margin:0 0 18px; font-size:15px}
+  h3{margin:26px 0 8px; font-size:17px}
+  p{margin:10px 0}
+  .fig{
+    border:1px solid var(--line); border-radius:12px; padding:16px 14px 10px;
+    margin:18px 0 6px; background:#fff;
+  }
+  .fig svg{display:block; width:100%; height:auto}
+  .figcap{font-size:13.5px; color:var(--muted); margin:8px 4px 2px}
+  .controls{
+    display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center;
+    margin:8px 4px 2px; padding:12px 14px; background:#f8fafc;
+    border:1px solid var(--line); border-radius:10px; font-size:14px;
+  }
+  .controls label{display:flex; flex-direction:column; gap:2px; min-width:150px}
+  .controls .vlabel{font-weight:600}
+  .controls input[type=range]{width:160px; accent-color:var(--inf)}
+  .grp{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center;
+    padding:6px 0; border-top:1px dashed var(--line); width:100%}
+  .grp:first-child{border-top:none}
+  .grp .gtag{font-weight:700; font-size:12.5px; min-width:96px}
+  .toggle{display:flex; align-items:center; gap:7px; min-width:auto}
+  .toggle input{accent-color:var(--inf)}
+  .readout{
+    display:inline-flex; gap:14px; flex-wrap:wrap; margin:10px 4px 0;
+    font-variant-numeric:tabular-nums;
+  }
+  .readout .chip{
+    background:#f1f5f9; border:1px solid var(--line); border-radius:8px;
+    padding:6px 12px; font-size:14px;
+  }
+  .readout .chip b{font-size:16px}
+  .presets{display:flex; gap:8px; flex-wrap:wrap; margin:14px 4px 0; align-items:center}
+  .presets button{
+    font:600 13px inherit; border:1px solid #c7d2fe; background:#fff; color:var(--inf);
+    padding:6px 13px; border-radius:8px; cursor:pointer;
+  }
+  .presets button:hover{background:#eff6ff}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:13.5px; margin:4px 4px 8px}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .swatch{width:22px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block}
+  .key{background:#eff6ff; border-left:4px solid var(--inf); padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0}
+  .key.orange{background:#fff7ed; border-color:var(--cases)}
+  .key.teal{background:#ecfeff; border-color:var(--ww)}
+  .formula{
+    background:#0f172a; color:#e2e8f0; border-radius:10px; padding:14px 18px;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:15px; overflow-x:auto; margin:14px 0;
+  }
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:14.5px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{background:#f8fafc}
+  td.metric{font-weight:600; white-space:nowrap}
+  ul{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  .pill{display:inline-block; font-size:12px; font-weight:700; padding:2px 9px; border-radius:999px; vertical-align:middle}
+  .pill.share{background:#dbeafe; color:#1e40af}
+  code{background:#f1f5f9; padding:1px 6px; border-radius:5px; font-size:14px}
+  footer{text-align:center; color:var(--muted); font-size:13px; margin-top:40px}
+  a{color:var(--inf)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Multiple data streams: one signal, several lenses</h1>
+  <p>Cases, deaths and a wastewater signal look like three different outbreaks. They are not. Each is the <b>same</b> latent <b style="color:var(--inf)">infections</b> — driven by one <b style="color:var(--rt)">R(t)</b> — seen through its own <b>delay</b> and its own <b>scaling</b>. Drive the shared infections and reshape each stream's lens, and watch the curves move together. Line up their shapes and the single shared signal underneath becomes obvious.</p>
+  <nav class="toc">
+    <a href="#intro">The idea</a>
+    <a href="#streams">One signal, three lenses</a>
+    <a href="#takeaways">Takeaways</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <h2>One process, many observations</h2>
+  <p class="tagline">Every stream is the same infections, delayed and rescaled</p>
+  <p>We rarely watch an outbreak through a single window. We usually see confirmed <b style="color:var(--cases)">cases</b>, <b style="color:var(--deaths)">deaths</b>, and increasingly a <b style="color:var(--ww)">wastewater</b> signal — all at once. It is tempting to treat them as three separate epidemics, because they peak at different times and sit at wildly different levels. The whole point of a joint model is that they are <b>not</b> separate: there is <b>one</b> latent infection trajectory <i>I</i>(t), and each stream is that same trajectory passed through its own lens.</p>
+
+  <p>A lens has two parts. A <b>delay</b> distribution <i>p</i>(s) — how long after infection this stream tends to record the event — which <b>shifts</b> and <b>smears</b> the curve. And a <b>scaling</b> — what fraction of infections this stream captures, and on what scale — which moves the <b>level</b> up or down without changing the shape:</p>
+
+  <div class="formula">stream(t) = scaling &times; &Sigma;<sub>s</sub> I(t &minus; s) &middot; p(s)</div>
+
+  <p>The shared infections are generated by the <b>renewal equation</b> from the reproduction number and the generation time, exactly as in the earlier sessions:</p>
+
+  <div class="formula">I(t) = R(t) &middot; &Sigma;<sub>s&ge;1</sub> I(t &minus; s) &middot; g(s)</div>
+
+  <table>
+    <tr><th>Stream</th><th>Delay (infection &rarr; record)</th><th>Scaling</th><th>Observation</th></tr>
+    <tr><td class="metric" style="color:var(--cases)">cases</td><td>short (gamma, mean &asymp; 3 d)</td><td>ascertainment &asymp; 0.4</td><td>counts</td></tr>
+    <tr><td class="metric" style="color:var(--deaths)">deaths</td><td>long (gamma, mean &asymp; 8 d)</td><td>IFR &asymp; 0.1</td><td>counts</td></tr>
+    <tr><td class="metric" style="color:var(--ww)">wastewater</td><td>short (gamma, mean &asymp; 2 d)</td><td>scale &asymp; 2</td><td>concentration (log scale)</td></tr>
+  </table>
+  <div class="key">Different <b>levels</b> come from the scalings; different <b>peak timing</b> comes from the delays. Deaths peak latest because their delay is longest. None of that means the streams disagree — line their shapes up (the toggle below) and the one shared trajectory shows through.</div>
+</section>
+
+<!-- ============ THE INTERACTIVE ============ -->
+<section id="streams">
+  <h2>One signal, three lenses <span class="pill share">shared infections</span></h2>
+  <p class="tagline">Drive R(t) and reshape each stream's delay and scaling</p>
+  <p>The top strip is <b style="color:var(--rt)">R(t)</b>; below it the shared <b style="color:var(--inf)">infections</b> it generates through the renewal equation; then the three streams, each the same infections convolved with its own delay and multiplied by its own scaling. Move the R(t) sliders and every panel responds to the same change. Change a stream's <b>scaling</b> and only its level moves; change its <b>delay</b> and its peak slides later and flattens. Turn on <b>Align shapes</b> to rescale every curve to its own peak: the shapes collapse onto one trajectory, offset only by their delays.</p>
+
+  <div class="presets" id="presets">
+    <button data-r0="1.4" data-r1="0.7" data-day="28" data-casd="3" data-deld="8" data-wwd="2" data-asc="0.4" data-ifr="0.1" data-wws="2">Rise &amp; fall (default)</button>
+    <button data-r0="1.4" data-r1="0.7" data-day="28" data-casd="3" data-deld="12" data-wwd="2" data-asc="0.4" data-ifr="0.1" data-wws="2">Long death delay</button>
+    <button data-r0="1.4" data-r1="0.7" data-day="28" data-casd="3" data-deld="8" data-wwd="2" data-asc="0.08" data-ifr="0.1" data-wws="2">Low ascertainment</button>
+    <button data-r0="1.4" data-r1="0.7" data-day="28" data-casd="3" data-deld="8" data-wwd="2" data-asc="0.4" data-ifr="0.1" data-wws="6">Strong wastewater signal</button>
+    <button data-r0="1.25" data-r1="1.25" data-day="30" data-casd="3" data-deld="8" data-wwd="2" data-asc="0.4" data-ifr="0.1" data-wws="2">Steady growth (R constant)</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch" style="border-color:var(--rt);border-top-width:4px"></i> R(t)</span>
+    <span><i class="swatch" style="border-color:var(--inf);border-top-width:8px;opacity:.55"></i> shared infections I(t)</span>
+    <span><i class="swatch" style="border-color:var(--cases);border-top-width:4px"></i> cases</span>
+    <span><i class="swatch" style="border-color:var(--deaths);border-top-width:4px"></i> deaths</span>
+    <span><i class="swatch" style="border-color:var(--ww);border-top-width:4px"></i> wastewater</span>
+    <span><i class="swatch" style="border-color:#94a3b8;border-top-style:dashed"></i> peak day</span>
+  </div>
+
+  <div class="fig">
+    <svg id="streamSvg" viewBox="0 0 720 600" role="img" aria-label="Stacked panels sharing a day axis. Top: the reproduction number R(t). Below it the shared latent infections generated by the renewal equation. Then cases, deaths and wastewater, each the same infections convolved with its own delay and multiplied by its own scaling, so they differ in level and in peak timing but share one shape."></svg>
+  </div>
+
+  <div class="controls">
+    <div class="grp">
+      <span class="gtag" style="color:var(--rt)">R(t)</span>
+      <label><span class="vlabel">Initial R<sub>0</sub>: <span id="r0Val">1.40</span></span>
+        <input id="r0" type="range" min="0.6" max="2.5" step="0.05" value="1.4" style="accent-color:var(--rt)"></label>
+      <label><span class="vlabel">Later R<sub>1</sub>: <span id="r1Val">0.70</span></span>
+        <input id="r1" type="range" min="0.4" max="2" step="0.05" value="0.7" style="accent-color:var(--rt)"></label>
+      <label><span class="vlabel">Change on day: <span id="dayVal">28</span></span>
+        <input id="day" type="range" min="8" max="52" step="1" value="28" style="accent-color:var(--rt)"></label>
+    </div>
+    <div class="grp">
+      <span class="gtag" style="color:var(--cases)">cases</span>
+      <label><span class="vlabel">Delay mean (days): <span id="casdVal">3.0</span></span>
+        <input id="casd" type="range" min="1" max="10" step="0.5" value="3" style="accent-color:var(--cases)"></label>
+      <label><span class="vlabel">Ascertainment: <span id="ascVal">0.40</span></span>
+        <input id="asc" type="range" min="0.02" max="1" step="0.02" value="0.4" style="accent-color:var(--cases)"></label>
+    </div>
+    <div class="grp">
+      <span class="gtag" style="color:var(--deaths)">deaths</span>
+      <label><span class="vlabel">Delay mean (days): <span id="deldVal">8.0</span></span>
+        <input id="deld" type="range" min="2" max="14" step="0.5" value="8" style="accent-color:var(--deaths)"></label>
+      <label><span class="vlabel">IFR (scaling): <span id="ifrVal">0.10</span></span>
+        <input id="ifr" type="range" min="0.01" max="0.5" step="0.01" value="0.1" style="accent-color:var(--deaths)"></label>
+    </div>
+    <div class="grp">
+      <span class="gtag" style="color:var(--ww)">wastewater</span>
+      <label><span class="vlabel">Delay mean (days): <span id="wwdVal">2.0</span></span>
+        <input id="wwd" type="range" min="1" max="8" step="0.5" value="2" style="accent-color:var(--ww)"></label>
+      <label><span class="vlabel">Scale: <span id="wwsVal">2.0</span></span>
+        <input id="wws" type="range" min="0.5" max="8" step="0.5" value="2" style="accent-color:var(--ww)"></label>
+      <label class="toggle"><input id="align" type="checkbox"> <span class="vlabel">Align shapes (scale each to its own peak)</span></label>
+    </div>
+  </div>
+
+  <div class="readout">
+    <span class="chip" style="border-left:4px solid var(--inf);padding-left:10px">infections peak: day <b id="pkInf">—</b></span>
+    <span class="chip" style="border-left:4px solid var(--cases);padding-left:10px">cases peak: day <b id="pkCas">—</b></span>
+    <span class="chip" style="border-left:4px solid var(--deaths);padding-left:10px">deaths peak: day <b id="pkDea">—</b></span>
+    <span class="chip" style="border-left:4px solid var(--ww);padding-left:10px">wastewater peak: day <b id="pkWw">—</b></span>
+    <span class="chip" id="shiftNote" style="background:#eff6ff"></span>
+  </div>
+
+  <div class="figcap">Shared infections come from <code>renewal(I0, R, gen_time)</code> with a gamma generation time (shape 4). Each stream is <code>scaling &times; convolve_with_delay(infections, delay_pmf)</code> using gamma delay PMFs (cases shape 3, deaths shape 8, wastewater shape 2). The delay mean sliders set the gamma shape (rate 1). Wastewater is drawn on a log axis as a continuous concentration.</div>
+
+  <div class="key">Same shape, three levels, three timings. The scalings (ascertainment, IFR, wastewater scale) only slide a panel up or down; the delays only shift and smear it. Nothing you can do to one stream's lens changes the shared infections — which is exactly why fitting all three together pins down one trajectory.</div>
+</section>
+
+<!-- ============ TAKEAWAYS ============ -->
+<section id="takeaways">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Cases, deaths and wastewater are one shared infection trajectory seen through three lenses — a per-stream <b>delay</b> and a per-stream <b>scaling</b> — not three separate epidemics.</li>
+    <li><b>Scaling</b> sets the level of a stream; it does not change the shape. This is why the absolute level of infections is hard to identify: any stream is happy with double the infections and half the scaling.</li>
+    <li><b>Delay</b> shifts a stream later and smears it. <b style="color:var(--deaths)">Deaths</b> peak latest because their infection-to-death delay is longest.</li>
+    <li>A joint (parallel) model uses this: every stream informs the <i>same</i> latent infections, so timely streams sharpen the recent trajectory while stable streams anchor the level — see the <a href="../sessions/multiple-data-streams.html">session</a>.</li>
+    <li>When streams cannot be reconciled by one shared trajectory, that is genuine <b>conflict</b>, and it signals that a delay or scaling assumption is wrong for at least one stream.</li>
+  </ul>
+  <footer>Built as a teaching aid for the NFIDD multiple data streams session · all figures are interactive and self-contained.</footer>
+</section>
+
+</div>
+
+<script>
+/* ---------- small numerics library ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function clear(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+
+/* regularised lower incomplete gamma P(a,x) (rate 1), via series / continued fraction */
+function gammaln(xx){
+  const cof=[76.18009172947146,-86.50532032941677,24.01409824083091,
+             -1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let x=xx,y=xx,tmp=x+5.5; tmp-=(x+0.5)*Math.log(tmp); let ser=1.000000000190015;
+  for(let j=0;j<6;j++){ y++; ser+=cof[j]/y; }
+  return -tmp+Math.log(2.5066282746310005*ser/x);
+}
+function gammaCdf(x,a){
+  if(x<=0) return 0;
+  if(x<a+1){
+    let ap=a, sum=1/a, del=sum;
+    for(let n=0;n<300;n++){ ap++; del*=x/ap; sum+=del; if(Math.abs(del)<Math.abs(sum)*1e-13) break; }
+    return sum*Math.exp(-x+a*Math.log(x)-gammaln(a));
+  } else {
+    const FPMIN=1e-300; let b=x+1-a, c=1/FPMIN, d=1/b, h=d;
+    for(let i=1;i<=300;i++){
+      const an=-i*(i-a); b+=2; d=an*d+b; if(Math.abs(d)<FPMIN)d=FPMIN;
+      c=b+an/c; if(Math.abs(c)<FPMIN)c=FPMIN; d=1/d; const dl=d*c; h*=dl;
+      if(Math.abs(dl-1)<1e-13) break;
+    }
+    const Q=Math.exp(-x+a*Math.log(x)-gammaln(a))*h;
+    return 1-Q;
+  }
+}
+/* discretised gamma delay PMF, mirroring censored_delay_pmf: delay = floor(U(0,1)+Gamma).
+   P(delay=d) = int_0^1 [F(d+1-u) - F(d-u)] du, F = gamma CDF (rate 1). Returns index 0..max. */
+function delayPmf(shape, rate, max){
+  const F=x=> gammaCdf(Math.max(x,0)*rate, shape);
+  const pmf=[]; let tot=0; const M=16;
+  for(let d=0; d<=max; d++){
+    let p=0;
+    for(let j=0;j<M;j++){ const u=(j+0.5)/M; p += F(d+1-u)-F(d-u); }
+    p/=M; p=Math.max(p,0); pmf.push(p); tot+=p;
+  }
+  for(let d=0; d<=max; d++) pmf[d]/=(tot||1e-12);
+  return pmf;
+}
+/* generation time PMF: gamma shape 4 rate 1, drop index 0, renormalise. g[s], s=1.. */
+function genTimePmf(){
+  const raw=delayPmf(4,1,14);
+  const g=[0]; let tot=0;
+  for(let s=1;s<=14;s++){ g[s]=raw[s]; tot+=raw[s]; }
+  for(let s=1;s<=14;s++) g[s]/=(tot||1e-12);
+  return g;
+}
+/* renewal(I0, R, gen_time): I[t] = R[t] * sum_s I[t-s] g[s]. Rfun(t) gives R on day t. */
+function renewal(Rfun, g, nDays, I0){
+  const S=g.length-1, I=new Array(nDays).fill(0); I[0]=I0;
+  for(let t=1;t<nDays;t++){
+    let f=0; for(let s=1;s<=S;s++){ if(t-s>=0) f+=I[t-s]*g[s]; }
+    I[t]=Rfun(t)*f;
+  }
+  return I;
+}
+/* convolve_with_delay: C[t] = sum_{k>=0} I[t-k] f[k], f is 0-indexed PMF. */
+function convolve(I, f){
+  const T=I.length, C=new Array(T).fill(0);
+  for(let t=0;t<T;t++){ let s=0; for(let k=0;k<f.length && t-k>=0;k++) s+=I[t-k]*f[k]; C[t]=s; }
+  return C;
+}
+function peakDay(a){ let p=0; for(let i=1;i<a.length;i++) if(a[i]>a[p]) p=i; return p; }
+function fmtNum(v){
+  if(v>=1000) return (v/1000).toFixed(v>=1e4?0:1)+"k";
+  if(v>=100) return Math.round(v);
+  if(v>=10) return v.toFixed(0);
+  if(v>=1) return v.toFixed(1);
+  return v.toFixed(2);
+}
+
+/* ================= the interactive ================= */
+(function(){
+  const svg=document.getElementById("streamSvg");
+  const W=720, nDays=60, I0=20, GEN=genTimePmf();
+  const m={l:54,r:16};
+  const sx=t=> m.l + t/(nDays-1)*(W-m.l-m.r);
+  const inp=id=>document.getElementById(id);
+  const ids=["r0","r1","day","casd","asc","deld","ifr","wwd","wws"];
+  const alignInp=inp("align");
+
+  function Rfun(t,r0,r1,day){
+    const z=(t-day)/1.6;               // smooth logistic step (~1 gen wide)
+    const f=1/(1+Math.exp(-z));
+    return r0+(r1-r0)*f;
+  }
+
+  // one stacked panel: baseline, gridlines, filled area + line, peak marker
+  function panel(top,h,title,tcolor,vals,color,opts){
+    opts=opts||{}; const bot=top+h;
+    svg.appendChild(el("text",{x:m.l,y:top-6,"font-size":12,"font-weight":700,fill:tcolor})).textContent=title;
+    let sy, ticks=[];
+    if(opts.log){
+      const pos=vals.filter(v=>v>0);
+      const mx=Math.max(...pos,1), mn=Math.max(Math.min(...pos), mx/1e3);
+      const lo=Math.log10(mn*0.6), hi=Math.log10(mx*1.6);
+      sy=v=> bot-(Math.log10(Math.max(v,mn*0.4))-lo)/(hi-lo)*h;
+      for(let e=Math.ceil(lo); e<=Math.floor(hi); e++) ticks.push(Math.pow(10,e));
+      if(ticks.length<2){ ticks=[mn,mx]; }
+    } else {
+      const mx=Math.max(...vals.filter(isFinite),1e-9)*1.14;
+      sy=v=> bot-(Math.min(v,mx)/mx)*h;
+      for(let k=0;k<=2;k++) ticks.push(mx*k/2);
+    }
+    ticks.forEach(v=>{ const yy=sy(v); if(yy<top-1||yy>bot+1) return;
+      svg.appendChild(el("line",{x1:m.l,y1:yy,x2:W-m.r,y2:yy,stroke:"#eef2f7"}));
+      svg.appendChild(el("text",{x:m.l-6,y:yy+3,"text-anchor":"end","font-size":9,fill:"#9ca3af"})).textContent=opts.log?fmtNum(v):fmtNum(v);
+    });
+    svg.appendChild(el("line",{x1:m.l,y1:bot,x2:W-m.r,y2:bot,stroke:"#cbd5e1"}));
+    // area
+    let area="M "+sx(0)+" "+bot, ln="";
+    for(let t=0;t<nDays;t++){ const yy=sy(Math.max(vals[t], opts.log?1e-9:0)); area+=" L "+sx(t)+" "+yy; ln+=(t?" L ":"M ")+sx(t)+" "+yy; }
+    area+=" L "+sx(nDays-1)+" "+bot+" Z";
+    svg.appendChild(el("path",{d:area,fill:color,opacity:0.14}));
+    svg.appendChild(el("path",{d:ln,fill:"none",stroke:color,"stroke-width":2.4}));
+    // peak marker
+    if(opts.peak!=null){
+      const pk=opts.peak;
+      svg.appendChild(el("line",{x1:sx(pk),y1:top,x2:sx(pk),y2:bot,stroke:"#94a3b8","stroke-dasharray":"3 3","stroke-width":1}));
+      svg.appendChild(el("circle",{cx:sx(pk),cy:sy(vals[pk]),r:3.6,fill:color,stroke:"#fff","stroke-width":1.4}));
+    }
+    return {sy,bot};
+  }
+
+  function draw(){
+    const r0=+inp("r0").value, r1=+inp("r1").value, day=+inp("day").value,
+          casd=+inp("casd").value, asc=+inp("asc").value,
+          deld=+inp("deld").value, ifr=+inp("ifr").value,
+          wwd=+inp("wwd").value, wws=+inp("wws").value;
+    inp("r0Val").textContent=r0.toFixed(2); inp("r1Val").textContent=r1.toFixed(2);
+    inp("dayVal").textContent=day;
+    inp("casdVal").textContent=casd.toFixed(1); inp("ascVal").textContent=asc.toFixed(2);
+    inp("deldVal").textContent=deld.toFixed(1); inp("ifrVal").textContent=ifr.toFixed(2);
+    inp("wwdVal").textContent=wwd.toFixed(1); inp("wwsVal").textContent=wws.toFixed(1);
+
+    // shared infections via renewal
+    const Rt=t=>Rfun(t,r0,r1,day);
+    const I=renewal(Rt,GEN,nDays,I0);
+    // per-stream delay PMFs (mean = shape, rate 1), then scale * convolution
+    const casPmf=delayPmf(casd,1,Math.max(10,Math.ceil(casd*2.5)));
+    const deaPmf=delayPmf(deld,1,Math.max(12,Math.ceil(deld*2.2)));
+    const wwPmf =delayPmf(wwd,1,Math.max(10,Math.ceil(wwd*3)));
+    const cases  = convolve(I,casPmf).map(v=>asc*v);
+    const deaths = convolve(I,deaPmf).map(v=>ifr*v);
+    const ww     = convolve(I,wwPmf).map(v=>wws*v);
+
+    const pkI=peakDay(I), pkC=peakDay(cases), pkD=peakDay(deaths), pkW=peakDay(ww);
+    inp("pkInf").textContent=pkI; inp("pkCas").textContent=pkC;
+    inp("pkDea").textContent=pkD; inp("pkWw").textContent=pkW;
+    inp("shiftNote").textContent="deaths peak "+(pkD-pkC>=0?"+":"")+(pkD-pkC)+" d after cases";
+
+    clear(svg);
+
+    /* ---- R(t) strip (always shown) ---- */
+    const Rtop=28, Rh=54, Rbot=Rtop+Rh;
+    const Rmax=Math.max(2.2, r0+0.2, r1+0.2), Rmin=0;
+    const syR=v=> Rbot-(v-Rmin)/(Rmax-Rmin)*Rh;
+    svg.appendChild(el("text",{x:m.l,y:Rtop-6,"font-size":12,"font-weight":700,fill:"#7e22ce"})).textContent="reproduction number R(t)";
+    [1].forEach(v=>{
+      svg.appendChild(el("line",{x1:m.l,y1:syR(v),x2:W-m.r,y2:syR(v),stroke:"#94a3b8","stroke-dasharray":"5 4","stroke-width":1.3}));
+      svg.appendChild(el("text",{x:W-m.r,y:syR(v)-3,"text-anchor":"end","font-size":9,fill:"#64748b","font-weight":600})).textContent="R = 1";
+    });
+    let pR="";
+    for(let t=0;t<nDays;t++) pR+=(t?" L ":"M ")+sx(t)+" "+syR(Rt(t));
+    svg.appendChild(el("path",{d:pR,fill:"none",stroke:"#9333ea","stroke-width":2.6}));
+    svg.appendChild(el("line",{x1:m.l,y1:Rbot,x2:W-m.r,y2:Rbot,stroke:"#cbd5e1"}));
+
+    if(!alignInp.checked){
+      /* ---- four stacked panels (free y each) ---- */
+      const gap=34, h=86;
+      let top=Rbot+gap;
+      panel(top,h,"shared latent infections I(t)","#1d4ed8",I,"#2563eb",{peak:pkI}); top+=h+gap;
+      panel(top,h,"cases  =  ascertainment × convolve(I, delay)","#c2410c",cases,"#ea580c",{peak:pkC}); top+=h+gap;
+      panel(top,h,"deaths  =  IFR × convolve(I, delay)","#9f1239",deaths,"#be123c",{peak:pkD}); top+=h+gap;
+      panel(top,h,"wastewater  =  scale × convolve(I, delay)  ·  log scale","#0e7490",ww,"#0891b2",{peak:pkW,log:true});
+      // shared x axis at very bottom
+      const axisY=top+h;
+      for(let t=0;t<=nDays;t+=10) svg.appendChild(el("text",{x:sx(Math.min(t,nDays-1)),y:axisY+16,"text-anchor":"middle","font-size":10,fill:"#6b7280"})).textContent=t;
+      svg.appendChild(el("text",{x:(m.l+W-m.r)/2,y:axisY+32,"text-anchor":"middle","font-size":12,fill:"#374151"})).textContent="day";
+    } else {
+      /* ---- aligned overlay: each stream scaled to its own peak ---- */
+      const top=Rbot+40, h=430, bot=top+h;
+      const sy=v=> bot-v*h;                       // v in 0..1
+      svg.appendChild(el("text",{x:m.l,y:top-8,"font-size":12,"font-weight":700,fill:"#1f2933"})).textContent="each stream scaled to its own peak — the shared shape shows through";
+      [0,0.25,0.5,0.75,1].forEach(v=>{
+        svg.appendChild(el("line",{x1:m.l,y1:sy(v),x2:W-m.r,y2:sy(v),stroke:"#eef2f7"}));
+        svg.appendChild(el("text",{x:m.l-6,y:sy(v)+3,"text-anchor":"end","font-size":9,fill:"#9ca3af"})).textContent=v.toFixed(2);
+      });
+      svg.appendChild(el("line",{x1:m.l,y1:bot,x2:W-m.r,y2:bot,stroke:"#cbd5e1"}));
+      const series=[
+        {a:I,c:"#2563eb",fill:true,pk:pkI,lab:"infections"},
+        {a:cases,c:"#ea580c",pk:pkC,lab:"cases"},
+        {a:deaths,c:"#be123c",pk:pkD,lab:"deaths"},
+        {a:ww,c:"#0891b2",pk:pkW,lab:"wastewater"}
+      ];
+      series.forEach(s=>{
+        const mx=Math.max(...s.a,1e-9); const nrm=s.a.map(v=>v/mx);
+        if(s.fill){
+          let area="M "+sx(0)+" "+bot;
+          for(let t=0;t<nDays;t++) area+=" L "+sx(t)+" "+sy(nrm[t]);
+          area+=" L "+sx(nDays-1)+" "+bot+" Z";
+          svg.appendChild(el("path",{d:area,fill:s.c,opacity:0.1}));
+        }
+        let ln="";
+        for(let t=0;t<nDays;t++) ln+=(t?" L ":"M ")+sx(t)+" "+sy(nrm[t]);
+        svg.appendChild(el("path",{d:ln,fill:"none",stroke:s.c,"stroke-width":s.fill?3:2.2,opacity:s.fill?0.6:1}));
+        // peak marker on baseline
+        svg.appendChild(el("line",{x1:sx(s.pk),y1:sy(1),x2:sx(s.pk),y2:bot,stroke:s.c,"stroke-dasharray":"3 3","stroke-width":1,opacity:.5}));
+        svg.appendChild(el("circle",{cx:sx(s.pk),cy:sy(1),r:3.6,fill:s.c,stroke:"#fff","stroke-width":1.4}));
+      });
+      for(let t=0;t<=nDays;t+=10) svg.appendChild(el("text",{x:sx(Math.min(t,nDays-1)),y:bot+16,"text-anchor":"middle","font-size":10,fill:"#6b7280"})).textContent=t;
+      svg.appendChild(el("text",{x:(m.l+W-m.r)/2,y:bot+32,"text-anchor":"middle","font-size":12,fill:"#374151"})).textContent="day  ·  markers show where each stream peaks";
+    }
+  }
+
+  ids.forEach(id=>inp(id).addEventListener("input",draw));
+  alignInp.addEventListener("change",draw);
+  document.querySelectorAll("#presets button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      inp("r0").value=b.dataset.r0; inp("r1").value=b.dataset.r1; inp("day").value=b.dataset.day;
+      inp("casd").value=b.dataset.casd; inp("deld").value=b.dataset.deld; inp("wwd").value=b.dataset.wwd;
+      inp("asc").value=b.dataset.asc; inp("ifr").value=b.dataset.ifr; inp("wws").value=b.dataset.wws;
+      draw();
+    });
+  });
+  draw();
+})();
+</script>
+<script>
+/* embed mode: ?embed=sectionId[,id2,...] strips the page chrome AND the
+   explanatory prose/maths from the kept sections, leaving only the interactive
+   figures, for inlining in an <iframe> in the course site. Reports height so the
+   host page can auto-size the iframe. */
+(function(){
+  var q=new URLSearchParams(location.search), e=q.get('embed');
+  var KEEP={fig:1,controls:1,readout:1,legend:1,presets:1,figcap:1};
+  if(e){
+    var keep=e.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    ['header.hero','nav.toc','footer'].forEach(function(sel){
+      Array.prototype.forEach.call(document.querySelectorAll(sel),function(n){n.style.display='none';});
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('body > div'),function(d){
+      if(!d.classList.contains('wrap')) d.style.display='none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('section'),function(sec){
+      if(keep.indexOf(sec.id)===-1){ sec.style.display='none'; return; }
+      sec.style.margin='0'; sec.style.border='none'; sec.style.boxShadow='none'; sec.style.padding='2px 2px 8px';
+      Array.prototype.forEach.call(sec.children,function(c){
+        var k=false, cl=c.classList; if(cl){ for(var key in KEEP){ if(cl.contains(key)){k=true;break;} } }
+        if(!k) c.style.display='none';
+      });
+    });
+    var wrap=document.querySelector('.wrap'); if(wrap) wrap.style.padding='0 8px 10px';
+    document.body.style.background='#fff'; document.documentElement.style.background='#fff';
+  }
+  function postH(){ try{ parent.postMessage({nfiddEmbedHeight: Math.ceil(document.body.getBoundingClientRect().height)}, '*'); }catch(_){} }
+  window.addEventListener('load', postH);
+  window.addEventListener('resize', postH);
+  document.addEventListener('input', function(){ setTimeout(postH,60); });
+  document.addEventListener('click', function(){ setTimeout(postH,120); });
+  setTimeout(postH,250); setTimeout(postH,1000);
+})();
+</script>
+</body>
+</html>

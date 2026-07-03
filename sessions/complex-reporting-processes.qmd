@@ -400,6 +400,17 @@ ggplot(reports_by_day, aes(x = reported_day, y = reports)) +
   labs(x = "Report day", y = "Reports", title = "Reports by report day")
 ```
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: the day-of-week sawtooth
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/complex-reporting-processes.html?embed=dow" title="the day-of-week reporting effect interactive" loading="lazy" style="width:100%;height:780px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Set the weekly reporting weights to distort a smooth epidemic into a weekly sawtooth, then divide the normalised pattern back out to recover the underlying signal.
+:::
+
 The three effects act on different things.
 The reference-date effect on the counts changes *when events happen* (the onset day), so it belongs in the model for the expected counts.
 The reference-date effect on the delay changes *how long reporting takes* for events on a given onset day, so it belongs in the delay (reference) module.

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Day-of-week reporting effects — the weekly sawtooth and how to remove it</title>
+<style>
+  :root{
+    --under:#334155;   /* underlying smooth signal / slate */
+    --obs:#ea580c;     /* observed (distorted) / orange */
+    --adj:#0891b2;     /* adjusted (recovered) / teal */
+    --wend:#eef2f7;    /* weekend shading */
+    --now:#dc2626;
+    --ink:#1f2933;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --bg:#fbfbfd;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 22px 120px}
+  header.hero{padding:54px 22px 30px; text-align:center;
+    background:linear-gradient(180deg,#fff7ed 0%, var(--bg) 100%); border-bottom:1px solid var(--line);}
+  header.hero h1{font-size:30px; margin:0 0 8px; letter-spacing:-.4px}
+  header.hero p{max-width:710px; margin:0 auto; color:var(--muted)}
+  nav.toc{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:22px auto 0; max-width:780px}
+  nav.toc a{text-decoration:none; color:var(--obs); font-weight:600; font-size:14px;
+    border:1px solid #fed7aa; background:#fff; padding:6px 13px; border-radius:999px}
+  nav.toc a:hover{background:#fff7ed}
+  section{background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; margin:30px 0; box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  section > h2{margin:0 0 4px; font-size:23px; letter-spacing:-.3px}
+  .tagline{color:var(--muted); margin:0 0 18px; font-size:15px}
+  h3{margin:26px 0 8px; font-size:17px}
+  p{margin:10px 0}
+  .fig{border:1px solid var(--line); border-radius:12px; padding:16px 14px 10px; margin:18px 0 6px; background:#fff}
+  .fig svg{display:block; width:100%; height:auto}
+  .figcap{font-size:13.5px; color:var(--muted); margin:8px 4px 2px}
+  .controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; margin:8px 4px 2px;
+    padding:12px 14px; background:#f8fafc; border:1px solid var(--line); border-radius:10px; font-size:14px}
+  .controls label{display:flex; flex-direction:column; gap:2px; min-width:120px}
+  .controls .vlabel{font-weight:600}
+  .controls input[type=range]{width:130px; accent-color:var(--obs)}
+  .toggle{display:flex; flex-direction:row; align-items:center; gap:7px; min-width:auto}
+  .toggle input{accent-color:var(--obs)}
+  .readout{display:inline-flex; gap:14px; flex-wrap:wrap; margin:12px 4px 0; font-variant-numeric:tabular-nums}
+  .readout .chip{background:#f1f5f9; border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:14px}
+  .readout .chip b{font-size:16px}
+  .presets{display:flex; gap:8px; flex-wrap:wrap; margin:14px 4px 0; align-items:center}
+  .presets button{font:600 13px inherit; border:1px solid #fed7aa; background:#fff; color:var(--obs);
+    padding:6px 13px; border-radius:8px; cursor:pointer}
+  .presets button:hover{background:#fff7ed}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:13.5px; margin:4px 4px 8px}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .swatch{width:22px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block}
+  .swbox{width:16px; height:14px; border-radius:3px; display:inline-block; vertical-align:middle}
+  .key{background:#fff7ed; border-left:4px solid var(--obs); padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0}
+  .key.teal{background:#ecfeff; border-color:var(--adj)}
+  .key.slate{background:#f1f5f9; border-color:var(--under)}
+  .formula{background:#0f172a; color:#e2e8f0; border-radius:10px; padding:14px 18px;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; font-size:15px; overflow-x:auto; margin:14px 0; line-height:2}
+  .formula .obs{color:#fdba74} .formula .adj{color:#5eead4} .formula .under{color:#cbd5e1}
+  .frac{display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; margin:0 .25em}
+  .frac > span:first-child{border-bottom:1px solid currentColor; padding:0 .35em}
+  .frac > span:last-child{padding:0 .35em}
+  ul{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  code{background:#f1f5f9; padding:1px 6px; border-radius:5px; font-size:14px}
+  footer{text-align:center; color:var(--muted); font-size:13px; margin-top:40px}
+  a{color:var(--obs)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Day-of-week reporting effects</h1>
+  <p>A surveillance system does not process reports evenly across the week: few land at the weekend, and Monday catches up. So the <b style="color:var(--obs)">observed</b> count series develops a weekly <b>sawtooth</b> that is an artefact of <i>reporting</i>, not of transmission. The underlying epidemic is smooth. Set the weekly reporting pattern below and watch the wobble appear — and disappear once you divide it back out.</p>
+  <nav class="toc">
+    <a href="#idea">The idea</a>
+    <a href="#dow">Distort &amp; correct</a>
+    <a href="#maths">The maths</a>
+    <a href="#takeaways">Takeaways</a>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<!-- ============ IDEA ============ -->
+<section id="idea">
+  <h2>The weekly wobble is about reporting, not transmission</h2>
+  <p class="tagline">A smooth epidemic can look jagged simply because of when reports are processed</p>
+  <p>Imagine the true number of events each day — the <b style="color:var(--under)">underlying</b> expected counts — follows a smooth epidemic curve. Transmission does not care what day of the week it is. But the <b>reporting system</b> does: staff, laboratories and data pipelines run at different intensities on different weekdays, so fewer reports are entered at weekends and a backlog is cleared early the following week.</p>
+  <p>Write the day of week of date <i>t</i> as <i>t</i> mod 7, with day 0 a <b>Monday</b> (matching the course simulation). Each weekday <i>k</i> carries a multiplicative <b>reporting weight</b> <i>w<sub>k</sub></i>. The count we actually see is the smooth signal scaled by that day's weight, so weekends are pushed down and Mondays pulled up:</p>
+  <ul>
+    <li><b style="color:var(--under)">underlying<sub>t</sub></b> — the smooth expected counts (the epidemic itself).</li>
+    <li><b style="color:var(--obs)">observed<sub>t</sub></b> = underlying<sub>t</sub> &times; <i>w</i><sub>(t mod 7)</sub> — the same signal seen through a weekly reporting filter.</li>
+  </ul>
+  <p>The weights are <b>normalised</b> to average one across the week, so they only redistribute reports between weekdays rather than change the overall level. That means the observed series wobbles <i>around</i> the smooth curve, and the wobble is a pure reporting artefact.</p>
+  <div class="key">A drop in the last two days of a raw curve is very often just the weekend, not a real downturn. The pattern repeats every seven days — that regularity is the giveaway that it is the calendar, not the epidemic, talking.</div>
+</section>
+
+<!-- ============ DISTORT & CORRECT (embedded) ============ -->
+<section id="dow">
+  <h2>Distort the smooth signal, then divide the pattern back out</h2>
+  <p class="tagline">Set the seven weekday weights and watch the sawtooth appear — and the correction remove it</p>
+  <p>The <b>top strip</b> is the weekly reporting pattern you set (normalised to mean one; the dashed line). The <b>middle panel</b> shows the smooth <b style="color:var(--under)">underlying</b> curve and the <b style="color:var(--obs)">observed</b> counts it becomes once each day is scaled by its weekday weight — the weekly sawtooth. The <b>bottom panel</b> shows the <b style="color:var(--adj)">day-of-week-adjusted</b> series, formed by dividing each observed count by its normalised weight; it collapses back onto the smooth curve. Weekends (Sat, Sun) are shaded.</p>
+
+  <div class="legend">
+    <span><i class="swatch" style="border-color:var(--under)"></i> underlying (smooth signal)</span>
+    <span><i class="swbox" style="background:var(--obs);opacity:.85"></i> observed (weekly sawtooth)</span>
+    <span><i class="swbox" style="background:var(--adj);opacity:.85"></i> day-of-week-adjusted</span>
+    <span><i class="swbox" style="background:var(--wend)"></i> weekend</span>
+  </div>
+
+  <div class="fig">
+    <svg id="dowSvg" viewBox="0 0 720 600" role="img" aria-label="Top: the normalised weekly reporting weight for each weekday as bars, with a dashed line at one. Middle: the smooth underlying epidemic curve and the observed counts, which show a weekly sawtooth after each day is scaled by its weekday weight, with weekends shaded. Bottom: the day-of-week-adjusted series, formed by dividing the observed counts by their normalised weights, sitting back on the smooth curve."></svg>
+  </div>
+  <div class="controls">
+    <label><span class="vlabel">Mon: <span id="w0val">1.35</span></span>
+      <input id="w0" type="range" min="0.1" max="2" step="0.05" value="1.35"></label>
+    <label><span class="vlabel">Tue: <span id="w1val">1.05</span></span>
+      <input id="w1" type="range" min="0.1" max="2" step="0.05" value="1.05"></label>
+    <label><span class="vlabel">Wed: <span id="w2val">1.00</span></span>
+      <input id="w2" type="range" min="0.1" max="2" step="0.05" value="1.00"></label>
+    <label><span class="vlabel">Thu: <span id="w3val">1.00</span></span>
+      <input id="w3" type="range" min="0.1" max="2" step="0.05" value="1.00"></label>
+    <label><span class="vlabel">Fri: <span id="w4val">0.95</span></span>
+      <input id="w4" type="range" min="0.1" max="2" step="0.05" value="0.95"></label>
+    <label><span class="vlabel">Sat: <span id="w5val">0.50</span></span>
+      <input id="w5" type="range" min="0.1" max="2" step="0.05" value="0.50"></label>
+    <label><span class="vlabel">Sun: <span id="w6val">0.45</span></span>
+      <input id="w6" type="range" min="0.1" max="2" step="0.05" value="0.45"></label>
+    <label class="toggle"><input id="noise" type="checkbox"> <span class="vlabel">add Poisson reporting noise</span></label>
+  </div>
+  <div class="presets">
+    <button data-w="1.35,1.05,1,1,0.95,0.5,0.45">weekend dip + Monday catch-up</button>
+    <button data-w="1,1,1,1,1,1,1">flat (no effect)</button>
+    <button data-w="0.4,1,1,1,1,1.3,1.3">weekend-only reporting</button>
+    <button id="dowReset">reset</button>
+  </div>
+  <div class="readout">
+    <span class="chip">weekend reporting vs weekday = <b id="wkRatio">—</b></span>
+    <span class="chip" style="border-left:4px solid var(--obs);padding-left:10px">observed weekly wobble = <b id="obsWob">—</b></span>
+    <span class="chip" style="border-left:4px solid var(--adj);padding-left:10px">adjusted wobble = <b id="adjWob">—</b></span>
+  </div>
+  <p class="figcap">Set the weekly weights to make the sawtooth deeper or shallower; the adjusted series recovers the smooth curve because dividing by the same normalised weight undoes the scaling. Turn on Poisson noise to see the small residual scatter that no day-of-week correction can remove.</p>
+  <div class="key teal">With the weights flat (all equal), the normalised pattern is all ones, so observed, adjusted and underlying coincide — the correction is the identity. Push the weekend weights down and the observed sawtooth deepens, yet the adjusted series barely moves: the reporting pattern has been divided out.</div>
+</section>
+
+<!-- ============ MATHS ============ -->
+<section id="maths">
+  <h2>The correction is one division per day</h2>
+  <p class="tagline">Normalise the weekly weights, multiply to distort, divide to recover</p>
+  <p>Let <i>w<sub>0</sub>, &hellip;, w<sub>6</sub></i> be the raw weekday weights (Mon&hellip;Sun) and <i>w&#772;</i> their mean. Normalising by the mean gives a pattern that averages to one over the week, so it only moves reports between weekdays:</p>
+  <div class="formula"><span class="under">w&#771;<sub>k</sub></span> = <span class="frac"><span>w<sub>k</sub></span><span>w&#772;</span></span>&nbsp;,&nbsp;&nbsp;&nbsp; <span class="frac"><span>1</span><span>7</span></span> &Sigma;<sub>k=0</sub><sup>6</sup> w&#771;<sub>k</sub> = 1</div>
+  <p>The observed count is the smooth expectation scaled by that day's normalised weight (optionally with Poisson reporting noise on top). The day-of-week-adjusted series just divides it straight back out:</p>
+  <div class="formula"><span class="obs">observed<sub>t</sub></span> = <span class="under">underlying<sub>t</sub></span> &middot; w&#771;<sub>(t mod 7)</sub>
+    &nbsp;&nbsp;&rarr;&nbsp;&nbsp;
+    <span class="adj">adjusted<sub>t</sub></span> = <span class="frac"><span class="obs">observed<sub>t</sub></span><span>w&#771;<sub>(t mod 7)</sub></span></span> = <span class="under">underlying<sub>t</sub></span></div>
+  <p>Because the same normalised weight appears in the multiplication and the division, the adjustment recovers the underlying signal exactly (up to reporting noise). If every weight is equal then each <i>w&#771;<sub>k</sub> = 1</i> and both steps are the identity, which is why a system with no day-of-week effect is left untouched.</p>
+  <div class="key slate"><b>Why normalise?</b> Without normalising, dividing by the raw weights would also rescale the overall level of the curve. Normalising to mean one separates the two questions: the weekly <i>shape</i> (what the correction removes) from the overall reporting <i>level</i> (which a nowcasting model handles elsewhere). This mirrors how the course model uses a report-date day-of-week term keyed on the report date <i>t</i> mod 7.</div>
+</section>
+
+<!-- ============ TAKEAWAYS ============ -->
+<section id="takeaways">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>A regular <b>weekly sawtooth</b> in a count series is usually a reporting artefact: reports are processed unevenly across weekdays, not created unevenly.</li>
+    <li>Model it as a <b>multiplicative weekday weight</b> <i>w<sub>(t mod 7)</sub></i> on the report date, with day 0 a Monday to match the course simulation.</li>
+    <li><b>Normalise</b> the weights to average one so they redistribute reports between weekdays without changing the overall level.</li>
+    <li>The day-of-week <b>adjustment divides the pattern back out</b>, recovering the smooth signal exactly when the true weights are known; flat weights leave the series unchanged.</li>
+    <li>A correction cannot invent information: <b>Poisson noise</b> stays, and the deep weekend troughs are where the adjusted counts are least certain because so few reports were seen.</li>
+    <li>In practice you do not know the true weights — you <b>estimate</b> them jointly with the nowcast, which is exactly what a report-date day-of-week term in <code>epinowcast</code> does.</li>
+  </ul>
+  <footer>Built as a teaching aid for the SISMID complex reporting processes session · all figures are interactive and self-contained.</footer>
+</section>
+
+</div>
+
+<script>
+/* ---------- small numerics library (shared with the other NFIDD explainers) ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function clear(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+// deterministic PRNG so the noise pattern is stable while sliders move
+function makeRng(seed){ let s=seed>>>0; return function(){ s=(s*1664525+1013904223)>>>0; return s/4294967296; }; }
+function gaussian(rng){ let u=0,v=0; while(u===0)u=rng(); while(v===0)v=rng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+function poisson(lam,rng){
+  if(lam<=0) return 0;
+  if(lam>30) return Math.max(0,Math.round(lam+Math.sqrt(lam)*gaussian(rng)));
+  const L=Math.exp(-lam); let k=0,p=1;
+  do{ k++; p*=rng(); }while(p>L);
+  return k-1;
+}
+// eventual epidemic curve: smooth asymmetric bump (slightly fatter tail after the peak)
+function trueCurve(t,peak,width,height){
+  const w = t<peak ? width : width*1.28;
+  return height*Math.exp(-0.5*((t-peak)/w)**2);
+}
+
+/* ================= FIGURE : day-of-week distortion and correction ================= */
+(function(){
+  const svg=document.getElementById("dowSvg");
+  const W=720, N=70, PEAK=34, WIDTH=12, HEIGHT=200;
+  const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const wIds=[]; for(let k=0;k<7;k++) wIds.push(document.getElementById("w"+k));
+  const noiseInp=document.getElementById("noise");
+  const m={l:52,r:18};
+
+  // top strip: weekly weights
+  const Wtop=48, Wh=64, Wbot=Wtop+Wh;
+  // middle panel: underlying vs observed
+  const Mtop=Wbot+62, Mh=168, Mbot=Mtop+Mh;
+  // bottom panel: underlying vs adjusted
+  const Btop=Mbot+58, Bh=168, Bbot=Btop+Bh;
+  const sx=i=>m.l+(i+0.5)/N*(W-m.l-m.r);
+  const bw=(W-m.l-m.r)/N;
+
+  function drawWeekendShade(top,h){
+    for(let t=0;t<N;t++){
+      if(t%7>=5){ svg.appendChild(el("rect",{x:m.l+t/N*(W-m.l-m.r),y:top,
+        width:bw,height:h,fill:"#eef2f7"})); }
+    }
+  }
+
+  function draw(){
+    const wraw=wIds.map(i=>+i.value);
+    wraw.forEach((v,k)=>{ document.getElementById("w"+k+"val").textContent=v.toFixed(2); });
+    const meanW=wraw.reduce((a,b)=>a+b,0)/7;
+    const wnorm=wraw.map(v=>v/meanW);                 // normalised: mean 1
+    const useNoise=noiseInp.checked;
+    const rng=makeRng(20240117);                      // fixed seed: stable noise
+    clear(svg);
+
+    // series
+    const under=[], obs=[], adj=[];
+    for(let t=0;t<N;t++){
+      const u=trueCurve(t,PEAK,WIDTH,HEIGHT);
+      const wt=wnorm[t%7];
+      let o=u*wt;
+      if(useNoise) o=poisson(o,rng);
+      under.push(u); obs.push(o); adj.push(o/wt);
+    }
+    let ymax=1; for(let t=0;t<N;t++) ymax=Math.max(ymax,under[t],obs[t],adj[t]);
+    ymax*=1.12;
+
+    /* ---------- TOP STRIP: weekly reporting weights ---------- */
+    svg.appendChild(el("text",{x:m.l,y:Wtop-14,"font-size":13,"font-weight":700,fill:"#1f2933"})).textContent="Reporting weight by weekday (normalised, mean = 1)";
+    const wmax=Math.max(1.05,Math.max.apply(null,wnorm))*1.12;
+    const wsy=v=>Wbot-(v/wmax)*Wh;
+    const cellW=(W-m.l-m.r)/7;
+    // baseline + dashed line at 1
+    svg.appendChild(el("line",{x1:m.l,y1:Wbot,x2:W-m.r,y2:Wbot,stroke:"#cbd5e1"}));
+    svg.appendChild(el("line",{x1:m.l,y1:wsy(1),x2:W-m.r,y2:wsy(1),stroke:"#94a3b8","stroke-dasharray":"5 4","stroke-width":1.4}));
+    svg.appendChild(el("text",{x:W-m.r,y:wsy(1)-4,"text-anchor":"end","font-size":10,fill:"#64748b","font-weight":600})).textContent="mean = 1";
+    wnorm.forEach((v,k)=>{
+      const wknd=k>=5, x=m.l+k*cellW;
+      svg.appendChild(el("rect",{x:x+cellW*0.16,y:wsy(v),width:cellW*0.68,height:Math.max(Wbot-wsy(v),0),
+        fill:wknd?"#f59e0b":"#fb923c",opacity:wknd?0.95:0.8,rx:2}));
+      svg.appendChild(el("text",{x:x+cellW/2,y:Wbot+15,"text-anchor":"middle","font-size":11,fill:wknd?"#b45309":"#6b7280","font-weight":wknd?700:400})).textContent=DOW[k];
+      svg.appendChild(el("text",{x:x+cellW/2,y:wsy(v)-4,"text-anchor":"middle","font-size":10,fill:"#374151"})).textContent=v.toFixed(2);
+    });
+
+    /* ---------- MIDDLE PANEL: underlying vs observed ---------- */
+    drawWeekendShade(Mtop,Mh);
+    const msy=v=>Mbot-(v/ymax)*Mh;
+    svg.appendChild(el("text",{x:m.l,y:Mtop-12,"font-size":13,"font-weight":700,fill:"#1f2933"})).textContent="Observed = underlying × weekday weight  (the weekly sawtooth)";
+    for(let g=0;g<=HEIGHT;g+=50){ if(g>ymax) break;
+      svg.appendChild(el("line",{x1:m.l,y1:msy(g),x2:W-m.r,y2:msy(g),stroke:"#eef2f7"}));
+      svg.appendChild(el("text",{x:m.l-8,y:msy(g)+4,"text-anchor":"end","font-size":10,fill:"#6b7280"})).textContent=g;
+    }
+    svg.appendChild(el("line",{x1:m.l,y1:Mbot,x2:W-m.r,y2:Mbot,stroke:"#cbd5e1"}));
+    // observed bars
+    for(let t=0;t<N;t++){
+      svg.appendChild(el("rect",{x:m.l+t/N*(W-m.l-m.r)+bw*0.12,y:msy(obs[t]),
+        width:bw*0.76,height:Math.max(Mbot-msy(obs[t]),0),fill:"#ea580c",opacity:0.82,rx:1}));
+    }
+    // underlying smooth line
+    let pu=""; for(let t=0;t<N;t++) pu+=(t?" L ":"M ")+sx(t)+" "+msy(under[t]);
+    svg.appendChild(el("path",{d:pu,fill:"none",stroke:"#334155","stroke-width":2.6}));
+
+    /* ---------- BOTTOM PANEL: underlying vs adjusted ---------- */
+    drawWeekendShade(Btop,Bh);
+    const bsy=v=>Bbot-(v/ymax)*Bh;
+    svg.appendChild(el("text",{x:m.l,y:Btop-12,"font-size":13,"font-weight":700,fill:"#1f2933"})).textContent="Adjusted = observed ÷ normalised weight  (the smooth signal recovered)";
+    for(let g=0;g<=HEIGHT;g+=50){ if(g>ymax) break;
+      svg.appendChild(el("line",{x1:m.l,y1:bsy(g),x2:W-m.r,y2:bsy(g),stroke:"#eef2f7"}));
+      svg.appendChild(el("text",{x:m.l-8,y:bsy(g)+4,"text-anchor":"end","font-size":10,fill:"#6b7280"})).textContent=g;
+    }
+    svg.appendChild(el("line",{x1:m.l,y1:Bbot,x2:W-m.r,y2:Bbot,stroke:"#cbd5e1"}));
+    // adjusted bars
+    for(let t=0;t<N;t++){
+      svg.appendChild(el("rect",{x:m.l+t/N*(W-m.l-m.r)+bw*0.12,y:bsy(adj[t]),
+        width:bw*0.76,height:Math.max(Bbot-bsy(adj[t]),0),fill:"#0891b2",opacity:0.78,rx:1}));
+    }
+    // underlying smooth line (faint reference)
+    let pu2=""; for(let t=0;t<N;t++) pu2+=(t?" L ":"M ")+sx(t)+" "+bsy(under[t]);
+    svg.appendChild(el("path",{d:pu2,fill:"none",stroke:"#334155","stroke-width":2.4,opacity:0.85}));
+
+    // shared x axis
+    for(let t=0;t<=N;t+=7){
+      svg.appendChild(el("text",{x:m.l+t/N*(W-m.l-m.r),y:Bbot+16,"text-anchor":"middle","font-size":9.5,fill:"#6b7280"})).textContent=t;
+    }
+    svg.appendChild(el("text",{x:(m.l+W-m.r)/2,y:Bbot+34,"text-anchor":"middle","font-size":12,fill:"#374151"})).textContent="day t  (day 0 = Monday; ticks every 7 days)";
+
+    /* ---------- readouts ---------- */
+    const wkdayMean=(wnorm[0]+wnorm[1]+wnorm[2]+wnorm[3]+wnorm[4])/5;
+    const wkndMean=(wnorm[5]+wnorm[6])/2;
+    document.getElementById("wkRatio").textContent=(wkndMean/wkdayMean).toFixed(2)+"×";
+    // relative RMS deviation from the smooth curve, over the informative range
+    function wobble(series){
+      let s2=0, sm=0, n=0;
+      for(let t=0;t<N;t++){ if(under[t]<8) continue; s2+=(series[t]-under[t])**2; sm+=under[t]; n++; }
+      if(n===0||sm===0) return 0;
+      return Math.sqrt(s2/n)/(sm/n);
+    }
+    document.getElementById("obsWob").textContent="±"+(wobble(obs)*100).toFixed(0)+"%";
+    document.getElementById("adjWob").textContent="±"+(wobble(adj)*100).toFixed(0)+"%";
+  }
+
+  wIds.forEach(i=>i.addEventListener("input",draw));
+  noiseInp.addEventListener("change",draw);
+  const defaults=[1.35,1.05,1,1,0.95,0.5,0.45];
+  document.querySelectorAll("#dow .presets button[data-w]").forEach(b=>{
+    b.addEventListener("click",()=>{
+      const v=b.dataset.w.split(",").map(Number);
+      wIds.forEach((inp,k)=>inp.value=v[k]);
+      draw();
+    });
+  });
+  document.getElementById("dowReset").addEventListener("click",()=>{
+    wIds.forEach((inp,k)=>inp.value=defaults[k]); noiseInp.checked=false; draw();
+  });
+  draw();
+})();
+</script>
+<script>
+/* embed mode: ?embed=sectionId[,id2,...] strips the page chrome AND the
+   explanatory prose/maths from the kept sections, leaving only the interactive
+   figures, for inlining in an <iframe> in the course site. Reports height so the
+   host page can auto-size the iframe. */
+(function(){
+  var q=new URLSearchParams(location.search), e=q.get('embed');
+  var KEEP={fig:1,controls:1,readout:1,legend:1,presets:1,figcap:1};
+  if(e){
+    var keep=e.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    ['header.hero','nav.toc','footer'].forEach(function(sel){
+      Array.prototype.forEach.call(document.querySelectorAll(sel),function(n){n.style.display='none';});
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('body > div'),function(d){
+      if(!d.classList.contains('wrap')) d.style.display='none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('section'),function(sec){
+      if(keep.indexOf(sec.id)===-1){ sec.style.display='none'; return; }
+      sec.style.margin='0'; sec.style.border='none'; sec.style.boxShadow='none'; sec.style.padding='2px 2px 8px';
+      Array.prototype.forEach.call(sec.children,function(c){
+        var k=false, cl=c.classList; if(cl){ for(var key in KEEP){ if(cl.contains(key)){k=true;break;} } }
+        if(!k) c.style.display='none';
+      });
+    });
+    var wrap=document.querySelector('.wrap'); if(wrap) wrap.style.padding='0 8px 10px';
+    document.body.style.background='#fff'; document.documentElement.style.background='#fff';
+  }
+  function postH(){ try{ parent.postMessage({nfiddEmbedHeight: Math.ceil(document.body.getBoundingClientRect().height)}, '*'); }catch(_){} }
+  window.addEventListener('load', postH);
+  window.addEventListener('resize', postH);
+  document.addEventListener('input', function(){ setTimeout(postH,60); });
+  document.addEventListener('click', function(){ setTimeout(postH,120); });
+  setTimeout(postH,250); setTimeout(postH,1000);
+})();
+</script>
+</body>
+</html>
