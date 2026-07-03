@@ -298,7 +298,7 @@ renewal_model
 
 These models are optimised for readability and not robustness or performance.
 For real-world versions of these models, see the `EpiNow2` and `epinowcast` packages.
-For the more complex models we might also consider using approximtate fitting methods such as variational inference or integrated nested Laplace approximations.
+For the more complex models we might also consider using approximate fitting methods such as variational inference or integrated nested Laplace approximations.
 :::
 
 ::: {.callout-tip}
@@ -812,6 +812,11 @@ scores <- sc_forecasts |>
 
 head(scores)
 ```
+
+The `score()` output reports the CRPS along with a breakdown of it.
+The CRPS is a proper scoring rule that generalises the mean absolute error to probabilistic forecasts, so lower is better, and it rewards forecasts that are sharp subject to being calibrated.
+Its breakdown splits the score into *overprediction* and *underprediction* (the cost of predicting too high or too low) and *dispersion* (the cost of a forecast that is too wide or too narrow).
+The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation) covers the CRPS and these components in depth.
 
 ## Overall performance table
 
