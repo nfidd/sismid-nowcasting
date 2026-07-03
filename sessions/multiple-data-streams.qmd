@@ -85,9 +85,23 @@ The point is not to memorise it but to take from it an order of work: according 
 5.  **Data integration choices.** How to combine those per-stream observation models. The diagram flags two things about this step: the *choice* of how to integrate sources, and a feedback arrow warning that *conflict between data sources reveals model misspecification*.
 6.  **Inference, checking and revision.** Fit the model, check it against each stream, and let identifiability problems or conflict between sources send us back to revise it.
 
-## Step one: design a DAG
+# Reviewing our data sources
 
-According to this approach the first step is to draw those relationships as a directed acyclic graph (DAG): a picture of how each quantity generates the next, from the shared process at the top down to the observations at the bottom.
+The workflow's *data source selection* step asks us to catalogue the streams we have and, for each, what it measures and how it is biased, before we commit to an observation model for it.
+Each stream will be one of the branches in the DAG we design next, and reviewing them now tells us what delay, scaling and likelihood each branch will need.
+
+-   **Confirmed cases** are timely, with a short infection-to-report delay, but only an ascertained *fraction* of infections is ever confirmed, and that fraction depends on testing capacity and policy.
+    They pin down the *timing* of recent infections but carry reporting noise.
+-   **Deaths** are a more stable, less noisy signal, but arrive with a long infection-to-death delay and capture only a small, severity-dependent fraction of infections (the infection fatality ratio).
+    They say little about the present but anchor the longer-term level.
+-   **Wastewater** measures shed pathogen concentration, so it does not depend on testing or care-seeking at all and picks up infections regardless of ascertainment.
+    It is a continuous signal on its own scale, is relatively indirect and noisy, and needs a scaling before it can be compared to infections.
+
+Each is a delayed, scaled and noisy window on the *same* infections, which is what makes combining them worthwhile: the timely streams sharpen the recent trajectory while the stable ones anchor the level.
+
+# Designing a DAG of the observation process
+
+With the data sources catalogued, the next step is to draw those relationships as a directed acyclic graph (DAG): a picture of how each quantity generates the next, from the shared process at the top down to the observations at the bottom.
 For our question the DAG is small.
 A geometric random walk on $R_t$ drives a single shared latent infection series $I$ through the renewal equation.
 Each stream then takes that *same* $I$, passes it through its own delay and scaling to give an expected signal, and observes that signal through its own likelihood: cases and deaths as Poisson counts, wastewater as a log-normal concentration.
@@ -139,7 +153,7 @@ Each stream then takes that *same* $I$, passes it through its own delay and scal
 </figure>
 ```
 
-## Step two: break the DAG into components
+## Breaking the DAG into components
 
 The workflow's next step is to break that DAG into modular components, or sub-models.
 Ours splits cleanly: the shared process (the $R_t$ random walk and the renewal equation) is one module, and each stream's delay-scaling-likelihood branch is another, self-contained module hanging off the shared infections.
@@ -189,20 +203,6 @@ The trade-off is therefore about the validity of that generative assumption rath
 A sequential model can be reasonable when the chain genuinely holds -- for example when a downstream count really is a subset of an upstream one -- but it commits you to trusting the upstream stream as if it were the truth.
 We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every stream informs and avoids privileging any single stream.
 :::
-
-# Reviewing our data sources
-
-The workflow's *data source selection* step asks us to catalogue the streams we have and, for each, what it measures and how it is biased, before we commit to an observation model for it.
-Each stream is one of the branches in the DAG above, and reviewing them now tells us what delay, scaling and likelihood each branch will need.
-
--   **Confirmed cases** are timely, with a short infection-to-report delay, but only an ascertained *fraction* of infections is ever confirmed, and that fraction depends on testing capacity and policy.
-    They pin down the *timing* of recent infections but carry reporting noise.
--   **Deaths** are a more stable, less noisy signal, but arrive with a long infection-to-death delay and capture only a small, severity-dependent fraction of infections (the infection fatality ratio).
-    They say little about the present but anchor the longer-term level.
--   **Wastewater** measures shed pathogen concentration, so it does not depend on testing or care-seeking at all and picks up infections regardless of ascertainment.
-    It is a continuous signal on its own scale, is relatively indirect and noisy, and needs a scaling before it can be compared to infections.
-
-Each is a delayed, scaled and noisy window on the *same* infections, which is what makes combining them worthwhile: the timely streams sharpen the recent trajectory while the stable ones anchor the level.
 
 # Simulating a shared infection trajectory
 
@@ -265,6 +265,19 @@ array[n] real infections = renewal(I0, R, gen_time_pmf);          // <2>
 1. The geometric random walk on $R_t$ (the top node of the DAG), exactly as in the previous session.
 2. The renewal equation turns $R_t$ into the shared latent infections $I$ that every stream observes.
 
+::: {.callout-note collapse="true"}
+## Mathematical definition
+
+The shared process is a geometric random walk on $R_t$ feeding the renewal equation:
+$$
+\log R_t = \log R_{t-1} + \sigma_{rw}\,\epsilon_t, \quad \epsilon_t \sim \mathrm{Normal}(0, 1),
+$$
+$$
+I_t = R_t \sum_{s \ge 1} I_{t-s}\, g(s),
+$$
+where $g$ is the generation-time PMF and $\sigma_{rw}$ the random-walk standard deviation.
+:::
+
 Each stream is then a branch hanging off those shared infections: the same $I$, convolved with the stream's own delay and multiplied by its own scaling to give an expected signal.
 
 ```stan
@@ -279,6 +292,15 @@ for (i in 1:n) {
 1. The delay edge in the DAG: convolve the shared infections with this stream's delay PMF (deaths and wastewater have their own `..._conv` lines just above).
 2. The scaling: multiply by `ascertainment`, `ifr`/`death_scale` or `ww_scale` to get each stream's expected signal.
 
+::: {.callout-note collapse="true"}
+## Mathematical definition
+
+For stream $k$ the expected signal is the shared infections convolved with the stream's delay PMF $p_k$ and multiplied by its scaling $\phi_k$ (ascertainment, IFR/`death_scale`, or wastewater scale):
+$$
+\mu^{(k)}_t = \phi_k \sum_{d \ge 0} I_{t-d}\, p_k(d).
+$$
+:::
+
 Finally each expected signal is observed through its own likelihood, and a `use_*` flag decides whether that stream enters the fit.
 
 ```stan
@@ -292,13 +314,25 @@ if (use_deaths) {
 1. Cases: Poisson counts of the expected cases (the cases observation node).
 2. Deaths: Poisson counts of the expected deaths. We will meet the wastewater likelihood, which is log-normal, when we add that stream.
 
+::: {.callout-note collapse="true"}
+## Mathematical definition
+
+Each stream is observed through its own likelihood on the expected signal $\mu^{(k)}_t$:
+$$
+C_t \sim \mathrm{Poisson}\big(\mu^{(\text{cases})}_t\big), \qquad D_t \sim \mathrm{Poisson}\big(\mu^{(\text{deaths})}_t\big),
+$$
+$$
+\log W_t \sim \mathrm{Normal}\big(\log \mu^{(\text{ww})}_t,\ \sigma_{ww}\big),
+$$
+for cases $C_t$, deaths $D_t$ and wastewater concentration $W_t$.
+:::
+
 Because the streams are conditionally independent given the infections, whichever terms are switched on are simply *added* together to form the joint log-likelihood.
 
 ::: {.callout-tip}
 ## Take 5 minutes
 
-Open the [full model](https://github.com/nfidd/sismid-nowcasting/blob/main/inst/stan/estimate-inf-and-r-multi-stream.stan) and compare it to the random-walk model `estimate-inf-and-r-rw` from the [previous session](R-estimation-and-the-renewal-equation#estimating-r_t-with-a-geometric-random-walk-prior).
-Which parts are shared across all three streams, and which are specific to each stream?
+Looking at the pieces above (and comparing with the random-walk model `estimate-inf-and-r-rw` from the [previous session](R-estimation-and-the-renewal-equation#estimating-r_t-with-a-geometric-random-walk-prior)): which parts are shared across all three streams, and which are specific to each stream?
 Map each `use_*` flag to a branch of the DAG.
 :::
 
