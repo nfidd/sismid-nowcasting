@@ -91,7 +91,7 @@ Possible, but this is where a tested framework earns its place.
 
 - A direct generalisation of our joint model: triangle in, counts + reporting out
 - Each component is a **module**, specified with an R **formula**
-- *One* of several tools (we point to others at the end)
+- *One* of several tools
 
 ::: {.callout-tip}
 If you understand the joint nowcasting session, you already understand what `epinowcast` is doing, just with more flexible components.
@@ -158,28 +158,33 @@ A weekly pattern can enter in *three* distinct places:
 - **Report date**: the system processes reports at different rates by day of week
   → goes in the **report** module
 
-```r
-enw_expectation(~ rw(day) + day_of_week)   # reference-side, on the counts
-enw_reference(~ day_of_week)               # reference-side, on the delay
-enw_report(~ (1 | day_of_week))            # report-side
-```
-
-```{r dow-effects, echo = FALSE, fig.width = 8, fig.height = 2.8}
-tibble(day = days, base = base) |>
-  mutate(
-    `Reference-date effect\n(onsets at weekends)` =
-      base * ref_dow_effect[(day %% 7) + 1],
-    `Report-date effect\n(reports at weekends)` =
-      base * rep_dow_effect[(day %% 7) + 1]
+```{r dow-effects, echo = FALSE, fig.width = 9, fig.height = 3}
+sdlog <- 0.5
+dows <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+# Longer delay for weekend onsets (a reference-date effect on the delay)
+delay_meanlog_dow <- c(1, 1, 1, 1, 1, 1.4, 1.4)
+tibble(
+  dow = factor(dows, levels = dows),
+  weekend = dows %in% c("Sat", "Sun"),
+  `Onsets by weekday\n(expectation module)` = ref_dow_effect,
+  `Mean delay by weekday\n(reference module)` =
+    exp(delay_meanlog_dow + sdlog^2 / 2),
+  `Reporting by weekday\n(report module)` = rep_dow_effect
+) |>
+  pivot_longer(
+    -c(dow, weekend), names_to = "effect", values_to = "value"
   ) |>
-  pivot_longer(-c(day, base), names_to = "effect", values_to = "value") |>
-  ggplot(aes(day, value, fill = (day %% 7) >= 4)) +
+  mutate(effect = factor(effect, levels = unique(effect))) |>
+  ggplot(aes(dow, value, fill = weekend)) +
   geom_col() +
-  facet_wrap(~effect) +
+  facet_wrap(~effect, scales = "free_y") +
   weekend_fill +
-  labs(x = "Day", y = "Count") +
+  labs(x = "Day of week", y = NULL) +
   theme_minimal(base_size = 13) +
-  theme(legend.position = "top")
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ### Time-varying delay {.smaller}

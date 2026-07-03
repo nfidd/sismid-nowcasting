@@ -135,6 +135,11 @@
     <svg id="dowSvg" viewBox="0 0 720 430" role="img" aria-label="A smooth underlying onset curve shown as a grey line, with the observed reported series shown as bars by report day. Toggling the three day-of-week effects on adds weekly structure to the bars; weekend days are shaded."></svg>
   </div>
 
+  <div class="fig">
+    <svg id="dowWeekly" viewBox="0 0 720 200" role="img" aria-label="Three small panels showing how each of the three day-of-week effects varies across the week: the reference-date onset weekday effect, the mean reporting delay by weekday, and the report-date weekday effect. Each panel is shown in full colour when its effect is switched on and greyed when off, with weekend days highlighted."></svg>
+  </div>
+  <p class="figcap">The three weekly ingredients behind the series above. The <span style="color:var(--ref)">onset weekday effect</span> scales how many onsets occur on each weekday, the <span style="color:var(--delay)">mean delay by weekday</span> reshapes how long weekend onsets take to report, and the <span style="color:var(--rep)">report weekday effect</span> scales reports on the day they land. Each panel is full colour when its toggle is on and greyed when off; weekends (Sat/Sun) are highlighted.</p>
+
   <div class="controls">
     <label class="toggle">
       <input id="tRef" type="checkbox">
@@ -281,7 +286,57 @@ function clear(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
     const varr=means.reduce((a,b)=>a+(b-gm)*(b-gm),0)/7;
     const cv = gm>0 ? Math.sqrt(varr)/gm : 0;
     document.getElementById("dCv").textContent=(cv*100).toFixed(0)+"%";
+
+    drawWeekly(refOn,delayOn,repOn);
   }
+
+  /* ---- small companion figure: how each of the three effects varies across the week ---- */
+  const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  function meanDelay(meanlog){ const pmf=delayPmf(meanlog); let m=0; for(let d=0; d<=Dmax; d++) m+=d*pmf[d]; return m; }
+  function drawWeekly(refOn,delayOn,repOn){
+    const svg2=document.getElementById("dowWeekly"); if(!svg2) return;
+    clear(svg2);
+    const W2=720,H2=200;
+    const panels=[
+      {title:"Onset weekday effect", vals:REF_ONSET.slice(),
+       colour:"#2563eb", on:refOn, fmt:v=>v.toFixed(2)},
+      {title:"Mean delay by weekday (days)", vals:DELAY_MEANLOG.map(meanDelay),
+       colour:"#f59e0b", on:delayOn, fmt:v=>v.toFixed(1)},
+      {title:"Report weekday effect", vals:REP_WEIGHT.slice(),
+       colour:"#0891b2", on:repOn, fmt:v=>v.toFixed(2)}
+    ];
+    const gap=22, padL=6, padR=6, top=30, bot=26;
+    const pw=(W2-padL-padR-2*gap)/3;
+    panels.forEach(function(p,pi){
+      const x0=padL+pi*(pw+gap);
+      const ymax=Math.max.apply(null,p.vals)*1.18||1;
+      const bTop=top, bBot=H2-bot, bH=bBot-bTop;
+      const sy=v=>bBot-(v/ymax)*bH;
+      const bw=pw/7*0.66;
+      const active=p.on;
+      // panel title with an on/off tag
+      svg2.appendChild(el("text",{x:x0,y:16,"font-size":12,"font-weight":700,
+        fill:active?"#1f2933":"#9aa4b2"})).textContent=p.title;
+      svg2.appendChild(el("text",{x:x0+pw,y:16,"text-anchor":"end","font-size":11,
+        "font-weight":700,fill:active?p.colour:"#9aa4b2"})).textContent=active?"on":"off";
+      // baseline
+      svg2.appendChild(el("line",{x1:x0,y1:bBot,x2:x0+pw,y2:bBot,stroke:"#cbd5e1"}));
+      for(let d=0; d<7; d++){
+        const cx=x0+pw*(d+0.5)/7;
+        const weekend=(d===5||d===6);
+        if(weekend) svg2.appendChild(el("rect",{x:cx-pw/14,y:bTop,width:pw/7,
+          height:bH,fill:"#eef2ff",opacity:.7}));
+        const h=p.vals[d];
+        svg2.appendChild(el("rect",{x:cx-bw/2,y:sy(h),width:bw,
+          height:Math.max(bBot-sy(h),0),rx:1.3,
+          fill:active?p.colour:"#cbd5e1",
+          opacity:active?(weekend?0.95:0.8):0.7}));
+        svg2.appendChild(el("text",{x:cx,y:H2-bot+14,"text-anchor":"middle",
+          "font-size":9,fill:weekend?"#334155":"#6b7280"})).textContent=DOW[d].charAt(0);
+      }
+    });
+  }
+
   Object.values(ids).forEach(i=>i.addEventListener("change",draw)); draw();
 })();
 </script>

@@ -46,14 +46,8 @@ library("data.table")
 ```
 
 ::: {.callout-tip}
-This session uses the development version of `epinowcast` from GitHub, as some of the data and preprocessing helpers used here are newer than the latest CRAN release.
-You can install it together with `cmdstanr` with:
-
-```{r install, eval = FALSE}
-pak::pak(c("stan-dev/cmdstanr", "epinowcast/epinowcast"))
-```
-
-This installs the development version of `epinowcast` from GitHub, matching the course's getting-started install which uses `pak::pak("nfidd/sismid-nowcasting")`.
+This session uses `epinowcast` and `cmdstanr`, which we load with `library()` above.
+The course's getting-started install already provides them, so there is no per-session install to run: `pak::pak("nfidd/sismid-nowcasting", dependencies = TRUE)` installs the development versions of `epinowcast` and `cmdstanr` alongside the other course packages.
 
 `epinowcast` compiles its models with `cmdstanr` the first time a model is fitted, which needs a working CmdStan toolchain (the same one used elsewhere in this course).
 Full installation and setup instructions, including how to install CmdStan, are on the [package website](https://package.epinowcast.org/).
@@ -253,21 +247,37 @@ plot(pobs, type = "delay_fraction")
 ```
 
 Now we specify the model.
-We define each module explicitly so the mapping back to the bespoke model is visible: a daily random walk for the expected counts (matching the daily geometric random walk we built), a single delay distribution estimated nonparametrically as a free simplex over delays and held constant over time (matching the free delay PMF we estimated by hand), and a Poisson observation model.
+We define each module explicitly so the mapping back to the bespoke model is visible: a daily random walk for the expected counts (matching the daily geometric random walk we built), a single delay distribution held constant over time, and a Poisson observation model.
 
 ```{r course-modules}
 # Expected counts lambda_t: a daily random walk (cf. our geometric random walk)
 expectation_module <- enw_expectation(~ rw(day), data = pobs)
 
-# Delay distribution p_{t,d} by reference date: a nonparametric free delay
-# (a free simplex over delays), constant over time (cf. our free fixed p)
-reference_module <- enw_reference(
-  parametric = ~ 0, distribution = "none", non_parametric = ~ 1, data = pobs
-)
+# Delay distribution p_{t,d} by reference date: a single parametric lognormal
+# delay, constant over time (epinowcast's default reference model)
+reference_module <- enw_reference(~ 1, data = pobs)
 
 # Observation model: Poisson, as in n_{t,d} ~ Poisson(lambda_t * p_{t,d})
 obs_module <- enw_obs(family = "poisson", data = pobs)
 ```
+
+This is one deliberate divergence from the bespoke model.
+The bespoke joint-nowcast model estimated the delay distribution *nonparametrically*, as a free per-delay PMF (a simplex over delays), whereas here we use `epinowcast`'s default *parametric* lognormal delay.
+We do this for speed and simplicity: the nonparametric delay fits noticeably more slowly, and the lognormal is a good fit to the delay we simulated.
+
+::: {.callout-tip .optional collapse="true"}
+## Reproducing the bespoke model exactly
+
+To match the bespoke joint-nowcast model exactly, estimate the delay nonparametrically as a free per-delay distribution (a simplex over delays) instead of the parametric lognormal:
+
+```{r course-reference-nonparametric, eval = FALSE}
+reference_module <- enw_reference(
+  parametric = ~ 0, distribution = "none", non_parametric = ~ 1, data = pobs
+)
+```
+
+This makes the delay a free per-delay distribution matching the bespoke model, but fits noticeably more slowly, which is why the session defaults to the parametric lognormal above.
+:::
 
 We collect the fitting options once and reuse them across the session.
 These play the same role as the arguments to `nfidd_sample()` did in earlier sessions, and we set them to match: four chains run in parallel with 500 warmup and 500 sampling iterations each.
@@ -304,7 +314,7 @@ Which module corresponds to $\lambda_{t}$, which to $p_{t,d}$, and which to the 
 ## Solution
 
 - `enw_expectation()` plays the role of $\lambda_{t}$: `rw(day)` is a daily random walk on the expected counts, like the geometric random walk we used for onsets.
-- `enw_reference()` plays the role of the delay distribution $p_{t,d}$: setting `parametric = ~ 0`, `distribution = "none"` and `non_parametric = ~ 1` estimates a nonparametric free delay (a simplex over delays) held constant over time, matching the free delay PMF we estimated by hand rather than assuming a parametric shape.
+- `enw_reference(~ 1)` plays the role of the delay distribution $p_{t,d}$: a single parametric lognormal delay held constant over time. This is one deliberate divergence from the bespoke model, which estimated the delay nonparametrically as a free PMF; we use the parametric default here for speed, and show how to recover the nonparametric delay in the optional callout above.
 - `enw_obs(family = "poisson")` plays the role of the likelihood $n_{t,d} \sim \text{Poisson}(\lambda_{t} p_{t,d})$.
 
 This is the *same* joint nowcasting model we built by hand, now expressed as a handful of modules.
