@@ -28,6 +28,10 @@ weekend_fill <- scale_fill_manual(
 
 ### The model we have so far {.smaller}
 
+::::: {.columns}
+
+:::: {.column width="60%"}
+
 In the [joint nowcasting session](../joint-nowcasting) we modelled each cell of the reporting triangle as
 
 $$
@@ -39,6 +43,16 @@ $$
 - a **single** delay distribution, the same on every day
 
 Ideal for *learning*, and fine when the reporting process is simple.
+
+::::
+
+:::: {.column width="40%"}
+
+![Each cell $n_{t,d}$ of the reporting triangle (by Johannes Bracher).](figures/reporting_triangle.png)
+
+::::
+
+:::::
 
 ### Real reporting is messier {.smaller}
 
@@ -171,6 +185,22 @@ tibble(day = days, base = base) |>
 ### Time-varying delay {.smaller}
 
 Delays *may* lengthen under strain and shorten with spare capacity.
+
+```{r tvd-drift, echo = FALSE, fig.width = 6.5, fig.height = 2.4}
+sdlog <- 0.5
+tibble(day = days) |>
+  mutate(
+    meanlog = 1 + 0.5 * day / max(days),
+    mean_delay = exp(meanlog + sdlog^2 / 2),
+    week = day %/% 7
+  ) |>
+  summarise(mean_delay = mean(mean_delay), .by = week) |>
+  ggplot(aes(week, mean_delay)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Reference week", y = "Mean delay (days)") +
+  theme_minimal(base_size = 14)
+```
 
 ```r
 enw_reference(~ rw(week))   # delay drifts week to week
