@@ -44,7 +44,7 @@ Ideal for *learning*, and fine when the reporting process is simple.
 
 A single, fixed delay cannot capture:
 
-- **Day-of-week effects** (fewer onsets, or fewer reports, at weekends)
+- **Day-of-week effects** (fewer onsets or reports at weekends, or delays that differ by weekday)
 - **Time-varying delays** (delays drift as a system gains or loses capacity)
 - **Weekly / batched reporting** (data released weekly, not daily)
 - **Strata** (delays differ by age, region, ...)
@@ -135,15 +135,18 @@ The course model is just these modules; everything else is an extension of one o
 
 ### Day-of-week effects {.smaller}
 
-Two *different* weekly patterns, on different dates:
+A weekly pattern can enter in *three* distinct places:
 
-- **Reference date**: events truly happen at different rates by day of week
+- **Reference date, on the counts**: events truly happen at different rates by day of week
   → goes in the **expectation** module
+- **Reference date, on the delay**: the delay distribution itself differs by the onset day of week
+  → goes in the **reference** module
 - **Report date**: the system processes reports at different rates by day of week
   → goes in the **report** module
 
 ```r
-enw_expectation(~ rw(day) + day_of_week)   # reference-side
+enw_expectation(~ rw(day) + day_of_week)   # reference-side, on the counts
+enw_reference(~ day_of_week)               # reference-side, on the delay
 enw_report(~ (1 | day_of_week))            # report-side
 ```
 
@@ -204,7 +207,7 @@ Each is a change to one formula, not a new model:
 ## `r fontawesome::fa("laptop-code", "white")` Your Turn {background-color="#447099" transition="fade-in"}
 
 1. Reproduce the joint nowcasting model in `epinowcast`
-2. Add day-of-week reporting effects
+2. Add day-of-week effects (on onsets, on the delay, and on reporting)
 3. Let the delay vary over time
 4. Fit weekly (batched) reporting with a reporting schedule
 
