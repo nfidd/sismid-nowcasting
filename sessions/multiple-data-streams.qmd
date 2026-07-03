@@ -11,7 +11,7 @@ In reality we often observe an outbreak through *several* surveillance streams a
 
 Rather than reach straight for a model that swallows all of these at once, in this session we follow a modelling *workflow*.
 We start from the question we are trying to answer, sketch what an ideal model would look like, and then *build that model up in parts*: fitting each data source on its own, linking two together through a shared latent infection process, and finally exposing what happens when streams disagree.
-This is the modelling idea behind tools such as `epidemia`, which jointly models cases and deaths from a shared renewal process [@bhattSemiMechanisticBayesianModeling2020].
+This is the modelling idea behind tools such as `epidemia`, which jointly models cases and deaths from a shared renewal process [@scottEpidemiaRPackage2021].
 
 ## Slides
 
@@ -756,7 +756,7 @@ Combining this multi-stream approach with the nowcasting models from the [joint 
 
 ## Methods in practice
 
--   `epidemia` implements joint renewal-equation models of cases and deaths of the kind introduced here [@bhattSemiMechanisticBayesianModeling2020].
+-   `epidemia` implements joint renewal-equation models of cases and deaths of the kind introduced here [@scottEpidemiaRPackage2021].
 -   `EpiSewer` is a Bayesian generative model for estimating transmission dynamics from a wastewater signal, with a carefully specified shedding and measurement model [@lisonRobustRealtimeEstimation2025; @lisonEpiSewer2025].
 -   The CDC's wastewater-informed modelling work jointly fits wastewater concentration data and epidemiological count data to produce nowcasts and forecasts [@johnsonWwinference2026]. Unlike our deliberately single-site example, it combines *multiple* wastewater sites with hierarchical structure -- a multi-site, multi-resolution extension of the ideas in this session.
 
