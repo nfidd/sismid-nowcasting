@@ -93,9 +93,9 @@ This is the **nowcasting** course (first half of the week, Monday to Wednesday m
 - using delays to model the data generating process
 - $R_t$ estimation and the renewal equation
 - nowcasting, and joint estimation of delays and nowcasts
-- linking nowcasting and forecasting (bridge to the forecasting course)
-- modelling more complex reporting processes with `epinowcast`
-- jointly fitting multiple surveillance data streams
+- linking nowcasting and forecasting
+- modelling more complex reporting processes
+- jointly fitting multiple data streams
 :::
 
 #
