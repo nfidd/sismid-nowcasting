@@ -9,8 +9,8 @@ bibliography: ../nfidd.bib
 So far we have estimated the reproduction number from a *single* observed time series.
 In reality we often observe an outbreak through *several* surveillance streams at once: confirmed cases, deaths, and a wastewater signal, each a delayed, scaled view of the same underlying epidemic.
 
-Rather than reach straight for a model that swallows all of these at once, in this session we follow a modelling *workflow*.
-We start from the question we are trying to answer, sketch what an ideal model would look like, and then *build that model up in parts*: fitting each data source on its own, linking two together through a shared latent infection process, and finally exposing what happens when streams disagree.
+Rather than reach straight for a model that swallows all of these at once, in this session we follow one *proposed* modelling workflow.
+We start from the question we are trying to answer, sketch what a model for it might look like, and then *build that model up in parts*: fitting each data source on its own, linking two together through a shared latent infection process, and finally exposing what happens when streams disagree.
 This is the modelling idea behind tools such as `epidemia`, which jointly models cases and deaths from a shared renewal process [@scottEpidemiaRPackage2021].
 
 ## Slides
@@ -19,7 +19,7 @@ This is the modelling idea behind tools such as `epidemia`, which jointly models
 
 ## Objectives
 
-The aim of this session is to develop a joint model of several surveillance streams the way a modeller actually would: question first, then an ideal model, then building it up one stream at a time, checking what each step buys us and what happens when streams conflict.
+The aim of this session is to develop a joint model of several surveillance streams the way a modeller might: question first, then a sketch of a model for it, then building it up one stream at a time, checking what each step buys us and what happens when streams conflict.
 
 ::: {.callout-note collapse="true"}
 # Setup
@@ -64,23 +64,19 @@ options(cmdstanr_warn_inits = FALSE)
 Before reaching for a model it is worth being explicit about what we want from it.
 Our **research question and target estimands** are the same as in earlier sessions: we want to recover the latent infection trajectory and the reproduction number $R_t$ that drives it, in as timely and as well-anchored a way as possible.
 
-No single data stream gives us a perfect view of those quantities.
-
--   **Confirmed cases** are timely but depend on testing and reporting, and only a fraction of infections are ever ascertained.
--   **Deaths** are a more stable signal but arrive with a long delay and capture only a small, severity-dependent fraction of infections.
--   A **wastewater** signal does not depend on people seeking care at all, but it measures something more indirect (shed pathogen concentration) on its own scale.
-
+No single data stream gives us a perfect view of those quantities: each is a delayed, scaled and noisy window on the same infections, and we look at what each one measures in the next section.
 The promise of using them together is that the timely-but-noisy streams sharpen our estimate of the recent trajectory while the stable-but-delayed streams anchor the longer-term level.
 The question for this session is therefore not just "can we fit several streams?" but "what does each stream add, and what happens when they pull in different directions?".
 
-# What would the ideal model look like?
+# What might an ideal model look like?
 
 Fitting several data streams is not a one-off trick: it is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026].
-We will let that workflow drive how we develop the model in this session, so it is worth looking at it before we write any code.
+This is one *proposed* workflow rather than the only way to build a model, but it gives us a concrete order to work in, so it is worth looking at before we write any code.
 
 ![A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again -- model checking, identifiability and conflict between data sources all feed revisions. Figure by Abbott et al., reproduced from the `a-workflow-for-infectious-disease-modelling` repository [@abbottWorkflowInfectiousDisease2026] under the MIT licence.](figures/workflow-diagram.png)
 
-Reading the diagram from the bottom-left, an ideal model for our question is assembled from a small number of pieces, and the rest of this session walks through them in order:
+There is a lot going on in this diagram, and we will not touch every box in one session.
+The point is not to memorise it but to take from it an order of work: according to this approach, a model for our question is assembled from a handful of pieces, roughly as follows.
 
 1.  **Research question and target estimands.** We fixed these above: latent infections and $R_t$.
 2.  **Process model.** A single shared epidemic process. We reuse the renewal equation with a geometric random walk on $R_t$ from the [previous session](R-estimation-and-the-renewal-equation), so there is *one* infection trajectory underneath everything.
@@ -89,10 +85,90 @@ Reading the diagram from the bottom-left, an ideal model for our question is ass
 5.  **Data integration choices.** How to combine those per-stream observation models. The diagram flags two things about this step: the *choice* of how to integrate sources, and a feedback arrow warning that *conflict between data sources reveals model misspecification*.
 6.  **Inference, checking and revision.** Fit the model, check it against each stream, and let identifiability problems or conflict between sources send us back to revise it.
 
-The ideal model, then, is *modular*: a shared process model with a separate, swappable observation model for each data source, combined by an explicit integration choice.
-That modularity is what lets us **build it in parts**, which is what we do next: fit each observation model on its own, make the integration choice that links them, then stress-test that choice.
+# Reviewing our data sources
+
+The workflow's *data source selection* step asks us to catalogue the streams we have and, for each, what it measures and how it is biased, before we commit to an observation model for it.
+Each stream will be one of the branches in the DAG we design next, and reviewing them now tells us what delay, scaling and likelihood each branch will need.
+
+-   **Confirmed cases** are timely, with a short infection-to-report delay, but only an ascertained *fraction* of infections is ever confirmed, and that fraction depends on testing capacity and policy.
+    They pin down the *timing* of recent infections but carry reporting noise.
+-   **Deaths** are a more stable, less noisy signal, but arrive with a long infection-to-death delay and capture only a small, severity-dependent fraction of infections (the infection fatality ratio).
+    They say little about the present but anchor the longer-term level.
+-   **Wastewater** measures shed pathogen concentration, so it does not depend on testing or care-seeking at all and picks up infections regardless of ascertainment.
+    It is a continuous signal on its own scale, is relatively indirect and noisy, and needs a scaling before it can be compared to infections.
+
+Each is a delayed, scaled and noisy window on the *same* infections, which is what makes combining them worthwhile: the timely streams sharpen the recent trajectory while the stable ones anchor the level.
+
+# Designing a DAG of the observation process
+
+With the data sources catalogued, the next step is to draw those relationships as a directed acyclic graph (DAG): a picture of how each quantity generates the next, from the shared process at the top down to the observations at the bottom.
+For our question the DAG is small.
+A geometric random walk on $R_t$ drives a single shared latent infection series $I$ through the renewal equation.
+Each stream then takes that *same* $I$, passes it through its own delay and scaling to give an expected signal, and observes that signal through its own likelihood: cases as overdispersed (negative binomial) counts, deaths as Poisson counts, wastewater as a log-normal concentration.
+
+```{=html}
+<figure style="margin:1.2em 0;">
+<svg viewBox="0 0 880 470" width="100%" style="max-width:760px;display:block;margin:0 auto;font-family:inherit;" role="img" aria-labelledby="dag-title dag-desc">
+  <title id="dag-title">Directed acyclic graph for the multi-stream model</title>
+  <desc id="dag-desc">A geometric random walk on R(t) drives a single shared latent infection series through the renewal equation. Each stream passes the same infections through its own delay and scaling to an expected signal, which is then observed: cases as overdispersed negative-binomial counts, deaths as Poisson counts, wastewater as a log-normal concentration.</desc>
+  <defs>
+    <marker id="dag-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7b"/>
+    </marker>
+  </defs>
+  <g stroke="#5b6b7b" stroke-width="2" fill="none" marker-end="url(#dag-arrow)">
+    <path d="M440,64 L440,104"/>
+    <path d="M330,158 C230,200 160,206 135,252"/>
+    <path d="M440,158 L440,252"/>
+    <path d="M550,158 C650,200 720,206 745,252"/>
+    <path d="M135,306 L135,372"/>
+    <path d="M440,306 L440,372"/>
+    <path d="M745,306 L745,372"/>
+  </g>
+  <g font-size="13.5" fill="#374553" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">
+    <text x="205" y="214">delay + ascertainment</text>
+    <text x="440" y="214">delay + IFR</text>
+    <text x="665" y="214">delay + scaling</text>
+  </g>
+  <g text-anchor="middle">
+    <rect x="310" y="14" width="260" height="50" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="45" font-size="16" fill="#1d2b3a">R<tspan baseline-shift="sub" font-size="11">t</tspan> (geometric random walk)</text>
+    <rect x="300" y="104" width="280" height="54" rx="9" fill="#2c7fb8" stroke="#1d5a86" stroke-width="1.5"/>
+    <text x="440" y="137" font-size="16.5" font-weight="600" fill="#ffffff">Shared latent infections I</text>
+    <rect x="30" y="252" width="210" height="54" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="135" y="284" font-size="15" fill="#1d2b3a">Expected cases</text>
+    <rect x="335" y="252" width="210" height="54" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="284" font-size="15" fill="#1d2b3a">Expected deaths</text>
+    <rect x="640" y="252" width="210" height="54" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="745" y="284" font-size="15" fill="#1d2b3a">Expected wastewater</text>
+    <rect x="30" y="372" width="210" height="54" rx="9" fill="#ffffff" stroke="#33506e" stroke-width="1.5"/>
+    <text x="135" y="404" font-size="15" fill="#1d2b3a">cases ~ NegBinomial</text>
+    <rect x="335" y="372" width="210" height="54" rx="9" fill="#ffffff" stroke="#33506e" stroke-width="1.5"/>
+    <text x="440" y="404" font-size="15" fill="#1d2b3a">deaths ~ Poisson</text>
+    <rect x="640" y="372" width="210" height="54" rx="9" fill="#ffffff" stroke="#33506e" stroke-width="1.5"/>
+    <text x="745" y="404" font-size="15" fill="#1d2b3a">ww ~ LogNormal</text>
+  </g>
+</svg>
+<figcaption style="text-align:center;font-size:0.9em;color:#5b6b7b;">A DAG for our model: one shared infection process, observed through a delay, a scaling and a likelihood for each stream.</figcaption>
+</figure>
+```
+
+## Breaking the DAG into components
+
+The workflow's next step is to break that DAG into modular components, or sub-models.
+Ours splits cleanly: the shared process (the $R_t$ random walk and the renewal equation) is one module, and each stream's delay-scaling-likelihood branch is another, self-contained module hanging off the shared infections.
+That decomposition is exactly what lets us **build the model in parts** rather than in one leap: we can bring in one branch at a time and check it before adding the next.
 
 ::: {.callout-note}
+## Top-down vs bottom-up
+
+We are working *top-down* here: sketch the full model we would ideally like, then build it up in parts.
+That is not the only order.
+A perfectly valid *bottom-up* alternative is to start from the smallest subset of data you actually need to answer the question, design a DAG for just that, and add components as more data (or more need) arrives.
+The two meet in the middle; which you prefer often comes down to whether you already know the full picture or are discovering it as you go.
+:::
+
+::: {.callout-note .optional collapse="true"}
 ## Parallel (joint) vs sequential modelling
 
 The "data integration choices" box hides a decision about how the streams relate to each other.
@@ -116,85 +192,172 @@ $$
 chaining deaths off cases instead of off the shared infections.
 
 **Which should you choose?**
-The choice hinges on whether the streams are better seen as independent observations of a shared process, or as a genuine causal chain you trust.
+The choice is really about one assumption: is it valid to treat one stream as generated *from* another?
+You can diagnose conflict and propagate uncertainty under either formulation, so the decision does not hinge on those alone.
 
--   A **parallel** model is appropriate when each stream is an independent (noisy) window on the same underlying infections, as cases and deaths usually are.
-    It is the right default in that case: the streams jointly inform the infections, borrow strength from one another, and propagate uncertainty coherently, with no single stream privileged.
--   A **sequential** model is appropriate only when one stream genuinely *derives* from another in a way you trust (for example, if deaths really were generated from the *observed* cases).
-    It is simpler, but it conditions on a possibly incomplete or biased upstream stream.
+-   A **parallel** model assumes only that each stream is a delayed, scaled view of the same infections, which is usually a safe assumption for cases, deaths and wastewater.
+-   A **sequential** model additionally assumes one stream really is drawn from another.
+    This is often *not* something you can claim: deaths are not drawn from the *reported* cases (which are themselves an incomplete, delayed observation), nor even from cases plus a delay, because that would ignore the case observation process entirely.
 
-These choices have different consequences for the answer.
-In a **sequential** model any bias or under-reporting in the upstream stream flows straight into the downstream estimate; because the upstream is treated as known, those errors cannot be corrected and the downstream uncertainty is understated.
-In a **parallel** model all streams jointly inform the shared infections with propagated uncertainty, and genuine disagreement is not silently absorbed: it shows up as misfit you can diagnose, the conflict we examine later in this session.
-
-We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every stream informs.
+The trade-off is therefore about the validity of that generative assumption rather than about one formulation having uniquely good diagnostics or uncertainty.
+A sequential model can be reasonable when the chain genuinely holds -- for example when a downstream count really is a subset of an upstream one -- but it commits you to trusting the upstream stream as if it were the truth.
+We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every stream informs and avoids privileging any single stream.
 :::
 
 # Simulating a shared infection trajectory
 
-As in previous sessions we first simulate the data-generating process so that we know the truth we are trying to recover.
-Rather than invent a new epidemic, we reuse the *same* simulated infections the course has used throughout, and treat them as the shared latent process that every stream observes.
-
-We build the generation time and infection time series exactly as in the [renewal equation](R-estimation-and-the-renewal-equation) and [nowcasting](nowcasting) sessions, from the course `infection_times` dataset.
+As in previous sessions we start by simulating the data-generating process, so that we know the truth we are trying to recover.
+Rather than invent a new epidemic we reuse the *same* simulated infections the course has used in the [renewal equation](R-estimation-and-the-renewal-equation) and [nowcasting](nowcasting) sessions, and treat them as the shared latent process that every stream observes.
 
 ```{r shared_infections}
 gen_time_pmf <- make_gen_time_pmf()
-
 inf_ts <- make_daily_infections(infection_times)
-## We take a short window around the epidemic peak so this session -- which fits
-## seven models -- renders quickly, while keeping the full story: a clear rise,
-## peak and decline (so Rt genuinely changes) with room for the death-scaling
-## drift we introduce later.
+```
+
+We take a short window around the epidemic peak so that this session, which fits several models, renders quickly while still spanning a clear rise, peak and decline.
+
+```{r shared_infections_window}
 infections <- inf_ts$infections[64:104]
 n <- length(infections)
 I0 <- infections[1]
-
 inf_df <- tibble(day = seq_len(n), infections = infections)
+
 ggplot(inf_df, aes(x = day, y = infections)) +
   geom_line() +
-  labs(title = "Shared latent infections", x = "Day", y = "Infections")
+  labs(title = "Shared latent infections",
+       subtitle = "The trajectory every stream observes",
+       x = "Day", y = "Infections")
 ```
 
 We will layer the observation models on top of these shared infections one stream at a time, simulating each stream only at the point we introduce it.
 
 # Building the model in parts
 
-We now build the ideal model up piece by piece, following the build order the workflow suggests: fit each stream on its own, then integrate.
+We now build the model up piece by piece, following the build order the workflow suggests: fit each stream on its own, then integrate.
 
 To do this without writing (and compiling) a different model for every combination of streams, we use a *single* Stan model with a switch for each stream.
-The model extends the random-walk renewal model from the previous session: one shared geometric random walk for $R_t$ drives one shared infection process, each stream adds its own convolution, scaling, and likelihood term, and integer flags (`use_cases`, `use_deaths`, `use_ww`) decide which streams contribute to the likelihood.
+The model extends the random-walk renewal model from the previous session, and its blocks map directly onto the DAG above: one shared geometric random walk for $R_t$ drives one shared infection process, each stream adds its own convolution, scaling, and likelihood term, and integer flags (`use_cases`, `use_deaths`, `use_ww`) decide which streams contribute to the likelihood.
 
 ```{r stan_model}
 mod <- nfidd_cmdstan_model("estimate-inf-and-r-multi-stream")
-mod
 ```
+
+Rather than read the whole model at once, we look at it a piece at a time, matching each piece to a component of the DAG.
+The full model is on [GitHub](https://github.com/nfidd/sismid-nowcasting/blob/main/inst/stan/estimate-inf-and-r-multi-stream.stan) if you want to see it end to end.
+
+::: {.callout-note}
+## Stan and modular models
+
+We use a single Stan file here because it is what the rest of the course uses, but Stan is not an ideal language for building models *modularly* like this.
+Stan has no built-in way to package the shared process and each observation branch as separate, reusable components and then compose them: in practice you end up with one monolithic file, as we have.
+You *can* get some way there by vendoring Stan functions between projects with tooling such as [`primarycensored`](https://primarycensored.epinowcast.org/), which packages reusable Stan functions (for censored and truncated delays) and copies them into your model at build time.
+Other probabilistic programming languages support this modular, composable style more naturally; see the Julia prototype [`EpiAwarePrototype.jl`](https://github.com/EpiAware/EpiAwarePrototype.jl) for one take on building this kind of model from swappable components.
+:::
+
+The top of the DAG is the shared process: the $R_t$ random walk and the renewal equation that turns it into one latent infection series.
+In the `transformed parameters` block this is:
+
+```stan
+// one shared infection / Rt process feeds every stream
+array[n] real R = geometric_random_walk(init_R, rw_noise, rw_sd); // <1>
+array[gen_time_max] real seed_infections;                         // <2>
+for (t in 1:gen_time_max)
+  seed_infections[t] = seed_base * exp(initial_growth * (t - gen_time_max));
+array[n] real infections =
+  renewal_seeded(seed_infections, R, gen_time_pmf);              // <3>
+```
+1. The geometric random walk on $R_t$ (the top node of the DAG), exactly as in the previous session.
+2. A seeded initial history. We start our window mid-outbreak, so there are already infections *before* day one. We build a full `gen_time_max`-day history by exponential growth from an estimated level `seed_base` (near the observed starting level) and an estimated initial growth rate.
+3. The renewal equation turns $R_t$ into the shared latent infections $I$. Unlike the plain `renewal(I0, ...)` used elsewhere, which starts from a single value and would collapse to near zero here, `renewal_seeded` starts from that full history, so the estimated infections begin at the right level.
+
+::: {.callout-note collapse="true"}
+## Mathematical definition
+
+The shared process is a geometric random walk on $R_t$ feeding the renewal equation:
+$$
+\log R_t = \log R_{t-1} + \sigma_{rw}\,\epsilon_t, \quad \epsilon_t \sim \mathrm{Normal}(0, 1),
+$$
+$$
+I_t = R_t \sum_{s \ge 1} I_{t-s}\, g(s),
+$$
+where $g$ is the generation-time PMF and $\sigma_{rw}$ the random-walk standard deviation.
+Because we start mid-outbreak, the sum needs infections from *before* day one, so we seed the first `gen_time_max` days with an exponential-growth history $I_t = I_0^{\text{seed}}\,e^{\rho(t - t_{\text{seed}})}$ (estimated level $I_0^{\text{seed}}$ and initial growth rate $\rho$) rather than a single starting value.
+:::
+
+Each stream is then a branch hanging off those shared infections: the same $I$, convolved with the stream's own delay and multiplied by its own scaling to give an expected signal.
+
+```stan
+array[n] real case_conv =
+  convolve_with_delay(infections, case_delay_pmf); // <1>
+for (i in 1:n) {
+  exp_cases[i] = ascertainment * case_conv[i];     // <2>
+  exp_deaths[i] = death_scale[i] * death_conv[i];
+  exp_ww[i] = ww_scale * ww_conv[i];
+}
+```
+1. The delay edge in the DAG: convolve the shared infections with this stream's delay PMF (deaths and wastewater have their own `..._conv` lines just above).
+2. The scaling: multiply by `ascertainment`, `ifr`/`death_scale` or `ww_scale` to get each stream's expected signal.
+
+::: {.callout-note collapse="true"}
+## Mathematical definition
+
+For stream $k$ the expected signal is the shared infections convolved with the stream's delay PMF $p_k$ and multiplied by its scaling $\phi_k$ (ascertainment, IFR/`death_scale`, or wastewater scale):
+$$
+\mu^{(k)}_t = \phi_k \sum_{d \ge 0} I_{t-d}\, p_k(d).
+$$
+:::
+
+Finally each expected signal is observed through its own likelihood, and a `use_*` flag decides whether that stream enters the fit.
+
+```stan
+if (use_cases) {
+  cases ~ neg_binomial_2(                         // <1>
+    exp_cases, inv_square(cases_overdispersion)
+  );
+}
+if (use_deaths) {
+  deaths ~ poisson(exp_deaths);       // <2>
+}
+```
+1. Cases: overdispersed (negative binomial) counts of the expected cases (the cases observation node). Reporting noise usually exceeds the Poisson, so cases get an extra overdispersion parameter; the reciprocal-overdispersion form near zero recovers the Poisson.
+2. Deaths: Poisson counts of the expected deaths. We will meet the wastewater likelihood, which is log-normal, when we add that stream.
+
+::: {.callout-note collapse="true"}
+## Mathematical definition
+
+Each stream is observed through its own likelihood on the expected signal $\mu^{(k)}_t$:
+$$
+C_t \sim \mathrm{NegBinomial}\big(\mu^{(\text{cases})}_t,\ \phi\big), \qquad D_t \sim \mathrm{Poisson}\big(\mu^{(\text{deaths})}_t\big),
+$$
+$$
+\log W_t \sim \mathrm{Normal}\big(\log \mu^{(\text{ww})}_t,\ \sigma_{ww}\big),
+$$
+for cases $C_t$, deaths $D_t$ and wastewater concentration $W_t$.
+:::
+
+Because the streams are conditionally independent given the infections, whichever terms are switched on are simply *added* together to form the joint log-likelihood.
 
 ::: {.callout-tip}
 ## Take 5 minutes
 
-Familiarise yourself with the model above.
-Compare it to the random-walk model `estimate-inf-and-r-rw` from the [previous session](R-estimation-and-the-renewal-equation#estimating-r_t-with-a-geometric-random-walk-prior).
-Which parts are shared across all three streams, and which parts are specific to each stream?
-Where in the `model` block does each stream contribute to the likelihood, and what do the `use_*` flags do there?
-:::
-
-::: {.callout-note collapse="true"}
-## Solution
-
-The `R`, `infections`, generation time, random walk noise and random walk standard deviation are *shared*: there is a single latent infection process.
-Each stream has its own delay PMF, its own scaling parameter (`ascertainment`, `ifr`, `ww_scale`) and its own observation term in the `model` block.
-The three likelihood lines (`cases ~ poisson(...)`, `deaths ~ poisson(...)`, `ww ~ normal(log(...), ww_sigma)`) are each guarded by a `use_*` flag, so we can switch any stream on or off.
-Because the streams are conditionally independent given the infections, whichever terms are switched on are simply *added* together to form the joint log-likelihood.
+Looking at the pieces above (and comparing with the random-walk model `estimate-inf-and-r-rw` from the [previous session](R-estimation-and-the-renewal-equation#estimating-r_t-with-a-geometric-random-walk-prior)): which parts are shared across all three streams, and which are specific to each stream?
+Map each `use_*` flag to a branch of the DAG.
 :::
 
 The Stan model always expects data for all three streams; the `use_*` flags decide which ones actually enter the likelihood.
 So that we can build up the data the same way we build up the model, we start with a small helper that assembles the data list for whichever streams we have simulated so far, filling any stream we have not yet introduced with harmless placeholders (they never enter the likelihood while its `use_*` flag is `0`).
+The helper also carries each stream's scaling prior as a `(mean, sd)` pair.
+These default to *relaxed* priors we use for the joint fits; we pass *tight* priors when we fit a single stream on its own, for a reason we come to below.
 
 ```{r data_helper}
 make_data <- function(cases, deaths, ww,
-                      case_delay_pmf, death_delay_pmf, ww_delay_pmf) {
+                      case_delay_pmf, death_delay_pmf, ww_delay_pmf,
+                      ascertainment_p = c(0.4, 0.06),
+                      ifr_p = c(0.1, 0.02),
+                      ww_scale_p = c(2, 0.3),
+                      use_nb_cases = 1) {
   list(
-    n = n,
+    n = length(cases),
     I0 = I0,
     gen_time_max = length(gen_time_pmf),
     gen_time_pmf = gen_time_pmf,
@@ -207,6 +370,10 @@ make_data <- function(cases, deaths, ww,
     ww = ww,
     ww_delay_max = length(ww_delay_pmf) - 1,
     ww_delay_pmf = ww_delay_pmf,
+    ascertainment_p = ascertainment_p,
+    ifr_p = ifr_p,
+    ww_scale_p = ww_scale_p,
+    use_nb_cases = use_nb_cases,
     tv_death_scale = 0
   )
 }
@@ -236,12 +403,13 @@ fit_streams <- function(data, use_cases, use_deaths, use_ww,
 
 ## Part 1: simulate and fit cases and deaths on their own
 
-The first thing the workflow asks of us is an observation model *per source*.
+*Workflow stage: observation model per source.*
+The first thing the workflow asks of us, once the shared process is fixed, is an observation model *per source*.
 We start with the two count streams.
 Each is a convolution of the shared infections with its own delay distribution, scaled by a fraction of infections, observed as counts:
 
--   **Cases**: a short infection-to-report delay, scaled by an *ascertainment* fraction (most infections are never confirmed).
--   **Deaths**: a long infection-to-death delay, scaled by the *infection fatality ratio* (IFR).
+-   **Cases**: a short infection-to-report delay, scaled by an *ascertainment* fraction (most infections are never confirmed), and reported with noise beyond the Poisson, so we simulate them as *negative binomial*.
+-   **Deaths**: a long infection-to-death delay, scaled by the *infection fatality ratio* (IFR), simulated as Poisson.
 
 ```{r simulate_cd}
 case_delay_pmf  <- censored_delay_pmf(rgamma, max = 10, shape = 3, rate = 1)
@@ -249,33 +417,43 @@ death_delay_pmf <- censored_delay_pmf(rgamma, max = 12, shape = 8, rate = 1)
 
 ascertainment <- 0.4
 ifr <- 0.1
+case_dispersion <- 5   # negative-binomial size: smaller = noisier cases
 
 exp_cases  <- ascertainment * convolve_with_delay(infections, case_delay_pmf)
 exp_deaths <- ifr * convolve_with_delay(infections, death_delay_pmf)
 
 obs <- inf_df |>
   mutate(
-    cases  = rpois(n, exp_cases),
+    cases  = rnbinom(n, mu = exp_cases, size = case_dispersion),
     deaths = rpois(n, exp_deaths)
   )
 ```
 
-We can plot the two streams alongside the infections.
+We can plot the two simulated count streams, the same way we plotted simulated onsets in earlier sessions.
 Each is a delayed, rescaled echo of the same infection curve: deaths peak later than cases.
+The cases are the timely stream but also the noisiest: drawing them from a negative binomial makes them visibly rougher than the smooth Poisson deaths, which is what we would expect of real case reporting.
 
 ```{r plot_cd}
 obs |>
-  select(day, infections, cases, deaths) |>
-  pivot_longer(-day, names_to = "stream", values_to = "value") |>
+  select(day, cases, deaths) |>
+  pivot_longer(c(cases, deaths), names_to = "stream", values_to = "value") |>
   ggplot(aes(x = day, y = value)) +
-  geom_line() +
-  facet_wrap(~stream, scales = "free_y") +
-  labs(title = "Shared infections and the two count streams",
-       x = "Day", y = NULL)
+  geom_col() +
+  facet_grid(stream ~ ., scales = "free_y") +
+  labs(title = "Simulated cases and deaths", x = "Day", y = "Count")
 ```
 
-Before combining anything, we check that each stream, on its own, can recover the shared infection process through its own delay and scaling.
-We assemble the data (using a placeholder wastewater stream for now) and fit the cases stream alone, then the deaths stream alone.
+### Checking each stream on its own
+
+*Workflow stage: validate each sub-model independently.*
+Before combining anything, the workflow tells us to check each sub-model on its own: can each stream, through its own delay and scaling, recover the shared infection process?
+This is the modular pay-off from breaking the DAG into components: we validate one branch at a time before we link them.
+
+There is a subtlety here worth being explicit about, because it drives how we fit these single streams.
+A single count stream only ever tells us about infections *multiplied by* its scaling: doubling the infections and halving the ascertainment gives exactly the same expected cases.
+So on its own a stream identifies the *trend* of infections (and hence $R_t$) but **not their absolute level**.
+To recover the level from one stream we have to inform its scaling.
+We therefore give each single-stream diagnostic fit a *tight* prior on that stream's scaling, centred near the truth, as a deliberate device: it lets us check that the stream recovers the infection level, not just its shape.
 
 ```{r fit_single, results = 'hide', message = FALSE}
 ## placeholder wastewater: never enters the likelihood while use_ww = 0
@@ -287,11 +465,22 @@ cd_data <- make_data(
   ww_delay_pmf = ww_placeholder_pmf
 )
 
-fit_cases  <- fit_streams(cd_data, use_cases = 1, use_deaths = 0, use_ww = 0)
-fit_deaths <- fit_streams(cd_data, use_cases = 0, use_deaths = 1, use_ww = 0)
+## tight, informed priors on each stream's own scaling anchor the level
+cases_data <- cd_data
+cases_data$ascertainment_p <- c(0.4, 0.03)
+deaths_data <- cd_data
+deaths_data$ifr_p <- c(0.1, 0.01)
+
+fit_cases <- fit_streams(
+  cases_data, use_cases = 1, use_deaths = 0, use_ww = 0
+)
+fit_deaths <- fit_streams(
+  deaths_data, use_cases = 0, use_deaths = 1, use_ww = 0
+)
 ```
 
 We extract the estimated infections from each single-stream fit and compare them to the truth.
+With the scaling informed, each stream now recovers the infection *level*, not just the trend.
 
 ```{r plot_single}
 single_inf <- bind_rows(
@@ -309,6 +498,29 @@ ggplot(single_inf, aes(x = day)) +
   facet_wrap(~model) +
   labs(title = "Infections from single-stream fits (grey) vs truth (red)",
        x = "Day", y = "Infections")
+```
+
+The reproduction number is recovered from each stream too.
+Unlike the level, $R_t$ is a property of the *trend*, so each stream identifies it without any help from the scaling prior.
+We plot each single-stream $R_t$ estimate; we do not draw a "true" $R_t$ line, because the quantity we are recovering is the latent $R_t$ and we compare estimates to each other rather than to a known truth.
+
+```{r plot_single_r}
+single_r <- bind_rows(
+  fit_cases  |> gather_draws(R[day]) |> mutate(model = "cases only"),
+  fit_deaths |> gather_draws(R[day]) |> mutate(model = "deaths only")
+) |>
+  ungroup() |>
+  group_by(model) |>
+  filter(.draw %in% sample(.draw, 100)) |>
+  ungroup()
+
+ggplot(single_r, aes(x = day, y = .value, group = .draw)) +
+  geom_line(alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  facet_wrap(~model) +
+  coord_cartesian(ylim = c(0, 3)) +
+  labs(title = "Rt from single-stream fits (sampled trajectories)",
+       x = "Day", y = "Rt")
 ```
 
 ::: {.callout-tip}
@@ -329,8 +541,10 @@ Each stream is a valid but partial view of the same infections, which is why com
 
 ## Part 2: link cases and deaths through the shared infections
 
+*Workflow stage: data integration choice.*
 Each stream works on its own, so we can now make the **data integration choice** from the workflow: link the two of them.
 Both cases and deaths look directly at the *same* latent infections, each through its own delay and scaling, and their likelihood terms are added.
+Because two streams now anchor the level between them, we drop the tight single-stream priors and fall back to the *relaxed* scaling priors baked into `make_data`.
 
 ```{r fit_two, results = 'hide', message = FALSE}
 fit_cd <- fit_streams(
@@ -353,6 +567,22 @@ ggplot(two_inf, aes(x = day)) +
        subtitle = "Two streams sharing one latent infection process")
 ```
 
+The two-stream fit gives us $R_t$ as well, now informed by both streams at once.
+
+```{r plot_two_r}
+two_r <- fit_cd |>
+  gather_draws(R[day]) |>
+  ungroup() |>
+  filter(.draw %in% sample(.draw, 100))
+
+ggplot(two_r, aes(x = day, y = .value, group = .draw)) +
+  geom_line(alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  coord_cartesian(ylim = c(0, 3)) +
+  labs(title = "Rt, cases + deaths jointly (sampled trajectories)",
+       x = "Day", y = "Rt")
+```
+
 ## Part 3: introduce wastewater and fit it on its own
 
 So far both streams have been counts of people.
@@ -363,6 +593,16 @@ Because it samples whatever is in the sewer, it is a *population-level* signal t
 That makes it an attractive complement to the count streams: it can lead case reports, captures asymptomatic infection, and is relatively cheap to collect at the scale of a whole catchment.
 
 We model it in a deliberately simple way that mirrors the other streams: the signal is taken to be **proportional to recent infections**, via a short infection-to-shedding delay and a single scaling factor, and observed on the **log scale with log-normal noise** (a single site, with no normalisation or site effects).
+
+This is the third stream's observation node, the one likelihood we deferred earlier.
+It is the same delay-scaling-then-observe pattern as the count streams, but with a log-normal likelihood rather than Poisson:
+
+```stan
+if (use_ww) {
+  ww ~ normal(log(exp_ww), ww_sigma); // <1>
+}
+```
+1. Wastewater: the log concentration is normal around the log of the expected signal, i.e. the signal itself is log-normal.
 
 ```{r simulate_ww}
 ww_delay_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
@@ -388,8 +628,9 @@ Measurement error in such assays tends to be multiplicative (proportional to the
 Dedicated wastewater tools build a much richer shedding and measurement model than ours; see `EpiSewer` [@lisonRobustRealtimeEstimation2025; @lisonEpiSewer2025] and the CDC `ww-inference-model` [@johnsonWwinference2026] to go further.
 :::
 
+*Workflow stage: validate each sub-model independently.*
 As with the other streams, we first fit wastewater on its own to check it can recover the shared infections through its delay and scaling.
-We rebuild the data, now with the real wastewater stream.
+We rebuild the data, now with the real wastewater stream, and give the single-stream fit the same treatment as the counts: a tight prior on its scaling so it recovers the infection level and not only the trend.
 
 ```{r fit_ww, results = 'hide', message = FALSE}
 full_data <- make_data(
@@ -398,7 +639,9 @@ full_data <- make_data(
   death_delay_pmf = death_delay_pmf,
   ww_delay_pmf = ww_delay_pmf
 )
-fit_ww <- fit_streams(full_data, use_cases = 0, use_deaths = 0, use_ww = 1)
+ww_data <- full_data
+ww_data$ww_scale_p <- c(2, 0.15)   # tight, informed prior on the ww scaling
+fit_ww <- fit_streams(ww_data, use_cases = 0, use_deaths = 0, use_ww = 1)
 ```
 
 ```{r plot_ww}
@@ -416,7 +659,9 @@ ggplot(ww_inf, aes(x = day)) +
 
 ## Part 4: add wastewater to the stack
 
+*Workflow stage: data integration choice.*
 Adding a stream is now just another integration step: switch wastewater on alongside cases and deaths.
+We again use the relaxed scaling priors from `make_data`: with three streams tied to one shared infection level, we no longer need to pin any single scaling.
 
 ```{r fit_all, results = 'hide', message = FALSE}
 fit <- fit_streams(
@@ -457,9 +702,52 @@ r_posterior <- posteriors |>
 ggplot(r_posterior, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  labs(title = "Estimated Rt",
+  coord_cartesian(ylim = c(0, 3)) +
+  labs(title = "Estimated Rt (sampled trajectories)",
        subtitle = "Joint model fit to all three streams")
 ```
+
+## Checking the joint fit against every stream
+
+*Workflow stage: model checking.*
+Before we trust the joint fit we should check it reproduces each stream it was fitted to.
+The model gives us posterior predictive draws for each stream (`pp_cases`, `pp_deaths`, `pp_ww`): simulated observations *with* each stream's own observation noise, so we can compare them like for like with the data.
+We overlay sampled predictive trajectories for the shared infections and all three streams against the simulated data.
+
+```{r ppc_streams}
+levels_ppc <- c("infections", "cases", "deaths", "wastewater")
+ppc_streams <- bind_rows(
+  fit |> gather_draws(infections[day]) |> mutate(stream = "infections"),
+  fit |> gather_draws(pp_cases[day])   |> mutate(stream = "cases"),
+  fit |> gather_draws(pp_deaths[day])  |> mutate(stream = "deaths"),
+  fit |> gather_draws(pp_ww[day])      |> mutate(stream = "wastewater")
+) |>
+  ungroup() |>
+  group_by(stream) |>
+  filter(.draw %in% sample(.draw, 100)) |>
+  ungroup() |>
+  mutate(stream = factor(stream, levels = levels_ppc))
+
+observed_streams <- bind_rows(
+  inf_df |> transmute(day, stream = "infections", value = infections),
+  obs    |> transmute(day, stream = "cases", value = cases),
+  obs    |> transmute(day, stream = "deaths", value = deaths),
+  obs    |> transmute(day, stream = "wastewater", value = ww)
+) |>
+  mutate(stream = factor(stream, levels = levels_ppc))
+
+ggplot(ppc_streams, aes(x = day, y = .value)) +
+  geom_line(aes(group = .draw), alpha = 0.1) +
+  geom_point(data = observed_streams, aes(y = value),
+             colour = "red", size = 0.6) +
+  facet_wrap(~stream, scales = "free_y") +
+  labs(title = "Posterior predictive check: infections and each stream",
+       subtitle = paste("Sampled trajectories with observation error (grey)",
+                        "vs simulated data (red)"),
+       x = "Day", y = NULL)
+```
+
+Each stream's predictive draws should bracket its data (the infections panel shows the latent trajectory against the truth we simulated), which tells us the shared infection process is compatible with all three streams at once.
 
 ::: {.callout-tip}
 ## Take 2 minutes
@@ -472,10 +760,130 @@ Why might the *absolute level* of infections be harder to pin down than the *tra
 ::: {.callout-note collapse="true"}
 ## Solution
 
-The scaling parameters are recovered much less precisely than $R_t$.
-Cases and deaths only constrain the product of infections and their scaling, so multiplying infections by a constant and dividing the scalings by the same constant gives an almost identical fit.
-The *shape* of the trajectory -- and hence $R_t$ -- is well identified by all three streams, but the *absolute level* is only weakly identified.
-In the workflow this is the "identifiability" feedback arrow: a problem we can either live with or address by fixing or strongly informing one of these scalings (for example, a literature value for the IFR) to anchor the level.
+The scaling parameters are recovered less precisely than $R_t$.
+Each stream only constrains the product of infections and its scaling, so multiplying infections by a constant and dividing every scaling by the same constant gives an almost identical fit.
+The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is only weakly identified and leans on the scaling priors.
+This is why the single-stream fits earlier needed a *tight* prior on their one scaling to recover the level: with relaxed priors, one stream on its own cannot.
+Here in the joint fit we deliberately relaxed those priors, and the level is still recovered reasonably: three streams each carrying a loose scaling prior, all tied to one shared infection process, pin the level between them better than any single stream with the same loose prior could.
+In the workflow this is the "identifiability" feedback arrow: with a single stream we address it by informing a scaling; with several streams the shared process does much of that work for us.
+:::
+
+# Comparing $R_t$ across streams
+
+*Workflow stage: model checking.*
+We have now fitted $R_t$ from cases alone, from deaths alone, and from the joint model.
+Putting the three on one figure makes the pay-off of combining streams concrete.
+Each single stream identifies $R_t$ (a trend), but with different strengths: cases are timely and sharpen the recent end, deaths are stable but blur it, and the joint fit borrows from both.
+
+```{r combined_r}
+r_by_source <- bind_rows(
+  fit_cases  |> gather_draws(R[day]) |> mutate(model = "cases only"),
+  fit_deaths |> gather_draws(R[day]) |> mutate(model = "deaths only"),
+  fit        |> gather_draws(R[day]) |> mutate(model = "joint (all three)")
+) |>
+  ungroup() |>
+  group_by(model) |>
+  filter(.draw %in% sample(.draw, 100)) |>
+  ungroup() |>
+  mutate(model = factor(
+    model, levels = c("cases only", "deaths only", "joint (all three)")
+  ))
+
+ggplot(r_by_source, aes(x = day, y = .value, group = .draw)) +
+  geom_line(alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  facet_wrap(~model) +
+  coord_cartesian(ylim = c(0, 3)) +
+  labs(title = "Rt by data source: single streams vs the joint fit",
+       subtitle = "Sampled trajectories from each fit",
+       x = "Day", y = "Rt")
+```
+
+# Real-time snapshots at day 20 and day 40
+
+*Workflow stage: model checking (fitness for real-time use).*
+Everything above used the *whole* outbreak.
+In practice $R_t$ estimation happens *during* an outbreak, when the data only run up to today.
+As in the [renewal equation session](R-estimation-and-the-renewal-equation#estimating-r_t-in-real-time) and the [nowcasting session](nowcasting), we can mimic this by truncating the streams at a `cutoff` and refitting, so each fit sees only what would have been available at that point.
+
+We take two snapshots: **day 20**, during the growth phase, and **day 40**, around the peak.
+We treat the **day-40** estimate as our *retrospective goal*: with more of the outbreak observed it is the better-anchored estimate, so the question is how close each stream's **real-time day-20** estimate gets to that later, more complete view.
+At each cutoff we fit cases only, deaths only, and the joint model, each running only up to its own cutoff.
+Unlike the single-stream *level* checks above, these snapshots use the standard (relaxed) scaling priors: $R_t$ is a trend and is identified regardless of the scaling, so we do not need to inform the scale here.
+A small helper truncates the data and fits, reusing the same compiled model on the shorter series.
+
+```{r realtime_helper}
+fit_at_cutoff <- function(cutoff, use_cases, use_deaths, use_ww, ...) {
+  keep <- seq_len(cutoff)
+  d <- make_data(
+    cases = obs$cases[keep], deaths = obs$deaths[keep], ww = obs$ww[keep],
+    case_delay_pmf = case_delay_pmf,
+    death_delay_pmf = death_delay_pmf,
+    ww_delay_pmf = ww_delay_pmf
+  )
+  fit_streams(d, use_cases, use_deaths, use_ww, ...)
+}
+```
+
+```{r realtime_fits, results = 'hide', message = FALSE}
+cutoffs <- c(20, 40)
+rt_snapshots <- map_dfr(cutoffs, function(ct) {
+  fc <- fit_at_cutoff(ct, 1, 0, 0)
+  fd <- fit_at_cutoff(ct, 0, 1, 0)
+  fj <- fit_at_cutoff(ct, 1, 1, 1, adapt_delta = 0.95)
+  bind_rows(
+    fc |> gather_draws(R[day]) |> mutate(model = "cases only"),
+    fd |> gather_draws(R[day]) |> mutate(model = "deaths only"),
+    fj |> gather_draws(R[day]) |> mutate(model = "joint (all three)")
+  ) |>
+    ungroup() |>
+    group_by(model) |>
+    filter(.draw %in% sample(.draw, 100)) |>
+    ungroup() |>
+    mutate(cutoff = ct)
+}) |>
+  mutate(
+    model = factor(
+      model, levels = c("cases only", "deaths only", "joint (all three)")
+    ),
+    cutoff_label = factor(
+      if_else(cutoff == 20, "real-time (day 20)", "retrospective (day 40)"),
+      levels = c("real-time (day 20)", "retrospective (day 40)")
+    )
+  )
+```
+
+We put both snapshots on one figure, coloured by cutoff and faceted by stream, so that within each panel we can read the real-time (day 20) estimate against the retrospective (day 40) goal.
+
+```{r realtime_plot}
+ggplot(rt_snapshots, aes(x = day, y = .value, group = .draw,
+                         colour = cutoff_label)) +
+  geom_line(alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  facet_wrap(~model) +
+  scale_colour_brewer(palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  coord_cartesian(ylim = c(0, 3)) +
+  labs(title = "Real-time (day 20) vs retrospective (day 40) Rt",
+       subtitle = paste("Each fit uses only data up to its cutoff;",
+                        "the day-40 estimate is the retrospective goal"),
+       x = "Day", y = "Rt", colour = "estimate") +
+  theme(legend.position = "bottom")
+```
+
+::: {.callout-tip}
+## Take 2 minutes
+
+In each panel, compare the real-time (day 20) trajectories with the retrospective (day 40) ones over their overlapping days.
+For which stream does the real-time estimate sit closest to the retrospective goal?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+The joint model's real-time (day 20) estimate firms up closest to its retrospective (day 40) goal.
+At day 20 the deaths carry almost no signal yet (the long delay means recent infections have not caused deaths), so the deaths-only estimate is barely more than its prior; the cases lead but are noisy, and the joint fit tracks the later retrospective estimate most tightly.
+Each single stream is a partial, real-time view; combining them gets us closest, in real time, to the estimate we would only otherwise reach retrospectively.
 :::
 
 # When streams conflict
@@ -505,7 +913,8 @@ Under our constant-scaling model the rising deaths therefore *look like* a risin
 ```{r simulate_conflict}
 ## death scaling drifts up over the second half of the outbreak
 ifr_drift <- ifr * c(rep(1, 20), seq(1, 4, length.out = n - 20))
-exp_deaths_conflict <- ifr_drift * convolve_with_delay(infections, death_delay_pmf)
+exp_deaths_conflict <-
+  ifr_drift * convolve_with_delay(infections, death_delay_pmf)
 
 obs_conflict <- obs |>
   mutate(deaths = rpois(n, exp_deaths_conflict))
@@ -565,6 +974,17 @@ A single shared infection process cannot simultaneously be declining (to match c
 The joint estimate is no longer faithful to any single stream.
 :::
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: when streams conflict
+
+```{=html}
+<iframe class="nfidd-embed" src="../interactive/data-conflict.html?embed=conflict" title="when surveillance streams conflict interactive" loading="lazy" style="width:100%;height:640px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+
+Drag the death-scaling drift to open a conflict, then let the scaling vary to snap the estimate back onto the truth.
+:::
+
 ## How the joint model surfaces conflict
 
 The $R_t$ comparison above already hints at trouble, but in a real analysis we would not know the truth to compare against.
@@ -572,33 +992,34 @@ So how would conflict actually announce itself?
 It shows up in three linked ways, and a principled workflow looks for all of them.
 
 **1. Poor fit to one stream.**
-The clearest symptom is a *posterior predictive check*: simulate each stream from the fitted model and overlay it on the data.
+The clearest symptom is a *posterior predictive check*: simulate each stream from the fitted model, *with* its observation noise, and overlay it on the data.
 Because the shared infections are dragged towards a compromise, at least one stream ends up fitted badly.
-We can extract the expected counts the model implies for each stream (`exp_cases`, `exp_deaths`) and compare them to the conflicting data.
+We draw the posterior predictive counts for each stream (`pp_cases`, `pp_deaths`, from each stream's own likelihood) and compare sampled trajectories to the conflicting data.
 
 ```{r ppc_conflict}
-exp_draws <- fit_conflict |>
-  gather_draws(exp_cases[day], exp_deaths[day]) |>
-  group_by(.variable, day) |>
-  median_qi(.value, .width = 0.9)
+pp_conflict <- fit_conflict |>
+  gather_draws(pp_cases[day], pp_deaths[day]) |>
+  ungroup() |>
+  group_by(.variable) |>
+  filter(.draw %in% sample(.draw, 100)) |>
+  ungroup()
 
 obs_long <- obs_conflict |>
   select(day, cases, deaths) |>
   pivot_longer(-day, names_to = "stream", values_to = "value") |>
-  mutate(.variable = paste0("exp_", stream))
+  mutate(.variable = paste0("pp_", stream))
 
-ggplot(exp_draws, aes(x = day)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3) +
-  geom_line(aes(y = .value)) +
-  geom_point(data = obs_long, aes(y = value), size = 0.6) +
+ggplot(pp_conflict, aes(x = day, y = .value)) +
+  geom_line(aes(group = .draw), alpha = 0.1) +
+  geom_point(data = obs_long, aes(y = value), colour = "red", size = 0.6) +
   facet_wrap(~.variable, scales = "free_y") +
   labs(title = "Posterior predictive fit under conflicting streams",
-       subtitle = "Fitted expectation (line + 90% band) vs observed (points)",
+       subtitle = "Sampled predictive trajectories (grey) vs observed (red)",
        x = "Day", y = NULL)
 ```
 
-The compromise infection trajectory cannot match both streams: typically the fitted expectation systematically *under*-shoots the late, rising deaths while *over*-shooting the declining cases (or vice versa), with the data points drifting outside the predictive band on one or both panels.
-A consistent run of points on one side of the fitted line for a single stream is the tell-tale sign that that stream is fighting the others.
+The compromise infection trajectory cannot match both streams: typically the predictive draws systematically *under*-shoot the late, rising deaths while *over*-shooting the declining cases (or vice versa), with the data points drifting outside the spread of trajectories on one or both panels.
+A consistent run of points on one side of the predictive draws for a single stream is the tell-tale sign that that stream is fighting the others.
 
 **2. Tension in the shared latent infections.**
 Conflict does not stay neatly inside one stream.
@@ -664,9 +1085,11 @@ We repeat the posterior predictive check, comparing the constant-scaling and tim
 ```{r ppc_resolved}
 ppc_for <- function(fit, label) {
   fit |>
-    gather_draws(exp_cases[day], exp_deaths[day]) |>
-    group_by(.variable, day) |>
-    median_qi(.value, .width = 0.9) |>
+    gather_draws(pp_cases[day], pp_deaths[day]) |>
+    ungroup() |>
+    group_by(.variable) |>
+    filter(.draw %in% sample(.draw, 100)) |>
+    ungroup() |>
     mutate(model = label)
 }
 
@@ -675,13 +1098,12 @@ resolved_draws <- bind_rows(
   ppc_for(fit_resolved, "time-varying death scaling")
 )
 
-ggplot(resolved_draws, aes(x = day)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3) +
-  geom_line(aes(y = .value)) +
-  geom_point(data = obs_long, aes(y = value), size = 0.6) +
+ggplot(resolved_draws, aes(x = day, y = .value)) +
+  geom_line(aes(group = .draw), alpha = 0.1) +
+  geom_point(data = obs_long, aes(y = value), colour = "red", size = 0.6) +
   facet_grid(.variable ~ model, scales = "free_y") +
   labs(title = "Posterior predictive fit: before and after modelling the drift",
-       subtitle = "Fitted expectation (line + 90% band) vs observed (points)",
+       subtitle = "Sampled predictive trajectories (grey) vs observed (red)",
        x = "Day", y = NULL)
 ```
 
@@ -691,18 +1113,21 @@ We can confirm that $R_t$ no longer chases the deaths, by comparing it to the tr
 ```{r r_resolved}
 r_resolved <- bind_rows(
   fit_conflict |> gather_draws(R[day]) |> mutate(model = "constant scaling"),
-  fit_resolved |> gather_draws(R[day]) |> mutate(model = "time-varying death scaling")
+  fit_resolved |> gather_draws(R[day]) |>
+    mutate(model = "time-varying death scaling")
 ) |>
   ungroup() |>
   group_by(model) |>
   filter(.draw %in% sample(.draw, 100)) |>
   ungroup()
 
-ggplot(r_resolved, aes(x = day, y = .value, group = .draw)) +
+ggplot(r_resolved, aes(x = day, y = .value, group = .draw, colour = model)) +
   geom_line(alpha = 0.1) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  facet_wrap(~model) +
-  labs(title = "Rt before and after modelling the drifting death scaling")
+  scale_colour_brewer(palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  labs(title = "Rt before and after modelling the drifting death scaling") +
+  theme(legend.position = "bottom")
 ```
 
 ```{r recovered_scale}
@@ -738,7 +1163,11 @@ $R_t$ returns to the true declining trajectory, the recovered death scaling trac
 The lesson: you resolve genuine data conflict by modelling the reason for the divergence, not by hoping the shared latent process will absorb it.
 :::
 
-This loop of building in parts, checking each addition, and letting conflict and identifiability send us back to revise is the core of a principled modelling workflow [@abbottWorkflowInfectiousDisease2026].
+This loop of building in parts, checking each addition, and letting conflict and identifiability send us back to revise is the core of this modelling workflow [@abbottWorkflowInfectiousDisease2026].
+
+Everything here has been on *simulated* data, where we know the truth and can check that the model recovers it.
+That is the point of building and testing on simulated data first.
+Once the model is tested and checked this way, the same workflow repeats on real data: the same steps of designing and breaking up the DAG, building in parts, and using model checks to send us back to revise, but now without a known truth to compare against, so the posterior predictive checks and conflict diagnostics from this session do the work of telling us whether the model is adequate.
 
 # Going further
 
@@ -750,7 +1179,7 @@ Combining this multi-stream approach with the nowcasting models from the [joint 
 
 ## Challenge
 
--   We used a Poisson observation model for both cases and deaths. Reporting is often *overdispersed*. How would you change the model to use a negative binomial distribution instead, and what extra parameter would that introduce?
+-   We used a negative binomial for cases (with an overdispersion parameter) but kept deaths Poisson. Following the same pattern, how would you also make the *deaths* overdispersed, and when might that matter?
 -   We resolved the conflict by letting the *death* scaling drift. Following the same pattern as `tv_death_scale`, how would you add a time-varying *ascertainment* to absorb a conflict driven by a change in testing policy? Which stream conflicts would that be able to absorb, and which would it not?
 -   We added the streams one at a time up to the full fit. Use the `use_*` flags to instead drop one stream at a time from the full fit. How much does each stream contribute to the precision of the $R_t$ estimate near the end of the outbreak?
 
@@ -759,6 +1188,8 @@ Combining this multi-stream approach with the nowcasting models from the [joint 
 -   `epidemia` implements joint renewal-equation models of cases and deaths of the kind introduced here [@scottEpidemiaRPackage2021].
 -   `EpiSewer` is a Bayesian generative model for estimating transmission dynamics from a wastewater signal, with a carefully specified shedding and measurement model [@lisonRobustRealtimeEstimation2025; @lisonEpiSewer2025].
 -   The CDC's wastewater-informed modelling work jointly fits wastewater concentration data and epidemiological count data to produce nowcasts and forecasts [@johnsonWwinference2026]. Unlike our deliberately single-site example, it combines *multiple* wastewater sites with hierarchical structure -- a multi-site, multi-resolution extension of the ideas in this session.
+-   [`EpiAwarePrototype.jl`](https://github.com/EpiAware/EpiAwarePrototype.jl) is a Julia prototype that builds this kind of multi-stream model from swappable, composable components, an example of tooling designed to make the modular workflow in this session easier than it is in a single Stan file.
+-   The workflow paper itself works through schematic case studies (no code) that apply these steps to real modelling problems, a useful set of worked examples of the workflow we followed here [@abbottWorkflowInfectiousDisease2026].
 
 # Wrap up
 
