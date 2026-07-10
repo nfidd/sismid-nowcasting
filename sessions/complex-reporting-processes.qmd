@@ -835,7 +835,6 @@ The [temporal aggregation guide](https://package.epinowcast.org/articles/tempora
 
 ::: {.callout-warning}
 ## The daily advantage is conditional
-This is a favourable snapshot, not a universal result.
 The daily model helps here because the epidemic is changing rapidly right at the nowcast date; when the recent weeks are flat or already reported the two approaches agree, and weekly-weekly is then just as good for far less compute.
 The daily model is also harder to fit and its weekly totals carry more uncertainty, so at a very sharp turn it will not always beat weekly-weekly on the weekly total.
 What it reliably buys is resolution: a daily nowcast that keeps the within-week shape weekly aggregation discards, which matters most exactly when things are changing fast.
