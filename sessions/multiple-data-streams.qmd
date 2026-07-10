@@ -70,8 +70,9 @@ The question for this session is therefore not just "can we fit several streams?
 
 # What might an ideal model look like?
 
-Fitting several data streams is not a one-off trick: it is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026].
-This is one *proposed* workflow rather than the only way to build a model, but it gives us a concrete order to work in, so it is worth looking at before we write any code.
+Throughout this course we have been building models **iteratively** — each session added a piece and we checked it. That is, informally, the *Bayesian workflow*: the iterative loop of building, checking, and revising a model.
+
+Here we make that explicit. Fitting several data streams is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026] — a recently proposed, infectious-disease-specific instance of that loop. It is one *proposed* workflow rather than the only way to build a model, but it gives us a concrete order to work in, so it is worth looking at before we write any code.
 
 ![A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again -- model checking, identifiability and conflict between data sources all feed revisions. Figure by Abbott et al., reproduced from the `a-workflow-for-infectious-disease-modelling` repository [@abbottWorkflowInfectiousDisease2026] under the MIT licence.](figures/workflow-diagram.png)
 
