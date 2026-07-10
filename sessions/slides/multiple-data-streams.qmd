@@ -25,7 +25,9 @@ In this course we have been building models **iteratively** — each session add
 
 ### This is the Bayesian workflow
 
-A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model.
+A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model [@gelman2020bayesian].
+
+![Bayesian Workflow (Gelman et al., 2026)](figures/book-image.png){height="340px"}
 
 ```{=html}
 <div style="display:flex;justify-content:center;margin-top:0.4em;">
