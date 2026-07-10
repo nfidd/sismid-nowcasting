@@ -879,7 +879,6 @@ Fitting both groups jointly lets a sparse group borrow strength from the other t
 
 This session only scratches the surface of what `epinowcast` can do, and `epinowcast` is only one of several tools for this kind of modelling.
 In fact `epinowcast` can express essentially all of the modelling in this course, from delay estimation and nowcasting through renewal-based $R_t$ estimation to the reporting effects above.
-The main exception is the multi-stream wastewater modelling from the [multiple data streams session](multiple-data-streams), which links several distinct observation processes and is likely outside its current scope.
 
 `epinowcast` has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:
 
