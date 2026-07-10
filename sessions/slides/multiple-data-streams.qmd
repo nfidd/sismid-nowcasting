@@ -19,6 +19,69 @@ set.seed(123)
 theme_set(theme_minimal(base_size = 16))
 ```
 
+### Building models iteratively
+
+In this course we have been building models **iteratively** — each session added a piece and checked it.
+
+### This is the Bayesian workflow
+
+A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model.
+
+```{=html}
+<div style="display:flex;justify-content:center;margin-top:0.4em;">
+<svg viewBox="0 0 640 300" width="100%" style="max-width:520px;font-family:inherit;" role="img" aria-label="The Bayesian workflow as an iterative loop: build a model, check it, revise it, and repeat.">
+  <defs>
+    <marker id="wf-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7b"/>
+    </marker>
+  </defs>
+  <g stroke="#5b6b7b" stroke-width="2" fill="none" marker-end="url(#wf-arrow)">
+    <path d="M395,90 Q478,124 470,190"/>
+    <path d="M405,234 Q320,270 237,234"/>
+    <path d="M170,190 Q162,124 245,90"/>
+  </g>
+  <g text-anchor="middle">
+    <rect x="245" y="36" width="150" height="50" rx="9" fill="#2c7fb8" stroke="#1d5a86" stroke-width="1.5"/>
+    <text x="320" y="67" font-size="17" font-weight="600" fill="#ffffff">Build</text>
+    <rect x="405" y="196" width="150" height="50" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="480" y="227" font-size="17" fill="#1d2b3a">Check</text>
+    <rect x="85" y="196" width="150" height="50" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
+    <text x="160" y="227" font-size="17" fill="#1d2b3a">Revise</text>
+  </g>
+</svg>
+</div>
+```
+
+### A workflow for infectious disease modelling
+
+In this session we formalise this process using a recently proposed infectious disease modelling workflow:
+
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="460px"}
+
+### Reading the workflow
+
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="340px"}
+
+1. **Question & estimands** — infections and $R_t$
+
+### Process model
+
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="340px"}
+
+2. **Process model** — one shared renewal process
+
+### Observation model per source
+
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="340px"}
+
+3. **Observation model per source** — a delay + a scaling + a likelihood
+
+### Inference, checking & iteration
+
+![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="340px"}
+
+4. **Inference, checking & iteration** — fit, check, revise
+
 ### One outbreak, several views
 
 So far: estimate $R_t$ from a *single* observed time series.
@@ -62,60 +125,6 @@ Why people are interested:
 Challenges: it is **noisy** and **indirect**, and needs **scaling / normalisation** before it can be compared to infections.
 
 This is why it is attractive as a third, parallel stream.
-
-### Don't reach for the whole model at once
-
-Fitting several streams is one step in a wider **modelling workflow**.
-
-A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model.
-
-```{=html}
-<div style="display:flex;justify-content:center;margin-top:0.4em;">
-<svg viewBox="0 0 640 300" width="100%" style="max-width:520px;font-family:inherit;" role="img" aria-label="The Bayesian workflow as an iterative loop: build a model, check it, revise it, and repeat.">
-  <defs>
-    <marker id="wf-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#5b6b7b"/>
-    </marker>
-  </defs>
-  <g stroke="#5b6b7b" stroke-width="2" fill="none" marker-end="url(#wf-arrow)">
-    <path d="M395,90 Q478,124 470,190"/>
-    <path d="M405,234 Q320,270 237,234"/>
-    <path d="M170,190 Q162,124 245,90"/>
-  </g>
-  <g text-anchor="middle">
-    <rect x="245" y="36" width="150" height="50" rx="9" fill="#2c7fb8" stroke="#1d5a86" stroke-width="1.5"/>
-    <text x="320" y="67" font-size="17" font-weight="600" fill="#ffffff">Build</text>
-    <rect x="405" y="196" width="150" height="50" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
-    <text x="480" y="227" font-size="17" fill="#1d2b3a">Check</text>
-    <rect x="85" y="196" width="150" height="50" rx="9" fill="#eef2f7" stroke="#33506e" stroke-width="1.5"/>
-    <text x="160" y="227" font-size="17" fill="#1d2b3a">Revise</text>
-  </g>
-</svg>
-</div>
-```
-
-We let that general idea drive how we develop this model.
-
-### A workflow for infectious disease modelling
-
-The infectious-disease-specific instance of that loop:
-
-![A workflow for infectious disease modelling. Figure by Abbott et al. (MIT licence).](figures/workflow-diagram.png){height="460px"}
-
-### Reading the workflow, bottom-left up
-
-::: {.incremental}
-1. **Question & estimands** — infections and $R_t$
-2. **Process model** — one shared renewal process
-3. **Data source selection** — what each stream measures, and its biases
-4. **Observation model per source** — a delay + a scaling + a likelihood
-5. **Data integration** — *how* to combine them (the key choice)
-6. **Inference, checking & iteration** — fit, check (PPCs, conflict), revise
-:::
-
-. . .
-
-A shared process, a swappable observation model per stream — so we can **build it in parts**.
 
 ### Three streams from one trajectory
 
@@ -197,9 +206,6 @@ $$
 
 Infections become the *one* shared quantity that every stream informs.
 
-The alternative, a *sequential* model, chains one stream off another (e.g. deaths off observed cases); apt only when one genuinely derives from another.
-We use the parallel form throughout.
-
 ### Build it in parts
 
 One Stan model, three `use_*` switches — fit any subset of streams:
@@ -229,7 +235,7 @@ Streams **conflict** when those implied trajectories can't both come from one $R
 - mis-specified delays or scalings (e.g. drifting IFR)
 - genuinely different populations
 
-```{r conflict-fork, echo = FALSE, fig.width = 8.5, fig.height = 4}
+```{r conflict-fork, echo = FALSE, fig.width = 11, fig.height = 5.5}
 ## Schematic: each stream implies its own infection trajectory. Up to the peak
 ## they agree; after it the constant-scaling deaths imply a rising epidemic while
 ## cases and wastewater imply a falling one -- no single curve can satisfy both.
@@ -268,11 +274,38 @@ ggplot(fork, aes(day, infections, colour = stream)) +
 
 A single shared $I$ can't be both falling (cases, wastewater) and rising (deaths), so the model **splits the difference** — and $R_t$ is faithful to no stream.
 
-It surfaces in three linked ways:
+```{r conflict-distort, echo = FALSE, fig.width = 11, fig.height = 5}
+## Schematic: the shared fit is pulled away from the true (declining) trajectory
+## towards a compromise with the conflicting (rising) deaths signal.
+day <- 1:40
+peak <- 20
+true <- 100 * dnorm(day, peak, 7) / max(dnorm(day, peak, 7)) + 5
+rising <- true
+rising[day >= peak] <- true[peak] * (1 + 0.04 * (day[day >= peak] - peak))
+compromise <- (true + rising) / 2
 
-1. **Poor fit to one stream** (posterior predictive check)
-2. **Tension in the shared infections** (distorted, more uncertain)
-3. **Degraded sampling** (divergences, low ESS, high `rhat`)
+distort <- tibble(
+  day,
+  `true (cases + wastewater)` = true,
+  `implied by deaths` = rising,
+  `joint fit (compromise)` = compromise
+) |>
+  pivot_longer(-day, names_to = "trajectory", values_to = "infections") |>
+  mutate(trajectory = factor(trajectory, levels = c(
+    "true (cases + wastewater)", "implied by deaths", "joint fit (compromise)"
+  )))
+
+ggplot(distort, aes(day, infections, colour = trajectory, linetype = trajectory)) +
+  geom_line(linewidth = 1.2) +
+  scale_colour_manual(values = c(
+    "true (cases + wastewater)" = "#447099",
+    "implied by deaths" = "#c0392b",
+    "joint fit (compromise)" = "#7f4f24"
+  )) +
+  scale_linetype_manual(values = c("solid", "solid", "dashed")) +
+  labs(x = "Day", y = "Implied infections", colour = NULL, linetype = NULL) +
+  theme(legend.position = "top")
+```
 
 ### Resolving conflict
 
