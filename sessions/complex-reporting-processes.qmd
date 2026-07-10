@@ -352,7 +352,7 @@ The plotting methods are more flexible still; see the [`epinowcast` plotting doc
 Now we add a complication the bespoke model could not handle comfortably.
 A day-of-week pattern can enter the data in *three* distinct places, and it helps to keep them separate because each belongs in a different module.
 
-- A **reference-date effect on the expected counts**: events genuinely happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends. This belongs in `enw_expectation()`.
+- A **reference-date effect on the expected counts**: events truly happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends. This belongs in `enw_expectation()`.
 - A **reference-date effect on the delay**: the reporting *delay distribution* itself differs by the day of week an event occurred, for example weekend onsets take longer to be reported than weekday onsets. This belongs in `enw_reference()`.
 - A **report-date effect**: the reporting system processes reports at different rates by day of week, so fewer reports land at weekends regardless of when the onset occurred. This belongs in `enw_report()`.
 
@@ -495,7 +495,7 @@ Why are these different effects, and why was the report-date one awkward to add 
 ## Solution
 
 The three terms act on different parts of the process.
-`day_of_week` in `enw_expectation()` models genuine variation in *when events occur* by reference (onset) day of week.
+`day_of_week` in `enw_expectation()` models real variation in *when events occur* by reference (onset) day of week.
 `day_of_week` in `enw_reference()` lets the *delay distribution* differ by reference day of week, capturing that (here) weekend onsets are reported more slowly; it changes the shape of the delay for those onset days, not how many onsets there are.
 `(1 | day_of_week)` in `enw_report()` is a random effect on the *report* date, one level per day of the week, scaling how many reports are processed on each calendar day; it absorbs the weekly reporting dip so it does not distort the nowcast of the underlying onsets.
 The two reference-date terms both key on the onset day of week but are still separable because one shifts the level of onsets and the other reshapes their delay; fitted together on this simulation the sampler converges without trouble.
@@ -712,7 +712,7 @@ plot(weekly_nowcast, latest_obs = weekly_latest) +
 ## Weekly-daily (structural reporting)
 
 Now we keep the *daily* process but model the fact that reports only arrive once a week.
-The idea is to build a daily grid where the cumulative count is only observed on the reporting day (here Wednesday) and carried forward on the other days, then tell the model which cells are genuine observations.
+The idea is to build a daily grid where the cumulative count is only observed on the reporting day (here Wednesday) and carried forward on the other days, then tell the model which cells are real observations.
 We start from the daily reporting triangle we fit to, blank out the non-Wednesday cumulative counts, and let `enw_impute_na_observations()` carry the last Wednesday value forward; `enw_flag_observed_observations()` records which cells are real in a `.observed` column.
 
 ```{r weekly-daily-scaffold}
@@ -777,7 +777,7 @@ plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest) +
 
 This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly.
 Its payoff over the weekly-weekly model is the finer daily granularity: a within-week nowcast recovered from once-a-week reports, which the weekly-weekly model cannot give.
-It will not match a nowcast fitted to genuinely daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.
+It will not match a nowcast fitted to truly daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.
 
 To compare the two directly we can aggregate the daily structural nowcast up to the same weekly buckets as the weekly-weekly model and plot them against the eventually-observed weekly totals.
 A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.

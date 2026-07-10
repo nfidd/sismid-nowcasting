@@ -233,7 +233,7 @@ Streams **conflict** when those implied trajectories can't both come from one $R
 
 - changing ascertainment (testing policy)
 - mis-specified delays or scalings (e.g. drifting IFR)
-- genuinely different populations
+- truly different populations
 
 ```{r conflict-fork, echo = FALSE, fig.width = 11, fig.height = 5.5}
 ## Schematic: each stream implies its own infection trajectory. Up to the peak
@@ -311,7 +311,7 @@ ggplot(distort, aes(day, infections, colour = trajectory, linetype = trajectory)
 
 A shared latent process *surfaces* conflict and gives a compromise — it does **not** resolve it.
 
-Genuine resolution = model the *reason* the streams disagree:
+Real resolution = model the *reason* the streams disagree:
 
 - **Diagnose, don't average** — which stream, which assumption?
 - **Relax the offending assumption** — e.g. time-varying ascertainment / IFR
