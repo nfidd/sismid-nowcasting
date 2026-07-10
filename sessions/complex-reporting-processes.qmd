@@ -261,10 +261,6 @@ reference_module <- enw_reference(~ 1, data = pobs)
 obs_module <- enw_obs(family = "poisson", data = pobs)
 ```
 
-This is one deliberate divergence from the bespoke model.
-The bespoke joint-nowcast model estimated the delay distribution *nonparametrically*, as a free per-delay PMF (a simplex over delays), whereas here we use `epinowcast`'s default *parametric* lognormal delay.
-We do this for speed and simplicity: the nonparametric delay fits noticeably more slowly, and the lognormal is a good fit to the delay we simulated.
-
 ::: {.callout-tip .optional collapse="true"}
 ## Reproducing the bespoke model exactly
 
@@ -314,7 +310,7 @@ Which module corresponds to $\lambda_{t}$, which to $p_{t,d}$, and which to the 
 ## Solution
 
 - `enw_expectation()` plays the role of $\lambda_{t}$: `rw(day)` is a daily random walk on the expected counts, like the geometric random walk we used for onsets.
-- `enw_reference(~ 1)` plays the role of the delay distribution $p_{t,d}$: a single parametric lognormal delay held constant over time. This is one deliberate divergence from the bespoke model, which estimated the delay nonparametrically as a free PMF; we use the parametric default here for speed, and show how to recover the nonparametric delay in the optional callout above.
+- `enw_reference(~ 1)` plays the role of the delay distribution $p_{t,d}$: a single parametric lognormal delay held constant over time. (The optional callout above shows how to recover the nonparametric free-PMF delay used in the bespoke joint-nowcast model.)
 - `enw_obs(family = "poisson")` plays the role of the likelihood $n_{t,d} \sim \text{Poisson}(\lambda_{t} p_{t,d})$.
 
 This is the *same* joint nowcasting model we built by hand, now expressed as a handful of modules.
