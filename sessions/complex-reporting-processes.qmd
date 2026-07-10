@@ -96,7 +96,7 @@ There is no single right answer, but the concrete changes add up quickly.
 - **A day-of-week reporting effect.** The reporting probability would have to depend on the calendar day the report lands on, not just the delay $d$. In practice you would turn the delay vector into a matrix indexed by reference date *and* delay, $p_{t,d}$, and multiply each cell by a day-of-week factor $w_{(t+d)\,\bmod\,7}$ keyed on the *report* date $t+d$. That means seven new parameters (a `simplex` or sum-to-zero vector for identifiability) and an extra loop over cells in `transformed parameters`.
 - **A time-varying delay.** You would put a random walk on the parameters of the delay distribution, for example `meanlog[t] = meanlog[t-1] + sigma * eta[t]` (and similarly for `sdlog`), each with its own prior, then recompute the delay PMF for every reference date $t$ rather than once. That is a new vector of innovations `eta`, a new standard-deviation parameter `sigma` with a prior, and a per-date PMF calculation.
 - **Keeping it a valid distribution.** The probabilities for each reference date must still sum to one over delays after both changes, so you would re-impose the per-date normalisation (a simplex or an explicit renormalisation) every day instead of reusing one shared, pre-normalised vector.
-- **The cost.** Each addition means more parameters, a larger `transformed parameters` block, slower gradient evaluations, and more code to unit-test, all before you have fitted anything.
+- **The downside.** Each addition means more parameters, a larger `transformed parameters` block, slower gradient evaluations, and more code to unit-test, all before you have fitted anything.
 
 None of this is impossible, and writing it yourself remains a reasonable option.
 But it is the point at which reaching for a general framework that already implements these features lets us focus on the modelling choices rather than the implementation.
@@ -107,7 +107,7 @@ But it is the point at which reaching for a general framework that already imple
 [`epinowcast`](https://package.epinowcast.org/) [@epinowcastPackage2024] is a Bayesian framework for real-time infectious disease surveillance.
 It is *one* of several tools for this kind of modelling (we point to others at the end of the session), and it is a direct generalisation of the joint nowcasting model we built: it works from the reporting triangle and jointly estimates the expected counts and the reporting process, but it makes each component far more flexible and exposes them through a formula interface rather than hand-written Stan code.
 
-`epinowcast` decomposes the problem into modular pieces, each of which mirrors something we have already seen.
+`epinowcast` decomposes the problem into modular pieces. Most mirror something we have already seen; the **report date** module is new — it handles effects that act on the report date, such as day-of-week reporting.
 
 - An **expectation** model for the expected counts $\lambda_{t}$ (the analogue of our geometric random walk or renewal process).
 - A **reference date** model for the delay distribution by date of the epidemiological event (the analogue of our $p_{t,d}$, but allowed to vary over time and by covariates).

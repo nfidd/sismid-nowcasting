@@ -104,7 +104,7 @@ Some methods (particularly Bayesian generative models) make this connection expl
 We'll start by generating synthetic data that mimics the challenges we face in real-time epidemic analysis.
 This builds on the approach from the [joint nowcasting session](joint-nowcasting), but now we'll also create a dataset filtered at a two-week forecast horizon for evaluation (i.e. the data that we would ultimately observe for the two weeks after the forecast date).
 
-::: {.callout-note}
+::: {.callout-note collapse="true"}
 ## Beyond simulated onsets: other surveillance data
 
 We use simulated line-list data here (individual symptom onsets with reporting delays) because it lets us see the whole infection → onset → report process clearly, and because it connects directly to the renewal and nowcasting models we have already built.

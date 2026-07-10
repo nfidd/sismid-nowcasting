@@ -74,7 +74,7 @@ tibble(day = days, reports = base * rep_dow_effect[(days %% 7) + 1]) |>
   theme(legend.position = "top")
 ```
 
-### What would this cost in bespoke Stan? {.smaller}
+### What is the downside in bespoke Stan? {.smaller}
 
 To add a day-of-week effect *and* a time-varying delay by hand:
 
@@ -82,8 +82,6 @@ To add a day-of-week effect *and* a time-varying delay by hand:
 - A random walk on the delay parameters (`meanlog[t]`, `sdlog[t]`) with priors
 - Re-impose the per-date sum-to-one constraint every day
 - More parameters, bigger `transformed parameters`, slower gradients, more to test
-
-Possible, but this is where a tested framework earns its place.
 
 ### `epinowcast`: one flexible tool {.smaller}
 
@@ -134,7 +132,7 @@ If you understand the joint nowcasting session, you already understand what `epi
 </div>
 ```
 
-Each piece mirrors something we built by hand; adding a feature is a one-line formula change.
+The **expectation**, **reference** and **observation** modules mirror what we built by hand; the **report date** module is new — it handles effects that act on the report date (e.g. day-of-week). Adding a feature is a one-line formula change.
 
 ### Mapping back to the bespoke model {.smaller}
 
