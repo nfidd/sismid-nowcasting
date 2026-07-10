@@ -823,6 +823,17 @@ The `score()` output reports the CRPS along with a breakdown of it.
 - The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation) develops the CRPS, proper scoring rules and these components in depth.
 :::
 
+::: {.callout-tip .optional collapse="true"}
+## Interactive: the CRPS
+
+Drag the observation or widen the forecast and watch the area — and the score — change. (From the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation).)
+
+```{=html}
+<iframe class="nfidd-embed" src="https://nfidd.github.io/sismid-forecasting/interactive/forecast-evaluation.html?embed=crps" title="CRPS interactive" loading="lazy" style="width:100%;height:640px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+```
+:::
+
 ## Overall performance table
 
 We summarise the performance across all forecast horizons:
