@@ -10,6 +10,14 @@ format:
     slide-level: 3
 ---
 
+### What is a forecast?
+
+A forecast is a **probabilistic statement about dates with *no data yet*** — an unconditional prediction of the future. The [forecasting course](https://nfidd.github.io/sismid-forecasting/) covers it in full; here is the motivation.
+
+- Good forecasts are **probabilistic**; uncertainty grows with the horizon
+- Our renewal model is already *generative*: keep simulating $R_t$ forward to forecast
+- We **evaluate** forecasts against what was observed, using proper scoring rules (e.g. CRPS)
+
 ### Motivating example {.smaller}
 
 Often we want to forecast from data like this
@@ -31,15 +39,6 @@ Data after the dashed line are marked as uncertain. How can we use them for fore
 - Reporting delays mean recent data are incomplete
 - But we need forecasts based on the most recent information
 - How do we bridge this gap?
-
-### A taste of forecasting {.smaller}
-
-A first look at forecasting - the [forecasting course](https://nfidd.github.io/sismid-forecasting/) covers it in full.
-
-- **Forecasting**: a probabilistic statement about dates with *no data yet* (the future)
-- Good forecasts are **probabilistic**; uncertainty grows with the horizon
-- Our renewal model is already *generative*: keep simulating $R_t$ forward to forecast
-- We **evaluate** forecasts against what was observed, using proper scoring rules (e.g. CRPS)
 
 ### Nowcasting reminder
 

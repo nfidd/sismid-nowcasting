@@ -22,16 +22,14 @@ in real time.
 
 ### Timeline
 
-This was the **nowcasting** course (first half of the week):
-
 ::: {.incremental}
 - delay distributions and how to estimate them
 - biases in delays: censoring and right truncation
 - using delays to model the data generating process
 - $R_t$ estimation and the renewal equation
 - nowcasting, and joint estimation of delays and nowcasts
-- linking nowcasting and forecasting (bridge to the forecasting course)
-- modelling more complex reporting processes with `epinowcast`
+- linking nowcasting and forecasting
+- modelling more complex reporting processes
 - jointly fitting multiple surveillance data streams
 :::
 
@@ -64,6 +62,22 @@ This was the **nowcasting** course (first half of the week):
 
 ![](figures/complete_reporting_triangle.png)
 
+### Complex reporting processes {.smaller}
+
+- real reporting has structure beyond a single fixed delay: **day-of-week**, **time-varying**, **batched**, and by **strata**
+- a **modular framework** (e.g. [`epinowcast`](https://package.epinowcast.org/)) generalises our joint model — each component is a swappable module
+- the course model is the base; each extension is a one-line formula change
+
+![](figures/reporting_triangle.png)
+
+### Jointly fitting multiple data streams {.smaller}
+
+- several surveillance streams are **delayed, scaled views** of the same infections
+- a **shared latent infection process**, with a swappable observation model per stream
+- together they constrain infections better than any one — but **conflict reveals model misspecification**
+
+![](figures/multiple-data-streams.png)
+
 ### Bridge: from nowcasting to forecasting {.smaller}
 
 - nowcasts feed naturally into **forecasts** of the near future
@@ -71,18 +85,12 @@ This was the **nowcasting** course (first half of the week):
 - we can assess them using **proper scoring rules** (e.g. CRPS)
 - the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) (second half of the week) covers forecasting models, evaluation, ensembles, and hubs
 
-![](figures/pit-log-scale.png)
+![](figures/nowcasting-forecasting-data.png)
 
 ### Outlook {.smaller}
 
 - the methods introduced here have **wide applications** in infectious disease epidemiology
-- **open-source tools** are available to make this task easier in practice
-- these ideas extend to **more complex reporting processes** (e.g. with [`epinowcast`](https://package.epinowcast.org/)) and to **jointly fitting multiple surveillance data streams** to estimate transmission from several sources at once
-- a real-world example of collaborative nowcasting and forecasting: the European Respiratory Forecasting Hub
-
-![](figures/respicast.png)
-
-[https://respicast.ecdc.europa.eu/](https://respicast.ecdc.europa.eu/)
+- **open-source tools** ([`epinowcast`](https://package.epinowcast.org/), [`EpiNow2`](https://epiforecasts.io/EpiNow2/)) make this easier in practice
 
 ### Feedback {.smaller}
 

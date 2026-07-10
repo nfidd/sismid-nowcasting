@@ -70,8 +70,9 @@ The question for this session is therefore not just "can we fit several streams?
 
 # What might an ideal model look like?
 
-Fitting several data streams is not a one-off trick: it is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026].
-This is one *proposed* workflow rather than the only way to build a model, but it gives us a concrete order to work in, so it is worth looking at before we write any code.
+Throughout this course we have been building models **iteratively** — each session added a piece and we checked it. That is, informally, the *Bayesian workflow*: the iterative loop of building, checking, and revising a model [@gelman2020bayesian].
+
+Here we make that explicit. Fitting several data streams is one step in a wider, iterative workflow for building, checking and comparing infectious disease models [@abbottWorkflowInfectiousDisease2026] — a recently proposed, infectious-disease-specific instance of that loop. It is one *proposed* workflow rather than the only way to build a model, but it gives us a concrete order to work in, so it is worth looking at before we write any code.
 
 ![A workflow for infectious disease modelling. We move from a research question through a process model and per-stream observation models to choices about how to integrate data sources and do inference, and back again -- model checking, identifiability and conflict between data sources all feed revisions. Figure by Abbott et al., reproduced from the `a-workflow-for-infectious-disease-modelling` repository [@abbottWorkflowInfectiousDisease2026] under the MIT licence.](figures/workflow-diagram.png)
 
@@ -200,7 +201,7 @@ You can diagnose conflict and propagate uncertainty under either formulation, so
     This is often *not* something you can claim: deaths are not drawn from the *reported* cases (which are themselves an incomplete, delayed observation), nor even from cases plus a delay, because that would ignore the case observation process entirely.
 
 The trade-off is therefore about the validity of that generative assumption rather than about one formulation having uniquely good diagnostics or uncertainty.
-A sequential model can be reasonable when the chain genuinely holds -- for example when a downstream count really is a subset of an upstream one -- but it commits you to trusting the upstream stream as if it were the truth.
+A sequential model can be reasonable when the chain truly holds -- for example when a downstream count really is a subset of an upstream one -- but it commits you to trusting the upstream stream as if it were the truth.
 We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every stream informs and avoids privileging any single stream.
 :::
 
@@ -903,7 +904,7 @@ Conflict is what we see when one of those assumptions is wrong for at least one 
 - **Changing ascertainment.** A change in testing policy or test availability bends the case curve without any change in transmission, so the constant-ascertainment assumption breaks.
 - **Mis-specified delays.** If the true infection-to-death delay is longer or more dispersed than the PMF we supplied, deaths will appear shifted relative to the infections the other streams imply.
 - **Mis-specified scalings.** A drifting infection fatality ratio (e.g. with changing age structure or treatment) or a reporting artefact pushes a stream off the level the others support.
-- **Genuinely different populations.** Streams that sample different groups (e.g. hospital deaths vs community cases) need not share one infection process at all.
+- **Truly different populations.** Streams that sample different groups (e.g. hospital deaths vs community cases) need not share one infection process at all.
 
 To see conflict in action we give it a concrete **mechanism**: a *drifting infection fatality ratio*.
 We re-simulate the deaths from the *same* shared infections as before, but let the death scaling rise over the second half of the outbreak (as it might if severity increased with age structure or a new variant).
@@ -1052,7 +1053,7 @@ The diagnostics for the conflicting fit are usually a little worse (larger `rhat
 
 It is worth being clear about what the shared latent process does and does not do here.
 Sharing one infection process across streams *surfaces* a conflict (the symptoms above) and yields a single compromise estimate, but it does not *resolve* the disagreement: the compromise is faithful to no stream and, as we have seen, can be actively misleading about $R_t$.
-Genuine resolution comes from modelling the *reason* the streams disagree, not from averaging the streams together.
+Real resolution comes from modelling the *reason* the streams disagree, not from averaging the streams together.
 
 ::: {.callout-note}
 ## Options for resolving conflict
@@ -1061,7 +1062,7 @@ When a principled model check flags conflict between data sources, there are a h
 
 - **Model the differing mechanism.** Extend the model so the suspected source of divergence is explicit -- a time-varying ascertainment or IFR, a re-estimated or more dispersed delay, or stream-specific reporting effects. This is the principled default when the streams really do observe the same infections [@deangelis2018analysing; @nicholson2022interoperability].
 - **Expand or relax the observation model.** Allow overdispersion, or weaken an over-confident likelihood, so a stream is no longer forced onto a level it cannot support.
-- **Down-weight or drop a stream.** If a stream measures a genuinely different population, or carries an artefact you cannot model, it may be right to exclude it -- but only once you understand *why* [@presanis2013conflict].
+- **Down-weight or drop a stream.** If a stream measures a truly different population, or carries an artefact you cannot model, it may be right to exclude it -- but only once you understand *why* [@presanis2013conflict].
 - **Revisit the data.** Conflict is sometimes a data problem (a definition change, a reporting glitch) rather than a model problem, and is best fixed upstream.
 
 Conflict diagnostics in Bayesian evidence synthesis make this formal: they quantify how much each source disagrees with the rest before deciding what to do [@presanis2013conflict].
@@ -1160,7 +1161,7 @@ Does the recovered death scaling track the drift we built in?
 Modelling the mechanism reconciles the streams.
 With a time-varying death scaling the deaths panel is fitted well *and* the cases panel is no longer distorted, because the rising deaths are now explained by a rising scaling rather than by rising infections.
 $R_t$ returns to the true declining trajectory, the recovered death scaling tracks the drift we built in, and the sampler diagnostics improve (smaller `rhat`, larger `ess_bulk`, fewer or no divergences) because the posterior no longer has to satisfy contradictory data.
-The lesson: you resolve genuine data conflict by modelling the reason for the divergence, not by hoping the shared latent process will absorb it.
+The lesson: you resolve real data conflict by modelling the reason for the divergence, not by hoping the shared latent process will absorb it.
 :::
 
 This loop of building in parts, checking each addition, and letting conflict and identifiability send us back to revise is the core of this modelling workflow [@abbottWorkflowInfectiousDisease2026].

@@ -96,7 +96,7 @@ There is no single right answer, but the concrete changes add up quickly.
 - **A day-of-week reporting effect.** The reporting probability would have to depend on the calendar day the report lands on, not just the delay $d$. In practice you would turn the delay vector into a matrix indexed by reference date *and* delay, $p_{t,d}$, and multiply each cell by a day-of-week factor $w_{(t+d)\,\bmod\,7}$ keyed on the *report* date $t+d$. That means seven new parameters (a `simplex` or sum-to-zero vector for identifiability) and an extra loop over cells in `transformed parameters`.
 - **A time-varying delay.** You would put a random walk on the parameters of the delay distribution, for example `meanlog[t] = meanlog[t-1] + sigma * eta[t]` (and similarly for `sdlog`), each with its own prior, then recompute the delay PMF for every reference date $t$ rather than once. That is a new vector of innovations `eta`, a new standard-deviation parameter `sigma` with a prior, and a per-date PMF calculation.
 - **Keeping it a valid distribution.** The probabilities for each reference date must still sum to one over delays after both changes, so you would re-impose the per-date normalisation (a simplex or an explicit renormalisation) every day instead of reusing one shared, pre-normalised vector.
-- **The cost.** Each addition means more parameters, a larger `transformed parameters` block, slower gradient evaluations, and more code to unit-test, all before you have fitted anything.
+- **The downside.** Each addition means more parameters, a larger `transformed parameters` block, slower gradient evaluations, and more code to unit-test, all before you have fitted anything.
 
 None of this is impossible, and writing it yourself remains a reasonable option.
 But it is the point at which reaching for a general framework that already implements these features lets us focus on the modelling choices rather than the implementation.
@@ -107,7 +107,7 @@ But it is the point at which reaching for a general framework that already imple
 [`epinowcast`](https://package.epinowcast.org/) [@epinowcastPackage2024] is a Bayesian framework for real-time infectious disease surveillance.
 It is *one* of several tools for this kind of modelling (we point to others at the end of the session), and it is a direct generalisation of the joint nowcasting model we built: it works from the reporting triangle and jointly estimates the expected counts and the reporting process, but it makes each component far more flexible and exposes them through a formula interface rather than hand-written Stan code.
 
-`epinowcast` decomposes the problem into modular pieces, each of which mirrors something we have already seen.
+`epinowcast` decomposes the problem into modular pieces. Most mirror something we have already seen; the **report date** module is new — it handles effects that act on the report date, such as day-of-week reporting.
 
 - An **expectation** model for the expected counts $\lambda_{t}$ (the analogue of our geometric random walk or renewal process).
 - A **reference date** model for the delay distribution by date of the epidemiological event (the analogue of our $p_{t,d}$, but allowed to vary over time and by covariates).
@@ -261,10 +261,6 @@ reference_module <- enw_reference(~ 1, data = pobs)
 obs_module <- enw_obs(family = "poisson", data = pobs)
 ```
 
-This is one deliberate divergence from the bespoke model.
-The bespoke joint-nowcast model estimated the delay distribution *nonparametrically*, as a free per-delay PMF (a simplex over delays), whereas here we use `epinowcast`'s default *parametric* lognormal delay.
-We do this for speed and simplicity: the nonparametric delay fits noticeably more slowly, and the lognormal is a good fit to the delay we simulated.
-
 ::: {.callout-tip .optional collapse="true"}
 ## Reproducing the bespoke model exactly
 
@@ -314,7 +310,7 @@ Which module corresponds to $\lambda_{t}$, which to $p_{t,d}$, and which to the 
 ## Solution
 
 - `enw_expectation()` plays the role of $\lambda_{t}$: `rw(day)` is a daily random walk on the expected counts, like the geometric random walk we used for onsets.
-- `enw_reference(~ 1)` plays the role of the delay distribution $p_{t,d}$: a single parametric lognormal delay held constant over time. This is one deliberate divergence from the bespoke model, which estimated the delay nonparametrically as a free PMF; we use the parametric default here for speed, and show how to recover the nonparametric delay in the optional callout above.
+- `enw_reference(~ 1)` plays the role of the delay distribution $p_{t,d}$: a single parametric lognormal delay held constant over time. (The optional callout above shows how to recover the nonparametric free-PMF delay used in the bespoke joint-nowcast model.)
 - `enw_obs(family = "poisson")` plays the role of the likelihood $n_{t,d} \sim \text{Poisson}(\lambda_{t} p_{t,d})$.
 
 This is the *same* joint nowcasting model we built by hand, now expressed as a handful of modules.
@@ -356,7 +352,7 @@ The plotting methods are more flexible still; see the [`epinowcast` plotting doc
 Now we add a complication the bespoke model could not handle comfortably.
 A day-of-week pattern can enter the data in *three* distinct places, and it helps to keep them separate because each belongs in a different module.
 
-- A **reference-date effect on the expected counts**: events genuinely happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends. This belongs in `enw_expectation()`.
+- A **reference-date effect on the expected counts**: events truly happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends. This belongs in `enw_expectation()`.
 - A **reference-date effect on the delay**: the reporting *delay distribution* itself differs by the day of week an event occurred, for example weekend onsets take longer to be reported than weekday onsets. This belongs in `enw_reference()`.
 - A **report-date effect**: the reporting system processes reports at different rates by day of week, so fewer reports land at weekends regardless of when the onset occurred. This belongs in `enw_report()`.
 
@@ -499,7 +495,7 @@ Why are these different effects, and why was the report-date one awkward to add 
 ## Solution
 
 The three terms act on different parts of the process.
-`day_of_week` in `enw_expectation()` models genuine variation in *when events occur* by reference (onset) day of week.
+`day_of_week` in `enw_expectation()` models real variation in *when events occur* by reference (onset) day of week.
 `day_of_week` in `enw_reference()` lets the *delay distribution* differ by reference day of week, capturing that (here) weekend onsets are reported more slowly; it changes the shape of the delay for those onset days, not how many onsets there are.
 `(1 | day_of_week)` in `enw_report()` is a random effect on the *report* date, one level per day of the week, scaling how many reports are processed on each calendar day; it absorbs the weekly reporting dip so it does not distort the nowcast of the underlying onsets.
 The two reference-date terms both key on the onset day of week but are still separable because one shifts the level of onsets and the other reshapes their delay; fitted together on this simulation the sampler converges without trouble.
@@ -716,7 +712,7 @@ plot(weekly_nowcast, latest_obs = weekly_latest) +
 ## Weekly-daily (structural reporting)
 
 Now we keep the *daily* process but model the fact that reports only arrive once a week.
-The idea is to build a daily grid where the cumulative count is only observed on the reporting day (here Wednesday) and carried forward on the other days, then tell the model which cells are genuine observations.
+The idea is to build a daily grid where the cumulative count is only observed on the reporting day (here Wednesday) and carried forward on the other days, then tell the model which cells are real observations.
 We start from the daily reporting triangle we fit to, blank out the non-Wednesday cumulative counts, and let `enw_impute_na_observations()` carry the last Wednesday value forward; `enw_flag_observed_observations()` records which cells are real in a `.observed` column.
 
 ```{r weekly-daily-scaffold}
@@ -781,7 +777,7 @@ plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest) +
 
 This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly.
 Its payoff over the weekly-weekly model is the finer daily granularity: a within-week nowcast recovered from once-a-week reports, which the weekly-weekly model cannot give.
-It will not match a nowcast fitted to genuinely daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.
+It will not match a nowcast fitted to truly daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.
 
 To compare the two directly we can aggregate the daily structural nowcast up to the same weekly buckets as the weekly-weekly model and plot them against the eventually-observed weekly totals.
 A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.
@@ -839,7 +835,6 @@ The [temporal aggregation guide](https://package.epinowcast.org/articles/tempora
 
 ::: {.callout-warning}
 ## The daily advantage is conditional
-This is a favourable snapshot, not a universal result.
 The daily model helps here because the epidemic is changing rapidly right at the nowcast date; when the recent weeks are flat or already reported the two approaches agree, and weekly-weekly is then just as good for far less compute.
 The daily model is also harder to fit and its weekly totals carry more uncertainty, so at a very sharp turn it will not always beat weekly-weekly on the weekly total.
 What it reliably buys is resolution: a daily nowcast that keeps the within-week shape weekly aggregation discards, which matters most exactly when things are changing fast.
@@ -884,7 +879,6 @@ Fitting both groups jointly lets a sparse group borrow strength from the other t
 
 This session only scratches the surface of what `epinowcast` can do, and `epinowcast` is only one of several tools for this kind of modelling.
 In fact `epinowcast` can express essentially all of the modelling in this course, from delay estimation and nowcasting through renewal-based $R_t$ estimation to the reporting effects above.
-The main exception is the multi-stream wastewater modelling from the [multiple data streams session](multiple-data-streams), which links several distinct observation processes and is likely outside its current scope.
 
 `epinowcast` has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:
 
