@@ -67,7 +67,7 @@ This is why it is attractive as a third, parallel stream.
 
 Fitting several streams is one step in a wider **modelling workflow**.
 
-A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model — never a single leap to the final model.
+A *Bayesian workflow* is the iterative loop of **building**, **checking**, and **revising** a model.
 
 ```{=html}
 <div style="display:flex;justify-content:center;margin-top:0.4em;">

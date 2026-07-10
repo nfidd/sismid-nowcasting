@@ -31,7 +31,8 @@ It is paired with the companion [forecasting & evaluation course](https://nfidd.
 | **Wed 15 Jul** | 09.00–09.15 | Day 2 review | |
 | | 09.15–10.30 | Session 9 · Modelling complex reporting processes | [Slides](sessions/slides/complex-reporting-processes), [Practice](sessions/complex-reporting-processes) |
 | | 10.30–11.00 | *Coffee break* | |
-| | 11.00–12.00 | Session 9 · Modelling complex reporting processes (cont.) | |
-| | 12.00–12.15 | Session 10 · Methods in the real world | [Methods in the real world](sessions/methods-in-the-real-world) |
+| | 11.00–11.15 | Session 9 · Modelling complex reporting processes (cont.) | |
+| | 11.15–11.45 | Revisit material & group discussion | |
+| | 11.45–12.15 | Session 10 · Methods in the real world | [Methods in the real world](sessions/methods-in-the-real-world) |
 | | 12.15–12.30 | Session 11 · Summary & discussion | [Summary](sessions/slides/closing), [further reading](sessions/end-of-course-summary-and-discussion) |
 :::
