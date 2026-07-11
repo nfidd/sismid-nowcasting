@@ -37,7 +37,7 @@ Suggests:
     scoringutils,
     testthat (>= 3.0.0)
 Remotes:
-    epinowcast/epinowcast,
+    epinowcast/epinowcast@v0.7.0,
     stan-dev/cmdstanr
 Encoding: UTF-8
 Language: en-GB

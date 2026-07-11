@@ -47,7 +47,7 @@ library("data.table")
 
 ::: {.callout-tip}
 This session uses `epinowcast` and `cmdstanr`, which we load with `library()` above.
-The course's getting-started install already provides them, so there is no per-session install to run: `pak::pak("nfidd/sismid-nowcasting", dependencies = TRUE)` installs the development versions of `epinowcast` and `cmdstanr` alongside the other course packages.
+The course's getting-started install already provides them, so there is no per-session install to run: `pak::pak("nfidd/sismid-nowcasting", dependencies = TRUE)` installs `epinowcast` and `cmdstanr` alongside the other course packages.
 
 `epinowcast` compiles its models with `cmdstanr` the first time a model is fitted, which needs a working CmdStan toolchain (the same one used elsewhere in this course).
 Full installation and setup instructions, including how to install CmdStan, are on the [package website](https://package.epinowcast.org/).
@@ -324,7 +324,7 @@ Everything that follows is an extension of one of these modules, or the addition
 To judge the nowcast we want to compare it against what was *eventually* reported, so we take the latest report for each reference date from the complete data with `enw_latest_data()` and pass it to `plot()` via `latest_obs`.
 Building the comparison data from the complete data matters: if we built it from the truncated snapshot we fit to (`enw_long`), the "eventually observed" points would just reproduce the incomplete nowcast-era counts and the plot would not tell us whether the nowcast was any good.
 
-Only the most recent dates are actually being nowcast, so we zoom the plot to a recent window around the nowcast horizon with `coord_cartesian()` rather than showing the whole series back to the first calendar date.
+Only the most recent dates are actually being nowcast, so we zoom the plot to a recent window around the nowcast horizon with `coord_cartesian()`, which restricts the view without dropping any data, rather than filtering `latest_obs`.
 
 ```{r course-plot}
 latest_obs <- enw_latest_data(to_enw_format(reporting_triangle))
@@ -345,8 +345,6 @@ pp_recent$data <- pp_recent$data[reference_date > nowcast_date - 9]
 pp_recent +
   facet_wrap(vars(reference_date), scales = "free")
 ```
-
-The plotting methods are more flexible still; see the [`epinowcast` plotting documentation](https://package.epinowcast.org/reference/plot.epinowcast.html) for further options.
 
 # Extending the model: day-of-week effects
 
@@ -423,6 +421,27 @@ ggplot(reports_by_day, aes(x = reported_day, y = reports)) +
   labs(x = "Report day", y = "Reports", title = "Reports by report day")
 ```
 
+::: {.callout-note}
+## Take 5 minutes
+Look back at the three simulation chunks (`dow-reference`, `dow-delay`, `dow-report`) and answer without running any code.
+
+1. Every weekly weight is indexed as `[... + 1]`, for example `ref_dow_effect[ref_dow + 1]`. Why the `+ 1`?
+2. In `dow-delay` the day of week enters through `meanlog`, not through a multiplicative weight. What does giving weekend onsets a larger `meanlog` do to their reporting delay?
+3. The reference-date effect keys off `day %% 7` but the report-date effect keys off `reported_day %% 7`. Why does each effect use a different day?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+1. `ref_dow` is `day %% 7`, which runs from 0 (Monday) to 6 (Sunday), but R vectors are indexed from 1.
+   Adding 1 maps day-of-week 0 to the first weight and day-of-week 6 to the seventh.
+2. `meanlog` is the log-scale mean of the lognormal delay, so a larger value shifts the whole delay distribution towards longer delays.
+   Weekend onsets are therefore reported more slowly than weekday onsets, rather than simply being fewer in number.
+3. The reference-date effects describe what happens on the day an event *occurred*, so they key off the onset day `day`.
+   The report-date effect describes how the reporting system behaves on the day a report is *processed*, which is the onset day plus its delay, so it keys off `reported_day`.
+   The same onset contributes to different report-day weights depending on how long its delay was.
+:::
+
 ::: {.callout-tip .optional collapse="true"}
 ## Interactive: how day-of-week effects combine
 
@@ -487,21 +506,25 @@ pp_recent +
 ```
 
 ::: {.callout-note}
-## Take 3 minutes
-This model carries three day-of-week terms: `day_of_week` in the expectation module, `day_of_week` in the reference (delay) module, and `(1 | day_of_week)` in the report module.
-Why are these different effects, and why was the report-date one awkward to add to the hand-rolled Stan model?
+## Take 5 minutes
+Read the two result plots rather than the model code.
+
+1. In the nowcast plot (`dow-result-plot`), does the model recover the underlying onsets, and what regular pattern do you see in the nowcast median across reference dates?
+2. In the posterior-prediction plot (`dow-plot-pp`), each panel is one reference (onset) date, with its reports accumulating over report dates. Compare weekday and weekend reference dates. Where does the day-of-week signal show up, and does the model track it?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
-The three terms act on different parts of the process.
-`day_of_week` in `enw_expectation()` models real variation in *when events occur* by reference (onset) day of week.
-`day_of_week` in `enw_reference()` lets the *delay distribution* differ by reference day of week, capturing that (here) weekend onsets are reported more slowly; it changes the shape of the delay for those onset days, not how many onsets there are.
-`(1 | day_of_week)` in `enw_report()` is a random effect on the *report* date, one level per day of the week, scaling how many reports are processed on each calendar day; it absorbs the weekly reporting dip so it does not distort the nowcast of the underlying onsets.
-The two reference-date terms both key on the onset day of week but are still separable because one shifts the level of onsets and the other reshapes their delay; fitted together on this simulation the sampler converges without trouble.
-In the bespoke model the reporting probabilities depended only on the delay $d$ and had to sum to one for each reference date, so making them also depend on the calendar day of the report (while staying a valid distribution) meant restructuring the whole delay component.
-Here each effect is one extra formula on the relevant module.
+1. The nowcast median follows the eventually-observed points, filling in the recent, still-incomplete dates.
+   It is not a smooth curve: the median rises and falls on a regular seven-day cycle, higher mid-week and lower at weekends.
+   That zigzag is the model recovering the day-of-week structure in the *onsets* after stripping out the separate day-of-week effect in *reporting*, rather than smearing the two together.
+2. Within a panel the accumulation is not a straight climb; it steps up faster on some report days than others, which is the report-date effect (fewer reports processed at weekends).
+   Across panels the weekend reference dates sit lower and, because weekend onsets were simulated with a longer delay, fill in more slowly than weekday reference dates.
+   The posterior-prediction band covers the observed accumulation in each panel, so the three day-of-week terms together are tracking the data rather than fighting each other.
+
+Each of these effects is one extra formula on the relevant module.
+The report-date effect in particular was awkward in the bespoke Stan model, where the reporting probabilities depended only on the delay $d$ and had to sum to one for each reference date, so making them also depend on the calendar day of the report meant restructuring the whole delay component.
 :::
 
 # Extending the model: a time-varying delay
@@ -558,6 +581,26 @@ ggplot(tvd_mean_delay, aes(x = reference_week, y = mean_delay)) +
 
 The mean delay climbs week on week, which is the feature a single fixed delay cannot represent: later onsets are reported more slowly than earlier ones, so the model has to let the delay change over time to nowcast the recent dates correctly.
 
+::: {.callout-note}
+## Take 5 minutes
+The whole drift comes from one line in `tvd-simulate`: `meanlog_t <- 1 + 0.5 * day / cutoff`.
+
+1. `meanlog` is the log-scale mean of the lognormal delay. What does letting it grow with `day` do to the most recent reference dates, and why does that make them harder to nowcast?
+2. What else could you simulate by changing this one line? Sketch how you would make (a) the delay *shorten* over the outbreak, and (b) a sudden step change in the delay rather than a smooth drift. Would the `~ rw(week)` delay model still cope?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+1. A larger `meanlog` shifts the whole lognormal towards longer delays, so recent onsets take longer to be fully reported.
+   The most recent reference dates are therefore less complete than a fixed-delay model would assume, and it is exactly those dates the nowcast has to fill in, so getting the drift right matters most where the data are thinnest.
+2. (a) A shortening delay is just a decreasing trend, for example `1.5 - 0.5 * day / cutoff`.
+   (b) A step change is a branch on `day`, for example `if (day < cutoff / 2) 1 else 1.5`.
+   The random walk makes no assumption about direction or shape, so it tracks a shortening delay as readily as a lengthening one and follows a smooth drift closely.
+   It would lag a sharp step by a week or so, because the weekly random walk smooths, but it would still adapt rather than break.
+   Changing the *spread* (`sdlog`) instead of the mean is a genuinely different feature, and you would want to check whether the delay model is flexible enough to follow a drift in the spread rather than only the average.
+:::
+
 This is a property of the *reference* (onset) date, so we put structure on the **reference module** rather than on the report module.
 Where the course model held the delay constant over time, we now let the delay distribution drift week to week with `enw_reference(~ rw(week), ...)`.
 
@@ -607,16 +650,19 @@ pp_recent +
 
 ::: {.callout-note}
 ## Take 3 minutes
-We changed the delay from one held constant over time to `enw_reference(~ rw(week), ...)`.
-Why does letting the delay vary over time matter for the nowcast, and what would happen if we kept a fixed delay when the true delay was lengthening?
+Look at the nowcast plot (`tvd-result-plot`), where we fit `enw_reference(~ rw(week), ...)`.
+
+1. Does the nowcast median track the eventually-observed points at the recent, still-incomplete dates?
+2. What would the plot look like if we had kept a *fixed* delay when the true delay was lengthening?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
-`rw(week)` lets the parameters of the delay distribution change from week to week, so the model can learn that recent onsets are being reported more slowly.
-If we forced a fixed delay when the true delay was lengthening, the model would assume recent dates are more complete than they really are and so would *under*-nowcast the most recent counts, biasing the picture of the epidemic exactly where it matters most.
-This is the same flexibility we used for the expectation module, applied to the delay instead.
+1. The median follows the eventual points up to the nowcast date, and the credible interval widens for the most recent dates where fewer reports have arrived.
+   `rw(week)` lets the parameters of the delay distribution change from week to week, so the model learns that recent onsets are being reported more slowly and fills the gap up to the eventual counts.
+2. A fixed delay would assume recent dates are more complete than they really are, so the nowcast median would sit *below* the eventual points at the recent end and *under*-nowcast exactly where it matters most.
+   This is the same flexibility we used for the expectation module, applied to the delay instead.
 :::
 
 # Extending the model: weekly (batched) reporting
@@ -752,11 +798,7 @@ structural <- enw_dayofweek_structural_reporting(
 
 weekly_daily_nowcast <- epinowcast(
   weekly_rep_pobs,
-  expectation = enw_expectation(
-    # A daily random walk keeps the daily resolution that lets the model
-    # track within-week change, unlike the weekly-weekly model
-    ~ rw(day) + (1 | day_of_week), data = weekly_rep_pobs
-  ),
+  expectation = enw_expectation(~ rw(day), data = weekly_rep_pobs),
   report = enw_report(structural = structural, data = weekly_rep_pobs),
   obs = enw_obs(
     family = "poisson", observation_indicator = ".observed",
@@ -765,6 +807,27 @@ weekly_daily_nowcast <- epinowcast(
   fit = fit_opts_structural
 )
 ```
+
+::: {.callout-note}
+## Take 5 minutes
+This model makes three configuration choices that differ from the course model.
+For each, say what it does and what would go wrong if you left it out.
+
+1. `report = enw_report(structural = structural, ...)` instead of a report formula.
+2. `observation_indicator = ".observed"` in `enw_obs()`.
+3. `expectation = enw_expectation(~ rw(day), ...)` rather than a weekly random walk.
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+1. The structural report module encodes the known once-a-week (Wednesday) reporting schedule.
+   Without it the model would treat the carried-forward daily values as ordinary reports and try to explain them with a smooth daily delay, misestimating both the delay and how complete the recent dates are.
+2. The observation indicator tells the likelihood to use only the cells flagged as real Wednesday reports.
+   Without it the model would treat every imputed non-Wednesday cell as a genuine observation, counting each carried-forward value as data and hugely over-weighting the reports.
+3. The daily random walk keeps a daily latent process, which is what lets the model reconstruct within-week shape from weekly reports.
+   A weekly random walk would collapse the process back to weekly resolution, giving up the one thing this approach buys over weekly-weekly.
+:::
 
 The nowcast is now on the daily scale even though reports only arrived weekly, so we compare it against the eventually-complete daily data.
 
@@ -839,18 +902,21 @@ What it reliably buys is resolution: a daily nowcast that keeps the within-week 
 :::
 
 ::: {.callout-note}
-## Take 3 minutes
-The weekly-weekly model only changed `timestep = "week"` in preprocessing, while the weekly-daily model kept a daily timestep and instead described the reporting schedule with a structural report module.
-Why is the reporting schedule a property of the *data* rather than of the model, and what does the weekly-daily approach buy you over aggregating to weeks?
+## Take 5 minutes
+Read the comparison plot (`weekly-compare`), where both weekly nowcasts are shown against the eventually-observed weekly totals (the black points).
+
+1. On the earlier, complete week the two models agree; at the most recent, still-incomplete week they diverge. Which model's central estimate lands closer to the eventual total, and which model's interval actually covers it?
+2. The weekly-daily interval is much wider at that recent week. Why, and why does that width help here?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
-The reporting schedule describes *when reports arrive*, which is a feature of how the data were collected, so it belongs to the data and its timestep.
-The weekly-weekly approach maps both the process and the delay onto a weekly grid, which is simple and cheap but can only produce weekly nowcasts and gives the process model few points to learn from.
-The weekly-daily approach keeps a daily latent process and encodes the once-a-week reporting through the structural report module, so it recovers daily resolution from weekly reports and can track within-week change that weekly aggregation smooths over; the cost is a larger daily reporting triangle and a harder fit.
-If we instead treated weekly batches as if they were ordinary daily data we would tell the model that almost every day had zero reports with occasional spikes, badly misrepresenting the delay distribution and the completeness of recent data.
+1. On the complete week both models sit on the eventual total, so they are indistinguishable there.
+   At the recent falling week the weekly-daily median is lower and closer to the eventual total, and its wide interval covers the truth, while the weekly-weekly interval is narrow, sits above the eventual total, and misses it.
+2. The weekly-daily weekly total is seven daily values rebuilt from a single weekly report, so it carries far more uncertainty than the weekly-weekly model, which estimates the week directly.
+   That width is honest here: with the epidemic falling fast the recent week is genuinely uncertain, and the narrow weekly-weekly interval is overconfident.
+   The daily model pays in width for the resolution and calibration it gains exactly where the epidemic is changing fastest.
 :::
 
 # Other reporting complications
@@ -892,7 +958,9 @@ To go deeper on the topics we covered, the relevant reference pages are:
 - **Missing reference dates:** the [`enw_missing()`](https://package.epinowcast.org/reference/enw_missing.html) module.
 - The [plotting reference](https://package.epinowcast.org/reference/plot.epinowcast.html) for more ways to visualise a fit than the default `plot()` we used here.
 
-Its case studies and vignettes also work through joint nowcasting with $R_t$ estimation (a renewal-based expectation model, generalising the joint model from the [joint nowcasting session](joint-nowcasting)), and evaluation of nowcasts with proper scoring rules (as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting)).
+Its [case studies](https://package.epinowcast.org/articles/package-use-cases.html) and vignettes also go beyond this session.
+The [real-time $R_t$ estimation vignette](https://package.epinowcast.org/articles/single-timeseries-rt-estimation.html) jointly estimates transmission and reporting delays with a renewal-based expectation model, generalising the joint model from the [joint nowcasting session](joint-nowcasting).
+Others work through evaluation of nowcasts with proper scoring rules, as we did for forecasts in the [combining nowcasting and forecasting session](forecasting-nowcasting).
 
 ::: {.callout-note}
 ## Challenge: fit the wrong model on purpose
