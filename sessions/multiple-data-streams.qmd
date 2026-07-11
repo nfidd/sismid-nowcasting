@@ -546,7 +546,7 @@ Each stream is a valid but partial view of the same infections, which is why com
 *Workflow stage: data integration choice.*
 Each stream works on its own, so we can now make the **data integration choice** from the workflow: link the two of them.
 Both cases and deaths look directly at the *same* latent infections, each through its own delay and scaling, and their likelihood terms are added.
-Because two streams now anchor the level between them, we drop the tight single-stream priors and fall back to the *relaxed* scaling priors baked into `make_data`.
+With two streams tied to one shared infection level, two scaling priors now bear on that level instead of one, so we can drop the tight single-stream priors and fall back to the *relaxed* scaling priors baked into `make_data` rather than pinning any single scaling tightly.
 
 ```{r fit_two, results = 'hide', message = FALSE}
 fit_cd <- fit_streams(
@@ -764,13 +764,13 @@ Why might the *absolute level* of infections be harder to pin down than the *tra
 
 The scaling parameters are recovered less precisely than $R_t$.
 Each stream only constrains the product of infections and its scaling, so multiplying the infections by a constant $c$ and dividing *every* scaling by the same $c$ leaves the expected signal of every stream exactly unchanged.
-The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is not identified by the data at all: it is pinned only by the priors.
+The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is not identified by the data at all: it is pinned only by our prior information, which here means the scaling priors, the prior on the seeded starting level `seed_base`, and the `<lower = 0, upper = 1>` bounds on `ascertainment` and `ifr` (which stop the infections being scaled *down* so far that those scalings would exceed one).
 This is why the single-stream fits earlier needed a *tight* prior on their one scaling to recover the level: with relaxed priors, one stream on its own cannot.
 Crucially, adding streams does **not** break that invariance, because each new stream arrives with its own free scaling to absorb $c$.
 What the joint fit buys is therefore not identification but *more prior information*: three scaling priors now bear on the same infection level instead of one, so it is pinned more tightly than any single stream with the same loose prior could manage.
-(The `<lower = 0, upper = 1>` bounds on `ascertainment` and `ifr` do add a weak, one-sided constraint, since the infections cannot be scaled down so far that those scalings would exceed one.)
-In the workflow this is the "identifiability" feedback arrow, and it never fully goes away: here every scaling prior is centred on the value we simulated from, so recovering the level is slightly cheating.
-On real data the level will only ever be as good as the scaling priors you can justify.
+In the workflow this is the "identifiability" feedback arrow, and it never fully goes away: here every scaling prior is centred on the value we simulated from, and `seed_base ~ normal(I0, I0)` is centred on the true starting infections, so recovering the level is slightly cheating.
+Note that the reparameterisation $I \to cI$ *is* `seed_base` $\to c \times$ `seed_base`, so that seeding prior acts directly on the level and would constrain it even with flat scaling priors.
+On real data the level will only ever be as good as the priors you can justify.
 :::
 
 # Comparing $R_t$ across streams
