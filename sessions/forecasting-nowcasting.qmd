@@ -821,7 +821,7 @@ The `score()` output reports the CRPS along with a breakdown of it.
 - The **Continuous Ranked Probability Score (CRPS)** generalises the mean absolute error to full probabilistic forecasts: it measures the gap between the forecast's cumulative distribution and a step at the observed value. Lower is better, it is in the same units as the data, and for a point forecast it reduces to the absolute error.
 - Guiding principle: as **sharp** as possible while staying **calibrated**.
 - The CRPS breaks down into *overprediction* / *underprediction* (predicting too high or too low) and *dispersion* (a forecast that is too wide).
-  A forecast that is too narrow is not penalised through dispersion; it misses the observation, so it shows up as over- or underprediction instead.
+  A narrow forecast is not penalised through dispersion; if it misses the observation, that shows up as over- or underprediction instead.
 - The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation) develops the CRPS, proper scoring rules and these components in depth.
 :::
 
