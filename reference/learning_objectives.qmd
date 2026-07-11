@@ -50,11 +50,11 @@ While examples often use outbreak scenarios for clarity, participants should con
 - understanding of population-level modelling with observation error
 - understanding of the link between Rt estimation and nowcasting
 
-## Jointly fitting multiple data streams
+## Jointly fitting multiple data sources
 
-- understanding of why combining multiple surveillance streams can improve inference
-- understanding of the difference between parallel (conditionally independent given infections) and sequential modelling of streams
-- familiarity with extending the renewal-with-delays model to several parallel observation streams with their own delays, scalings and likelihoods
+- understanding of why combining multiple surveillance data sources can improve inference
+- understanding of the difference between parallel (conditionally independent given infections) and sequential modelling of data sources
+- familiarity with extending the renewal-with-delays model to several parallel data sources with their own delays, scalings and likelihoods
 - understanding of the joint estimation of $R_t$ and infections from cases, deaths and a wastewater signal
 - awareness of the data-conflict problem and how a shared latent process maybe used to reconcile disagreeing streams
 
