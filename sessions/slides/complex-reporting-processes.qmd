@@ -209,11 +209,6 @@ tibble(day = days) |>
 enw_reference(~ rw(week))   # delay drifts week to week
 ```
 
-::: {.callout-warning}
-We simulate a roughly linear drift, but fitting a matching linear trend would be *cheating*: in reality we do not know the functional form.
-Choose a **flexible** model (a random walk) instead of baking in what you simulated.
-:::
-
 ### Weekly (batched) reporting {.smaller}
 
 Data are often *reported* weekly even though events happen daily.
