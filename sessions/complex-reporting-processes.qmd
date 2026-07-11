@@ -107,11 +107,12 @@ But it is the point at which reaching for a general framework that already imple
 [`epinowcast`](https://package.epinowcast.org/) [@epinowcastPackage2024] is a Bayesian framework for real-time infectious disease surveillance.
 It is *one* of several tools for this kind of modelling (we point to others at the end of the session), and it is a direct generalisation of the joint nowcasting model we built: it works from the reporting triangle and jointly estimates the expected counts and the reporting process, but it makes each component far more flexible and exposes them through a formula interface rather than hand-written Stan code.
 
-`epinowcast` decomposes the problem into modular pieces. Most mirror something we have already seen; the **report date** module is new — it handles effects that act on the report date, such as day-of-week reporting.
+`epinowcast` decomposes the problem into modular pieces. Most mirror something we have already seen; the **report date** and **missing data** modules are new — they handle effects that act on the report date, such as day-of-week reporting, and reports whose reference date is unknown.
 
 - An **expectation** model for the expected counts $\lambda_{t}$ (the analogue of our geometric random walk or renewal process).
 - A **reference date** model for the delay distribution by date of the epidemiological event (the analogue of our $p_{t,d}$, but allowed to vary over time and by covariates).
 - A **report date** model for effects that act on the *report* date, such as day-of-week reporting effects.
+- A **missing data** model for reports whose reference date is missing or not yet known (we had no analogue in the bespoke model).
 - An **observation** model for the likelihood linking expected to observed counts (the analogue of our Poisson likelihood for $n_{t,d}$).
 
 Each piece is specified with an R formula, so adding a day-of-week effect or a time-varying delay is a one-line change rather than a rewrite of the model.
@@ -166,6 +167,9 @@ From that one complete data set we derive the two things we need with `epinowcas
 - the data available **as of the nowcast**, which we fit to, using `enw_filter_report_dates()` to keep only reports that had arrived by the nowcast date;
 - the **eventually-reported** data, which we judge the nowcast against, using `enw_latest_data()` to take the most recent report for each reference date.
 
+After filtering to the as-of-nowcast reports we call `enw_complete_dates()` to make the reporting triangle explicitly complete, so any reference-date and delay cell that never received a report is filled with a zero rather than left missing.
+Our simulation is already complete so this changes nothing here, but on real data it guards against gaps in the triangle before preprocessing.
+
 ```{r to-enw-helper}
 # Day 0 of the simulation is a Monday
 ref_date0 <- as.Date("2023-01-02")
@@ -188,11 +192,7 @@ to_enw_format <- function(triangle) {
     enw_add_cumulative()
 }
 
-# The as-of-nowcast snapshot we fit to: drop reports that arrived later, then
-# make the reporting triangle explicitly complete so any reference-date/delay
-# cell that never received a report is filled with a zero rather than left
-# missing. Our simulation is already complete so this changes nothing here, but
-# on real data it guards against gaps in the triangle before preprocessing.
+# The as-of-nowcast snapshot we fit to
 enw_long <- to_enw_format(reporting_triangle) |>
   enw_filter_report_dates(latest_date = nowcast_date) |>
   enw_complete_dates(max_delay = 16, missing_reference = FALSE)
@@ -784,10 +784,7 @@ To compare the two directly we can aggregate the daily structural nowcast up to 
 A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.
 
 ```{r weekly-compare}
-# Aggregate the daily structural nowcast up to epinowcast's weekly buckets so it
-# lines up with the weekly-weekly nowcast. Those weeks end on reference dates a
-# whole number of weeks after day zero, so we bin each daily reference date onto
-# that same grid and keep only weeks the daily model covers in full.
+# Bin each daily reference date onto the weekly grid, keeping only full weeks
 weekly_daily_samples <- summary(weekly_daily_nowcast, type = "nowcast_samples")
 weekly_daily_samples[
   , week := as.IDate(
