@@ -816,10 +816,12 @@ head(scores)
 
 The `score()` output reports the CRPS along with a breakdown of it.
 
-- A **proper scoring rule** scores a probabilistic forecast against the eventual observation; a forecaster minimises their expected score only by reporting what they really believe, so honest forecasts are rewarded rather than ones tuned to game the metric.
+- A **proper scoring rule** scores a probabilistic forecast against the eventual observation; a forecaster minimises their expected score by reporting what they really believe, so honest forecasts are rewarded rather than ones tuned to game the metric.
+  The CRPS is *strictly* proper, so reporting your true belief is the **only** way to minimise the expected score.
 - The **Continuous Ranked Probability Score (CRPS)** generalises the mean absolute error to full probabilistic forecasts: it measures the gap between the forecast's cumulative distribution and a step at the observed value. Lower is better, it is in the same units as the data, and for a point forecast it reduces to the absolute error.
 - Guiding principle: as **sharp** as possible while staying **calibrated**.
-- The CRPS breaks down into *overprediction* / *underprediction* (predicting too high or too low) and *dispersion* (a forecast that is too wide or too narrow).
+- The CRPS breaks down into *overprediction* / *underprediction* (predicting too high or too low) and *dispersion* (a forecast that is too wide).
+  A forecast that is too narrow is not penalised through dispersion; it misses the observation, so it shows up as over- or underprediction instead.
 - The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation) develops the CRPS, proper scoring rules and these components in depth.
 :::
 
