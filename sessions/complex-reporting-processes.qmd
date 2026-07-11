@@ -196,7 +196,7 @@ to_enw_format <- function(triangle) {
 # on real data it guards against gaps in the triangle before preprocessing.
 enw_long <- to_enw_format(reporting_triangle) |>
   enw_filter_report_dates(latest_date = nowcast_date) |>
-  enw_complete_dates(max_delay = 15, missing_reference = FALSE)
+  enw_complete_dates(max_delay = 16, missing_reference = FALSE)
 head(enw_long)
 ```
 
@@ -221,9 +221,11 @@ Each `reference_date` is a row of the triangle, each `report_date` gives a colum
 ## Preprocessing and fitting
 
 `epinowcast` preprocesses the data into its internal reporting-triangle representation, where we also choose the maximum delay we will model.
+Note that `max_delay` counts delay *classes*, and delays are zero-indexed: `max_delay = 16` models $d = 0, \ldots, 15$, which is exactly the support we simulated from.
+Setting it to 15 would quietly drop the last delay class rather than model it.
 
 ```{r preprocess}
-pobs <- enw_preprocess_data(enw_long, max_delay = 15)
+pobs <- enw_preprocess_data(enw_long, max_delay = 16)
 ```
 
 The preprocessed object has its own `plot()` method.
@@ -455,7 +457,7 @@ fit_opts_hard <- enw_fit_opts(
 dow_long <- enw_filter_report_dates(
   to_enw_format(dow_triangle), latest_date = nowcast_date
 )
-dow_pobs <- enw_preprocess_data(dow_long, max_delay = 15)
+dow_pobs <- enw_preprocess_data(dow_long, max_delay = 16)
 
 dow_nowcast <- epinowcast(
   dow_pobs,
@@ -577,7 +579,7 @@ A rolling window instead throws away every report outside the window, so it has 
 tvd_long <- enw_filter_report_dates(
   to_enw_format(tvd_triangle), latest_date = nowcast_date
 )
-tvd_pobs <- enw_preprocess_data(tvd_long, max_delay = 15)
+tvd_pobs <- enw_preprocess_data(tvd_long, max_delay = 16)
 
 tvd_nowcast <- epinowcast(
   tvd_pobs,
@@ -729,7 +731,7 @@ weekly_rep_data <- weekly_rep_data |>
 
 weekly_rep_pobs <- weekly_rep_data |>
   enw_complete_dates(timestep = "day") |>
-  enw_preprocess_data(max_delay = 15, timestep = "day")
+  enw_preprocess_data(max_delay = 16, timestep = "day")
 ```
 
 We describe the known Wednesday-only reporting cycle with `enw_dayofweek_structural_reporting()` and pass it to `enw_report()` through its `structural` argument instead of a formula.
