@@ -764,12 +764,13 @@ Why might the *absolute level* of infections be harder to pin down than the *tra
 
 The scaling parameters are recovered less precisely than $R_t$.
 Each stream only constrains the product of infections and its scaling, so multiplying the infections by a constant $c$ and dividing *every* scaling by the same $c$ leaves the expected signal of every stream exactly unchanged.
-The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is not identified by the data at all: it is pinned only by our prior information, which here means the scaling priors, the prior on the seeded starting level `seed_base`, and the `<lower = 0, upper = 1>` bounds on `ascertainment` and `ifr` (which stop the infections being scaled *down* so far that those scalings would exceed one).
+The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is not identified by the data at all: it is pinned only by our prior information.
+Three things supply that information here: the scaling priors, the prior on the seeded starting level `seed_base`, and the `<lower = 0, upper = 1>` bounds on `ascertainment` and `ifr`, which stop the infections being scaled *down* so far that those scalings would exceed one.
 This is why the single-stream fits earlier needed a *tight* prior on their one scaling to recover the level: with relaxed priors, one stream on its own cannot.
 Crucially, adding streams does **not** break that invariance, because each new stream arrives with its own free scaling to absorb $c$.
 What the joint fit buys is therefore not identification but *more prior information*: three scaling priors now bear on the same infection level instead of one, so it is pinned more tightly than any single stream with the same loose prior could manage.
 In the workflow this is the "identifiability" feedback arrow, and it never fully goes away: here every scaling prior is centred on the value we simulated from, and `seed_base ~ normal(I0, I0)` is centred on the true starting infections, so recovering the level is slightly cheating.
-Note that the reparameterisation $I \to cI$ *is* `seed_base` $\to c \times$ `seed_base`, so that seeding prior acts directly on the level and would constrain it even with flat scaling priors.
+Note that the reparameterisation $I \to cI$ is exactly $I_0^{\text{seed}} \to c\,I_0^{\text{seed}}$ (the `seed_base` parameter above), so that seeding prior acts directly on the level and would constrain it even with flat scaling priors.
 On real data the level will only ever be as good as the priors you can justify.
 :::
 
