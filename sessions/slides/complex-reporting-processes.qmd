@@ -66,7 +66,7 @@ A single, fixed delay cannot capture:
 
 ```{r reports-dip, echo = FALSE, fig.width = 7, fig.height = 3.2}
 tibble(day = days, reports = base * rep_dow_effect[(days %% 7) + 1]) |>
-  ggplot(aes(day, reports, fill = (day %% 7) >= 4)) +
+  ggplot(aes(day, reports, fill = (day %% 7) >= 5)) +
   geom_col() +
   weekend_fill +
   labs(x = "Report day", y = "Reports") +

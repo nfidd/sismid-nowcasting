@@ -128,7 +128,6 @@ Before adding anything new, let us reproduce the joint nowcasting model we alrea
 We simulate exactly as in the [joint nowcasting session](joint-nowcasting): the same onset time series, the same fixed reporting delay, and the same reporting triangle.
 
 ```{r simulate-onsets}
-gen_time_pmf <- make_gen_time_pmf()
 ip_pmf <- make_ip_pmf()
 onset_df <- simulate_onsets(
   make_daily_infections(infection_times), ip_pmf
