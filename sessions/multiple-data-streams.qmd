@@ -452,7 +452,8 @@ This is the modular pay-off from breaking the DAG into components: we validate o
 
 There is a subtlety here worth being explicit about, because it drives how we fit these single streams.
 A single count stream only ever tells us about infections *multiplied by* its scaling: doubling the infections and halving the ascertainment gives exactly the same expected cases.
-So on its own a stream identifies the *trend* of infections (and hence $R_t$) but **not their absolute level**.
+So a stream identifies the *trend* of infections (and hence $R_t$) but **not their absolute level**.
+This is a property of the model rather than of having only one stream: as we will see, adding more streams does not break the invariance, because each new stream arrives with its own free scaling.
 To recover the level from one stream we have to inform its scaling.
 We therefore give each single-stream diagnostic fit a *tight* prior on that stream's scaling, centred near the truth, as a deliberate device: it lets us check that the stream recovers the infection level, not just its shape.
 
@@ -762,11 +763,14 @@ Why might the *absolute level* of infections be harder to pin down than the *tra
 ## Solution
 
 The scaling parameters are recovered less precisely than $R_t$.
-Each stream only constrains the product of infections and its scaling, so multiplying infections by a constant and dividing every scaling by the same constant gives an almost identical fit.
-The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is only weakly identified and leans on the scaling priors.
+Each stream only constrains the product of infections and its scaling, so multiplying the infections by a constant $c$ and dividing *every* scaling by the same $c$ leaves the expected signal of every stream exactly unchanged.
+The *shape* of the trajectory -- and hence $R_t$ -- is well identified, but the *absolute level* is not identified by the data at all: it is pinned only by the priors.
 This is why the single-stream fits earlier needed a *tight* prior on their one scaling to recover the level: with relaxed priors, one stream on its own cannot.
-Here in the joint fit we deliberately relaxed those priors, and the level is still recovered reasonably: three streams each carrying a loose scaling prior, all tied to one shared infection process, pin the level between them better than any single stream with the same loose prior could.
-In the workflow this is the "identifiability" feedback arrow: with a single stream we address it by informing a scaling; with several streams the shared process does much of that work for us.
+Crucially, adding streams does **not** break that invariance, because each new stream arrives with its own free scaling to absorb $c$.
+What the joint fit buys is therefore not identification but *more prior information*: three scaling priors now bear on the same infection level instead of one, so it is pinned more tightly than any single stream with the same loose prior could manage.
+(The `<lower = 0, upper = 1>` bounds on `ascertainment` and `ifr` do add a weak, one-sided constraint, since the infections cannot be scaled down so far that those scalings would exceed one.)
+In the workflow this is the "identifiability" feedback arrow, and it never fully goes away: here every scaling prior is centred on the value we simulated from, so the recovered level flatters us somewhat.
+On real data the level will only ever be as good as the scaling priors you can justify.
 :::
 
 # Comparing $R_t$ across streams
