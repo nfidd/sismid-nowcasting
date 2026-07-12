@@ -10,13 +10,22 @@ nfidd_stan_path()
 A character string with the path to the Stan code
 }
 \description{
-Stan code is looked up in the package source tree when there is one above
-the working directory, and in the installed package otherwise. Rendering the
-course site, or running a session, from a clone of the course repository
-therefore uses the Stan code in that clone. Without this a model added to
-`inst/stan` is invisible to [nfidd_stan_models()] and the rest of the Stan
-tools until the package is reinstalled, so the reference pages silently
-report whichever set of models happened to be installed.
+This is the single place the Stan code is resolved, for both the models and
+the functions they include. It looks in three places, in order.
+}
+\details{
+1. The `nfidd.nowcasting.stan_path` option, if it is set. Set this to point
+   the Stan tools at your own Stan code.
+2. The package source tree, if the working directory sits in a clone of the
+   course repository. Rendering the course site, or running a session, from
+   a clone therefore uses the Stan code in that clone rather than whichever
+   version of the package happens to be installed. Without this a model
+   added to `inst/stan` is invisible to [nfidd_stan_models()] and the rest
+   of the Stan tools until the package is reinstalled. Using the source tree
+   over an installed package is reported once per session, so it is never a
+   silent switch. The report is only made in an interactive session, where
+   someone is there to read it, and so never lands in a rendered page.
+3. The installed package.
 }
 \seealso{
 Other stantools:

@@ -18,9 +18,9 @@ The SISMID nowcasting course was adapted by the **SISMID course contributors**:
 
 If you use materials from this course in your work, please cite:
 
-> NFIDD course contributors (2026). NFIDD: Nowcasting and Forecasting Infectious Disease Dynamics. Version [VERSION]. <https://nfidd.github.io/nfidd/>
+> NFIDD course contributors (2026). NFIDD: Nowcasting and Forecasting Infectious Disease Dynamics. <https://nfidd.github.io/nfidd/>
 
-> SISMID course contributors (2026). SISMID: Nowcasting Infectious Disease Dynamics. Version [VERSION]. <https://nfidd.github.io/sismid-nowcasting/>
+> SISMID course contributors (2026). SISMID: Nowcasting Infectious Disease Dynamics. <https://nfidd.github.io/sismid-nowcasting/>
 
 ### BibTeX Entry
 
@@ -29,7 +29,6 @@ If you use materials from this course in your work, please cite:
   author = {{Sam Abbott, Katherine Sherratt, Sebastian Funk}},
   title = {{NFIDD: Nowcasting and Forecasting Infectious Disease Dynamics}},
   year = {2026},
-  version = {[VERSION]},
   url = {https://nfidd.github.io/nfidd/}
 }
 ```
@@ -39,7 +38,6 @@ If you use materials from this course in your work, please cite:
   author = {{Sam Abbott, Mariah Boudreau, Nick Reich}},
   title = {{SISMID: Nowcasting Infectious Disease Dynamics}},
   year = {2026},
-  version = {[VERSION]},
   url = {https://nfidd.github.io/sismid-nowcasting/}
 }
 ```

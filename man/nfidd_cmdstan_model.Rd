@@ -7,8 +7,7 @@
 nfidd_cmdstan_model(
   model_name = NULL,
   model_file = NULL,
-  include_paths = getOption("nfidd.nowcasting.stan_path",
-    nfidd.nowcasting::nfidd_stan_path()),
+  include_paths = nfidd.nowcasting::nfidd_stan_path(),
   ...
 )
 }
@@ -20,8 +19,8 @@ the NFIDD package. Ignored if model_file is provided.}
 If provided, this takes precedence over model_name.}
 
 \item{include_paths}{Character vector of paths to include for Stan
-compilation. Defaults to the result of `nfidd_stan_path()` or can be
-overridden using the R option "nfidd.nowcasting.stan_path".}
+compilation. Defaults to the result of [nfidd_stan_path()], which also
+honours the "nfidd.nowcasting.stan_path" option.}
 
 \item{...}{Additional arguments passed to cmdstanr::cmdstan_model().}
 }

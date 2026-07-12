@@ -34,7 +34,67 @@ test_that("nfidd_stan_models() lists models the installed package lacks", {
 
   withr::with_dir(
     source_tree,
-    expect_equal(nfidd_stan_models(), "a-model-that-is-not-installed")
+    expect_equal(
+      suppressMessages(nfidd_stan_models()), "a-model-that-is-not-installed"
+    )
+  )
+})
+
+test_that("nfidd_stan_path() says when it uses a source tree", {
+  source_tree <- local_source_tree("a-model")
+
+  # defeat the once-per-session frequency so the test does not depend on
+  # whether something else has already triggered the message
+  withr::local_options(rlib_message_verbosity = "verbose")
+
+  withr::with_options(
+    list(rlang_interactive = TRUE),
+    expect_message(
+      withr::with_dir(source_tree, nfidd_stan_path()),
+      "course repository"
+    )
+  )
+})
+
+test_that("nfidd_stan_path() stays quiet when nobody is there to read it", {
+  source_tree <- local_source_tree("a-model")
+  withr::local_options(rlib_message_verbosity = "verbose")
+
+  # a rendered page is not an audience for the note
+  withr::with_options(
+    list(rlang_interactive = FALSE),
+    expect_no_message(withr::with_dir(source_tree, nfidd_stan_path()))
+  )
+})
+
+test_that("nfidd_stan_path() takes the option over everything else", {
+  option_tree <- local_source_tree("an-option-model")
+  source_tree <- local_source_tree("a-source-model")
+  option_path <- file.path(option_tree, "inst", "stan")
+
+  withr::with_options(
+    list(nfidd.nowcasting.stan_path = option_path),
+    withr::with_dir(source_tree, {
+      expect_equal(nfidd_stan_path(), option_path)
+      expect_equal(nfidd_stan_models(), "an-option-model")
+    })
+  )
+})
+
+test_that("nfidd_stan_path() falls back to the installed package", {
+  outside <- tempfile("outside")
+  on.exit(unlink(outside, recursive = TRUE), add = TRUE)
+  dir.create(outside)
+
+  withr::with_options(
+    list(nfidd.nowcasting.stan_path = NULL),
+    withr::with_dir(
+      outside,
+      expect_equal(
+        nfidd_stan_path(),
+        system.file("stan", package = "nfidd.nowcasting")
+      )
+    )
   )
 })
 
@@ -64,4 +124,27 @@ test_that("nfidd_stan_function_files() finds the file a function lives in", {
     nfidd_stan_function_files(functions = "renewal_seeded"),
     "functions/renewal_seeded.stan"
   )
+})
+
+test_that("nfidd_cmdstan_model() handles a Stan path with several entries", {
+  extra <- local_source_tree("a-model")
+  stan_path <- c(
+    file.path(extra, "inst", "stan"),
+    system.file("stan", package = "nfidd.nowcasting")
+  )
+
+  withr::with_options(list(nfidd.nowcasting.stan_path = stan_path), {
+    expect_equal(nfidd_stan_path(), stan_path)
+
+    model <- nfidd_cmdstan_model("simple-nowcast", compile = FALSE)
+    expect_equal(
+      normalizePath(model$stan_file()),
+      normalizePath(file.path(stan_path[2], "simple-nowcast.stan"))
+    )
+
+    expect_error(
+      nfidd_cmdstan_model("not-a-model", compile = FALSE),
+      "not-a-model.stan' not found"
+    )
+  })
 })
