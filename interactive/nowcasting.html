@@ -201,10 +201,10 @@
 
 <!-- ============ SIMPLE CDF NOWCAST ============ -->
 <section id="simple">
-  <h2>The simplest nowcast: spread each day forward, then divide back up</h2>
-  <p class="tagline">One reference date's reports smeared over the delay PMF — the "now" line cuts off the tail</p>
-  <p>Reporting is a <b>forward convolution</b>: the <b style="color:var(--true)">N<sub>t</sub></b> cases on a reference date don't all land at once — they get <b>spread forward</b> over report-days <i>t, t+1, t+2, …</i> in the proportions of the reporting-delay PMF <i>p<sub>d</sub></i>. Pick a recent reference date <i>t*</i> and watch its reports fan out: the caps sitting on each report-day are <i>N<sub>t*</sub> · p<sub>d</sub></i>.</p>
-  <p>The red <b>now</b> line at day <i>T</i> is the truncation boundary. Report-days at or before it (delay <i>d ≤ T − t*</i>) have arrived — colour them <b style="color:var(--obs)">teal</b>; report-days beyond it (<i>d &gt; T − t*</i>) are <b style="color:var(--miss)">still in the post</b> — amber, hatched. So we only ever see a fraction <i>F(T − t*)</i> of the day's cases. The simplest nowcast just <b>divides the observed count back up</b> by that fraction, which exactly recovers <i>N<sub>t*</sub></i>.</p>
+  <h2>The simplest nowcast: scale up by the proportion reported</h2>
+  <p class="tagline">The delay CDF says how much of a reference date is in by now, so we divide by it</p>
+  <p>A reference date's cases are not all reported at once. Pick a recent reference date <i>t*</i>. Reports that have had a delay of <i>d ≤ T − t*</i> days have had time to arrive, so the share of that date we have seen by now is the delay <b>CDF</b> <i>F(T − t*)</i>. The figure shows where that share comes from: each report-day carries a cap of height <i>N<sub>t*</sub> · p<sub>d</sub></i>, and the CDF is the running total of the caps up to the <b>now</b> line.</p>
+  <p>The red <b>now</b> line at day <i>T</i> is the truncation boundary. Caps at or before it are already reported, in <b style="color:var(--obs)">teal</b>; caps beyond it are <b style="color:var(--miss)">still in the post</b>, in amber and hatched. The bar at the foot of the figure reads off <i>F(T − t*)</i> at the current setting. The simplest nowcast <b>divides the observed count by that proportion</b>, which recovers <i>N<sub>t*</sub></i>.</p>
   <div class="formula">observed<sub>t</sub> = N<sub>t</sub> &middot; <span class="obs">F(T &minus; t)</span>
     &nbsp;&nbsp;&rarr;&nbsp;&nbsp;
     nowcast<sub>t</sub> = <span class="frac"><span>observed<sub>t</sub></span><span class="obs">F(T &minus; t)</span></span></div>
@@ -215,7 +215,7 @@
     <span><i class="swatch" style="border-color:var(--now);border-top-style:dashed"></i> now (T) — truncation cut</span>
   </div>
   <div class="fig">
-    <svg id="simpleSvg" viewBox="0 0 720 380" role="img" aria-label="Faint onset bars by reference date, with the highlighted recent date t* spreading its reports forward over the reporting-delay PMF. Report-days up to the red now line are observed (teal); later ones are still to come (amber, hatched). Chips show the proportion reported and the divide-back-up nowcast."></svg>
+    <svg id="simpleSvg" viewBox="0 0 720 440" role="img" aria-label="Faint onset bars by reference date, with the highlighted recent date t* and the reports it has accrued at each report-day. Report-days up to the red now line are reported (teal); later ones are still to come (amber, hatched). A bar at the foot shows the proportion reported, the delay CDF at the now line, and chips show the scaled-up nowcast."></svg>
   </div>
   <div class="controls">
     <label><span class="vlabel">Reporting delay mean (days): <span id="smMval">4.0</span></span>
@@ -509,6 +509,7 @@ function trueCurve(t,peak,width,height){
 (function(){
   const svg=document.getElementById("simpleSvg");
   const W=720,H=380, m={l:54,r:20,t:30,b:52};
+  const PB={y:400,h:18};                                       // proportion-reported bar
   const t0=20, t1=64, HEIGHT=100, Dmax=12, PEAK=44, WIDTH=9;
   const sx=v=>m.l+(v-t0)/(t1-t0)*(W-m.l-m.r);
   const ids={M:document.getElementById("smM"),T:document.getElementById("smT"),
@@ -546,7 +547,7 @@ function trueCurve(t,peak,width,height){
     svg.appendChild(el("line",{x1:m.l,y1:sy(0),x2:W-m.r,y2:sy(0),stroke:"#cbd5e1"}));
     for(let v=t0; v<=t1; v+=4) svg.appendChild(el("text",{x:sx(v),y:H-m.b+16,"text-anchor":"middle","font-size":10,fill:"#6b7280"})).textContent=v;
     svg.appendChild(el("text",{x:(m.l+W-m.r)/2,y:H-8,"text-anchor":"middle","font-size":12,fill:"#374151"})).textContent="calendar day  (reference date = when cases occurred, report-day = when they arrive)";
-    svg.appendChild(el("text",{x:m.l,y:m.t-12,"font-size":13,"font-weight":700,fill:"#1f2933"})).textContent="Spread date t*'s N cases forward over the delay PMF, then divide by what's in by now";
+    svg.appendChild(el("text",{x:m.l,y:m.t-12,"font-size":13,"font-weight":700,fill:"#1f2933"})).textContent="Date t*: how much of it has been reported by now, and the scale-up that recovers it";
 
     const bw=(W-m.l-m.r)/(t1-t0)*0.62;
     // faint onset bars N(t) by reference date
@@ -588,8 +589,31 @@ function trueCurve(t,peak,width,height){
     svg.appendChild(el("line",{x1:sx(T)+bw/2+2,y1:m.t-2,x2:sx(T)+bw/2+2,y2:sy(0),stroke:"#dc2626","stroke-width":2,"stroke-dasharray":"6 4"}));
     svg.appendChild(el("text",{x:sx(T)+bw/2+2,y:m.t-4,"text-anchor":"end","font-size":11,"font-weight":700,fill:"#dc2626"})).textContent="now T ";
 
-    /* ---- readouts ---- */
+    /* ---- proportion reported bar: delay CDF F(T - t*) at the now line ---- */
     const F=Fdisc(boundary,pmf);
+    const pbW=W-m.l-m.r;
+    svg.appendChild(el("text",{x:m.l,y:PB.y-7,"font-size":11.5,
+      "font-weight":700,fill:"#1f2933"}))
+      .textContent="proportion of date t* reported by now: F(T − t*)";
+    svg.appendChild(el("rect",{x:m.l,y:PB.y,width:pbW,height:PB.h,rx:4,
+      fill:"#f59e0b","fill-opacity":0.35,stroke:"#e2e8f0"}));
+    svg.appendChild(el("rect",{x:m.l,y:PB.y,width:Math.max(pbW*F,0),
+      height:PB.h,rx:4,fill:"#0891b2","fill-opacity":0.9}));
+    // tick marks every 25% so the bar can be read off
+    for(let q=0.25; q<1; q+=0.25){
+      svg.appendChild(el("line",{x1:m.l+pbW*q,y1:PB.y,x2:m.l+pbW*q,
+        y2:PB.y+PB.h,stroke:"#ffffff","stroke-width":1,opacity:0.7}));
+    }
+    const pctTxt=(F*100).toFixed(0)+"% reported";
+    const inside=F>0.35;
+    svg.appendChild(el("text",{x:inside?m.l+pbW*F-6:m.l+pbW*F+6,y:PB.y+13,
+      "text-anchor":inside?"end":"start","font-size":11.5,"font-weight":700,
+      fill:inside?"#ffffff":"#0e7490"})).textContent=pctTxt;
+    svg.appendChild(el("text",{x:W-m.r,y:PB.y+31,"text-anchor":"end",
+      "font-size":10.5,fill:"#b45309"}))
+      .textContent=((1-F)*100).toFixed(0)+"% still to come";
+
+    /* ---- readouts ---- */
     const observed=Nstar*F;
     const nowcast=observed/Math.max(F,1e-3);
     document.getElementById("smPct").textContent=(F*100).toFixed(0)+"%";
