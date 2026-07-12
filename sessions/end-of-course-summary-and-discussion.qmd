@@ -6,7 +6,7 @@ order: 17
 # Introduction
 
 We hope that you've enjoyed taking this course on nowcasting infectious disease dynamics.
-Over the course you have worked from delay distributions and their biases, through $R_t$ estimation and nowcasting, to combining nowcasting with forecasting, modelling more complex reporting processes, and jointly fitting multiple surveillance data streams to estimate transmission from several sources at once.
+Over the course you have worked from delay distributions and their biases, through $R_t$ estimation and nowcasting, to combining nowcasting with forecasting, jointly fitting multiple data sources to estimate transmission from several sources at once, and modelling more complex reporting processes.
 We will be very happy to have your feedback, comments or any questions on the [course discussion page](https://github.com/nfidd/sismid-nowcasting/discussions).
 
 
