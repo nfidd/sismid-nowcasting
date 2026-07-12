@@ -7,9 +7,8 @@
 nfidd_stan_functions(stan_path = nfidd.nowcasting::nfidd_stan_path())
 }
 \arguments{
-\item{stan_path}{Character string specifying the path to the directory
-containing Stan files. Defaults to the Stan path of the nfidd
-package.}
+\item{stan_path}{Character vector of directories holding Stan files, as
+returned by [nfidd_stan_path()]. May name more than one directory.}
 }
 \value{
 A character vector containing unique names of all functions found in

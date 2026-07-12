@@ -7,8 +7,8 @@
 nfidd_stan_models(stan_path = nfidd.nowcasting::nfidd_stan_path())
 }
 \arguments{
-\item{stan_path}{Character string specifying the path to Stan files. Defaults
-to the result of `nfidd_stan_path()`.}
+\item{stan_path}{Character vector of directories holding Stan files, as
+returned by [nfidd_stan_path()]. May name more than one directory.}
 }
 \value{
 A character vector of available Stan model names.

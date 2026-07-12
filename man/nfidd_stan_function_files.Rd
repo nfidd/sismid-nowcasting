@@ -13,9 +13,8 @@ nfidd_stan_function_files(
 \item{functions}{Character vector of function names to search for. If NULL,
 all Stan files are returned.}
 
-\item{stan_path}{Character string specifying the path to the directory
-containing Stan files. Defaults to the Stan path of the nfidd
-package.}
+\item{stan_path}{Character vector of directories holding Stan files, as
+returned by [nfidd_stan_path()]. May name more than one directory.}
 }
 \value{
 A character vector of file paths to Stan files.

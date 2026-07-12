@@ -18,7 +18,7 @@ the NFIDD package. Ignored if model_file is provided.}
 \item{model_file}{Character string specifying the path to a custom Stan file.
 If provided, this takes precedence over model_name.}
 
-\item{include_paths}{Character vector of paths to include for Stan
+\item{include_paths}{Character vector of directories to include for Stan
 compilation. Defaults to the result of [nfidd_stan_path()], which also
 honours the "nfidd.nowcasting.stan_path" option.}
 

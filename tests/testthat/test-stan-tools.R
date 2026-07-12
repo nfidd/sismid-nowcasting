@@ -148,3 +148,34 @@ test_that("nfidd_cmdstan_model() handles a Stan path with several entries", {
     )
   })
 })
+
+test_that("nfidd_stan_function_files() is relative under a multi-entry path", {
+  extra <- local_source_tree("a-model")
+  stan_path <- c(
+    file.path(extra, "inst", "stan"),
+    system.file("stan", package = "nfidd.nowcasting")
+  )
+
+  # renewal_seeded lives under the second directory only
+  expect_equal(
+    nfidd_stan_function_files(
+      functions = "renewal_seeded", stan_path = stan_path
+    ),
+    "functions/renewal_seeded.stan"
+  )
+})
+
+test_that(".relative_to_stan_path() strips roots literally", {
+  # a root holding regular expression characters must not over-match
+  expect_equal(
+    .relative_to_stan_path(
+      c("/a.b/stan/functions/renewal.stan", "/other/functions/renewal.stan"),
+      c("/a.b/stan", "/other")
+    ),
+    c("functions/renewal.stan", "functions/renewal.stan")
+  )
+  expect_equal(
+    .relative_to_stan_path("/axb/stan/f.stan", "/a.b/stan"),
+    "/axb/stan/f.stan"
+  )
+})

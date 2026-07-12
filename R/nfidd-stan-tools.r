@@ -49,7 +49,8 @@
 #'    someone is there to read it, and so never lands in a rendered page.
 #' 3. The installed package.
 #'
-#' @return A character string with the path to the Stan code
+#' @return A character vector of directories holding the Stan code. This is a
+#'   single directory unless the option names more than one.
 #'
 #' @family stantools
 #'
@@ -161,14 +162,34 @@ nfidd_stan_path <- function() {
   }
 }
 
+#' Make Stan file paths relative to the Stan path they were found under
+#'
+#' `stan_path` can hold more than one directory, so each root is stripped in
+#' turn. Matching is on a literal prefix rather than a pattern, so a root
+#' holding regular expression characters cannot over-match.
+#'
+#' @param files Character vector of Stan file paths.
+#' @param stan_path Character vector of Stan path roots.
+#'
+#' @return `files`, with any leading Stan path root removed.
+#'
+#' @keywords internal
+.relative_to_stan_path <- function(files, stan_path) {
+  for (root in stan_path) {
+    prefix <- paste0(root, "/")
+    under_root <- startsWith(files, prefix)
+    files[under_root] <- substring(files[under_root], nchar(prefix) + 1)
+  }
+  files
+}
+
 #' Get Stan function names from Stan files
 #'
 #' This function reads all Stan files in the specified directory and extracts
 #' the names of all functions defined in those files.
 #'
-#' @param stan_path Character string specifying the path to the directory
-#' containing Stan files. Defaults to the Stan path of the nfidd
-#' package.
+#' @param stan_path Character vector of directories holding Stan files, as
+#' returned by [nfidd_stan_path()]. May name more than one directory.
 #'
 #' @return A character vector containing unique names of all functions found in
 #' the Stan files.
@@ -233,10 +254,8 @@ nfidd_stan_function_files <- function(
       }
     }
 
-    # remove the path from the file names
-    matching_files <- sub(
-      paste0(stan_path, "/"), "", matching_files
-    )
+    # remove the Stan path from the file names
+    matching_files <- .relative_to_stan_path(matching_files, stan_path)
     return(matching_files)
   }
 }
@@ -246,8 +265,8 @@ nfidd_stan_function_files <- function(
 #' @param functions Character vector of function names to load. Defaults to all
 #' functions.
 #'
-#' @param stan_path Character string, the path to the Stan code. Defaults to the
-#' path to the Stan code in the nfidd package.
+#' @param stan_path Character vector of directories holding Stan files, as
+#' returned by [nfidd_stan_path()]. May name more than one directory.
 #'
 #' @param wrap_in_block Logical, whether to wrap the functions in a
 #' `functions{}` block. Default is FALSE.
@@ -316,8 +335,8 @@ nfidd_load_stan_functions <- function(
 #' This function finds all available Stan models in the NFIDD package and
 #' returns their names without the .stan extension.
 #'
-#' @param stan_path Character string specifying the path to Stan files. Defaults
-#'   to the result of `nfidd_stan_path()`.
+#' @param stan_path Character vector of directories holding Stan files, as
+#'   returned by [nfidd_stan_path()]. May name more than one directory.
 #'
 #' @return A character vector of available Stan model names.
 #'
@@ -332,8 +351,8 @@ nfidd_stan_models <- function(stan_path = nfidd.nowcasting::nfidd_stan_path()) {
     recursive = FALSE
   )
 
-  # Remove .stan extension
-  model_names <- tools::file_path_sans_ext(stan_files)
+  # Remove .stan extension. The same model can sit under more than one root.
+  model_names <- unique(tools::file_path_sans_ext(stan_files))
 
   return(model_names)
 }
@@ -347,7 +366,7 @@ nfidd_stan_models <- function(stan_path = nfidd.nowcasting::nfidd_stan_path()) {
 #'   the NFIDD package. Ignored if model_file is provided.
 #' @param model_file Character string specifying the path to a custom Stan file.
 #'   If provided, this takes precedence over model_name.
-#' @param include_paths Character vector of paths to include for Stan
+#' @param include_paths Character vector of directories to include for Stan
 #'   compilation. Defaults to the result of [nfidd_stan_path()], which also
 #'   honours the "nfidd.nowcasting.stan_path" option.
 #' @param ... Additional arguments passed to cmdstanr::cmdstan_model().

@@ -7,7 +7,8 @@
 nfidd_stan_path()
 }
 \value{
-A character string with the path to the Stan code
+A character vector of directories holding the Stan code. This is a
+  single directory unless the option names more than one.
 }
 \description{
 This is the single place the Stan code is resolved, for both the models and
