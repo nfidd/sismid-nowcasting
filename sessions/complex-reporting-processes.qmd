@@ -759,14 +759,25 @@ plot(weekly_nowcast, latest_obs = weekly_latest) +
 ## Weekly-daily (structural reporting)
 
 Now we keep the *daily* process but model the fact that reports only arrive once a week.
-The idea is to build a daily grid where the cumulative count is only observed on the reporting day (here Wednesday) and carried forward on the other days, then tell the model which cells are real observations.
-We start from the daily reporting triangle we fit to, blank out the non-Wednesday cumulative counts, and let `enw_impute_na_observations()` carry the last Wednesday value forward; `enw_flag_observed_observations()` records which cells are real in a `.observed` column.
+The idea is to build a daily grid where the cumulative count is only observed on the reporting day and carried forward on the other days, then tell the model which cells are real observations.
+We start from the daily reporting triangle we fit to, blank out the cumulative counts on every other day, and let `enw_impute_na_observations()` carry the last reported value forward; `enw_flag_observed_observations()` records which cells are real in a `.observed` column.
+
+Which day we choose as the reporting day matters, and not only for realism.
+`enw_aggregate_cumulative()` anchors its weekly grid on the report dates in the data, so the weekly-weekly model already has a reporting day baked in.
+If we picked a different day here, the two models would see their last report on different dates, and the one with the older final report would be nowcasting further ahead with less information.
+Any difference between the two nowcasts would then just be that information gap rather than the modelling choice we want to compare.
+So we read the reporting day off the aggregated data rather than hard-coding it, which keeps the comparison like-for-like.
 
 ```{r weekly-daily-scaffold}
+# Both models must see their last report on the same date, or the comparison
+# below is confounded by one model simply having fresher data
+report_dow <- weekdays(max(weekly_long$report_date))
+report_dow
+
 weekly_rep_data <- enw_complete_dates(weekly_enw_long, timestep = "day")
 weekly_rep_data[, day_of_week := weekdays(report_date)]
 weekly_rep_data[
-  , confirm := fifelse(day_of_week == "Wednesday", confirm, NA_real_)
+  , confirm := fifelse(day_of_week == report_dow, confirm, NA_real_)
 ]
 weekly_rep_data <- weekly_rep_data |>
   enw_flag_observed_observations() |>
@@ -779,8 +790,8 @@ weekly_rep_pobs <- weekly_rep_data |>
   enw_preprocess_data(max_delay = 16, timestep = "day")
 ```
 
-We describe the known Wednesday-only reporting cycle with `enw_dayofweek_structural_reporting()` and pass it to `enw_report()` through its `structural` argument instead of a formula.
-Because most daily cells are imputed rather than observed, we also point the observation model at the `.observed` indicator so the likelihood only uses the real Wednesday reports.
+We describe the known once-a-week reporting cycle with `enw_dayofweek_structural_reporting()` and pass it to `enw_report()` through its `structural` argument instead of a formula.
+Because most daily cells are imputed rather than observed, we also point the observation model at the `.observed` indicator so the likelihood only uses the real reports.
 
 ```{r weekly-daily-fit, message = FALSE, results = "hide"}
 # Structural variants need a little less adapt_delta and more tree depth
@@ -793,7 +804,7 @@ fit_opts_structural <- enw_fit_opts(
 )
 
 structural <- enw_dayofweek_structural_reporting(
-  weekly_rep_pobs, day_of_week = "Wednesday"
+  weekly_rep_pobs, day_of_week = report_dow
 )
 
 weekly_daily_nowcast <- epinowcast(
@@ -821,12 +832,13 @@ For each, say what it does and what would go wrong if you left it out.
 ::: {.callout-note collapse="true"}
 ## Solution
 
-1. The structural report module encodes the known once-a-week (Wednesday) reporting schedule.
+1. The structural report module encodes the known once-a-week reporting schedule.
    Without it the model would treat the carried-forward daily values as ordinary reports and try to explain them with a smooth daily delay, misestimating both the delay and how complete the recent dates are.
-2. The observation indicator tells the likelihood to use only the cells flagged as real Wednesday reports.
-   Without it the model would treat every imputed non-Wednesday cell as a genuine observation, counting each carried-forward value as data and hugely over-weighting the reports.
-3. The daily random walk keeps a daily latent process, which is what lets the model reconstruct within-week shape from weekly reports.
-   A weekly random walk would collapse the process back to weekly resolution, giving up the one thing this approach buys over weekly-weekly.
+2. The observation indicator tells the likelihood to use only the cells flagged as real reports.
+   Without it the model would treat every imputed cell as a genuine observation, counting each carried-forward value as data and hugely over-weighting the reports.
+3. The daily random walk lets the expected counts change from one day to the next, which is what lets the model track a trend developing *within* the most recent week.
+   A weekly random walk would let them change only once a week, so the within-week trend that the weekly-weekly model misses would be largely lost again.
+   `epinowcast`'s [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) instead pairs a weekly random walk with a day-of-week effect, which is a good choice when the within-week shape is a repeating weekly pattern rather than a trend.
 :::
 
 The nowcast is now on the daily scale even though reports only arrived weekly, so we compare it against the eventually-complete daily data.
@@ -842,6 +854,9 @@ plot(weekly_daily_nowcast, latest_obs = weekly_daily_latest) +
 This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly.
 Its payoff over the weekly-weekly model is the finer daily granularity: a within-week nowcast recovered from once-a-week reports, which the weekly-weekly model cannot give.
 It will not match a nowcast fitted to truly daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.
+
+Note that we are asking a lot of the daily random walk here: it has one latent value per day but only one report per week to learn from.
+That is deliberate, because keeping the daily process is the whole point of this approach, but it is why the daily nowcast is visibly less certain than the daily nowcasts earlier in this session, which were fitted to daily reports.
 
 To compare the two directly we can aggregate the daily structural nowcast up to the same weekly buckets as the weekly-weekly model and plot them against the eventually-observed weekly totals.
 A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.
@@ -887,9 +902,12 @@ ggplot(rbind(wd_weekly, ww_weekly), aes(week, colour = model, fill = model)) +
 ```
 
 Because the nowcast sits in a steep decline, the two models disagree about the most recent, still-incomplete week (the black points are the eventually-observed totals).
-The weekly-weekly model extrapolates its short weekly random walk and overshoots the falling week, and with only a handful of weekly points its interval is narrow enough to miss the eventual total.
-The weekly-daily model keeps a daily random walk, so it tracks the within-week decline: its central estimate lands close to the eventual total, though its weekly interval is wider because seven daily values are being rebuilt from a single weekly report.
-On the earlier weeks, which are complete and not changing fast, the two agree closely.
+The weekly-weekly model has only a handful of weekly points to learn from, so its weekly random walk carries the recent level forward and overshoots the falling week.
+The weekly-daily model keeps a daily random walk, so it can see the decline happening *within* the week and its central estimate lands closer to the eventual total.
+On the earlier week, which is complete and already fully reported, the two agree closely.
+
+Both intervals do contain the eventual total here, so this is a difference in central estimate and in how much of the week's shape each model can represent, not a case of one model being flatly wrong.
+The weekly-weekly interval is the more overconfident of the two: the eventual total sits close to its lower edge, so a slightly sharper turn would have taken it outside.
 
 The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a harder fit.
 The [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) scores these approaches against a fully daily benchmark if you want to see how much each one gives up.
@@ -897,26 +915,30 @@ The [temporal aggregation guide](https://package.epinowcast.org/articles/tempora
 ::: {.callout-warning}
 ## The daily advantage is conditional
 The daily model helps here because the epidemic is changing rapidly right at the nowcast date; when the recent weeks are flat or already reported the two approaches agree, and weekly-weekly is then just as good for far less compute.
-The daily model is also harder to fit and its weekly totals carry more uncertainty, so at a very sharp turn it will not always beat weekly-weekly on the weekly total.
+The daily model is also harder to fit and its weekly totals carry more uncertainty, so on the weekly total alone it will not always beat weekly-weekly.
 What it reliably buys is resolution: a daily nowcast that keeps the within-week shape weekly aggregation discards, which matters most exactly when things are changing fast.
+
+The comparison is also only fair because we gave both models the same final report date.
+It is worth being alert to this in your own work: a nowcast that appears to lose to a simpler model is often just working from staler data, and that shows up as a wider interval and a slower response to a turning point rather than as an obvious error.
 :::
 
 ::: {.callout-note}
 ## Take 5 minutes
 Read the comparison plot (`weekly-compare`), where both weekly nowcasts are shown against the eventually-observed weekly totals (the black points).
 
-1. On the earlier, complete week the two models agree; at the most recent, still-incomplete week they diverge. Which model's central estimate lands closer to the eventual total, and which model's interval actually covers it?
-2. The weekly-daily interval is much wider at that recent week. Why, and why does that width help here?
+1. On the earlier, complete week the two models agree; at the most recent, still-incomplete week they diverge. Which model's central estimate lands closer to the eventual total, and in which direction does the other one err?
+2. Why can the weekly-daily model see the decline that the weekly-weekly model misses, given both are built from exactly the same weekly reports?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
 1. On the complete week both models sit on the eventual total, so they are indistinguishable there.
-   At the recent falling week the weekly-daily median is lower and closer to the eventual total, and its wide interval covers the truth, while the weekly-weekly interval is narrow, sits above the eventual total, and misses it.
-2. The weekly-daily weekly total is seven daily values rebuilt from a single weekly report, so it carries far more uncertainty than the weekly-weekly model, which estimates the week directly.
-   That width is honest here: with the epidemic falling fast the recent week is genuinely uncertain, and the narrow weekly-weekly interval is overconfident.
-   The daily model pays in width for the resolution and calibration it gains exactly where the epidemic is changing fastest.
+   At the recent falling week the weekly-daily median is lower and closer to the eventual total, while the weekly-weekly median sits above it: with only a handful of weekly points, its weekly random walk carries the recent level forward and overshoots a week that is falling fast.
+   Both intervals still cover the eventual total, but the weekly-weekly one only just does, with the truth near its lower edge.
+2. The two models see the same *reports*, but not at the same resolution.
+   Within one weekly release, each day of the preceding week has had a different amount of time to be reported, so the same delay distribution implies a different degree of completeness for each day.
+   The daily model uses that to reconstruct the shape *within* the week and can see the decline under way; the weekly model collapses the week to a single number and has nothing left to read the within-week trend from.
 :::
 
 # Other reporting complications
