@@ -95,7 +95,7 @@ This is the **nowcasting** course (first half of the week, Monday to Wednesday m
 - nowcasting, and joint estimation of delays and nowcasts
 - linking nowcasting and forecasting
 - modelling more complex reporting processes
-- jointly fitting multiple data streams
+- jointly fitting multiple data sources
 :::
 
 #

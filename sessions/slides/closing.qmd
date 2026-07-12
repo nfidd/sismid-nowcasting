@@ -70,13 +70,13 @@ in real time.
 
 ![](figures/reporting_triangle.png)
 
-### Jointly fitting multiple data streams {.smaller}
+### Jointly fitting multiple data sources {.smaller}
 
-- several surveillance streams are **delayed, scaled views** of the same infections
-- a **shared latent infection process**, with a swappable observation model per stream
+- several surveillance data sources are **delayed, scaled measurements** of the same infections
+- a **shared latent infection process**, with a swappable observation model per data source
 - together they constrain infections better than any one — but **conflict reveals model misspecification**
 
-![](figures/multiple-data-streams.png)
+![](figures/multiple-data-sources.png)
 
 ### Bridge: from nowcasting to forecasting {.smaller}
 
