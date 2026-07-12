@@ -36,7 +36,19 @@ website:
     - id: sessions
       title: "Sessions"
       style: "docked"
-      contents: "sessions/*.qmd"
+      contents:
+        - sessions/introduction-and-course-overview.qmd
+        - sessions/delay-distributions.qmd
+        - sessions/biases-in-delay-distributions.qmd
+        - sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic.qmd
+        - sessions/R-estimation-and-the-renewal-equation.qmd
+        - sessions/nowcasting.qmd
+        - sessions/joint-nowcasting.qmd
+        - sessions/forecasting-nowcasting.qmd
+        - sessions/multiple-data-sources.qmd
+        - sessions/complex-reporting-processes.qmd
+        - sessions/methods-in-the-real-world.qmd
+        - sessions/end-of-course-summary-and-discussion.qmd
 
 execute:
   freeze: auto
