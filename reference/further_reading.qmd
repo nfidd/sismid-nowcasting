@@ -20,6 +20,25 @@ You can also access this via Zotero in an open [living library](https://www.zote
 - @lisonGenerativeBayesianModeling2024 develops a generative model for nowcasting and $R_t$ estimation and compares its performance to an approach where the steps for estimating incidence and reproduction number are separated.
 - @stonerPowerfulModellingFramework2020 contains a nice review of different methods for nowcasting evaluates a range of methods, in addition to introducing a new approach.
 
+## Modelling workflow
+- @abbottWorkflowInfectiousDisease2026 sets out the workflow we follow when we jointly fit multiple data sources, from research question through process model and observation models to inference and model checking.
+- @gelman2020bayesian is the book behind that workflow.
+It describes the general Bayesian workflow, of which the infectious disease workflow is one instance, and goes into much more depth on prior and posterior predictive checks, model comparison and what to do when a model fails to fit.
+Read it if you want the reasoning behind the steps we take in the course.
+
+## Packages we use
+The course teaches Stan models written from scratch, but the same ideas are packaged up in tools you can use directly.
+
+- [`nfidd.nowcasting`](https://github.com/nfidd/sismid-nowcasting) is the course package.
+It holds the data, the helper functions and every Stan model shown in the sessions (see the [Stan model index](model-index.qmd)).
+- [`cmdstanr`](https://mc-stan.org/cmdstanr/) is the R interface to Stan we use to compile and fit all of our own models.
+- [`epinowcast`](https://package.epinowcast.org/) is the nowcasting package we use in the session on complex reporting processes.
+It fits the reporting triangle models we build by hand, plus day of week effects, batch reporting and time-varying delays.
+- [`primarycensored`](https://primarycensored.epinowcast.org/) handles the censoring and truncation corrections from the delay distribution sessions.
+- [`scoringutils`](https://epiforecasts.io/scoringutils/) scores probabilistic nowcasts and forecasts, as used when we combine nowcasting and forecasting.
+- [`EpiNow2`](https://epiforecasts.io/EpiNow2/) is an $R_t$ estimation and forecasting package built on the renewal equation models we develop.
+- [`EpiAware`](https://epiaware.org/) is a Julia package that builds the same models from composable parts, and is where much of this work is heading.
+
 ## References
 
 ::: {#refs}

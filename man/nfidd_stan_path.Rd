@@ -10,7 +10,13 @@ nfidd_stan_path()
 A character string with the path to the Stan code
 }
 \description{
-Get the path to Stan code
+Stan code is looked up in the package source tree when there is one above
+the working directory, and in the installed package otherwise. Rendering the
+course site, or running a session, from a clone of the course repository
+therefore uses the Stan code in that clone. Without this a model added to
+`inst/stan` is invisible to [nfidd_stan_models()] and the rest of the Stan
+tools until the package is reinstalled, so the reference pages silently
+report whichever set of models happened to be installed.
 }
 \seealso{
 Other stantools:

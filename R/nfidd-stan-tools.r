@@ -1,4 +1,45 @@
+#' Find the Stan code in a package source tree
+#'
+#' Walks up from `path` looking for the source tree of this package, i.e. a
+#' `DESCRIPTION` naming `nfidd.nowcasting` next to an `inst/stan` directory.
+#' Returns `NULL` when there is no such directory above `path`.
+#'
+#' @param path Character string, the directory to start from.
+#'
+#' @return A character string with the path to `inst/stan`, or `NULL`.
+#'
+#' @keywords internal
+.nfidd_source_stan_path <- function(path = getwd()) {
+  path <- normalizePath(path, mustWork = FALSE)
+  repeat {
+    description <- file.path(path, "DESCRIPTION")
+    stan_path <- file.path(path, "inst", "stan")
+    if (file.exists(description) && dir.exists(stan_path)) {
+      package <- tryCatch(
+        read.dcf(description, fields = "Package")[1, 1],
+        error = function(e) NA_character_
+      )
+      if (isTRUE(package == "nfidd.nowcasting")) {
+        return(stan_path)
+      }
+    }
+    parent <- dirname(path)
+    if (identical(parent, path)) {
+      return(NULL)
+    }
+    path <- parent
+  }
+}
+
 #' Get the path to Stan code
+#'
+#' Stan code is looked up in the package source tree when there is one above
+#' the working directory, and in the installed package otherwise. Rendering the
+#' course site, or running a session, from a clone of the course repository
+#' therefore uses the Stan code in that clone. Without this a model added to
+#' `inst/stan` is invisible to [nfidd_stan_models()] and the rest of the Stan
+#' tools until the package is reinstalled, so the reference pages silently
+#' report whichever set of models happened to be installed.
 #'
 #' @return A character string with the path to the Stan code
 #'
@@ -6,6 +47,10 @@
 #'
 #' @export
 nfidd_stan_path <- function() {
+  source_path <- .nfidd_source_stan_path()
+  if (!is.null(source_path)) {
+    return(source_path)
+  }
   system.file("stan", package = "nfidd.nowcasting")
 }
 
@@ -305,13 +350,13 @@ nfidd_cmdstan_model <- function(
     }
     stan_model <- model_file
   } else if (!is.null(model_name)) {
-    # Use model from NFIDD package
-    stan_model <- system.file(
-      "stan", paste0(model_name, ".stan"),
-      package = "nfidd.nowcasting"
+    # Use model from NFIDD package, taken from the same Stan code that
+    # nfidd_stan_models() lists rather than always from the installed package
+    stan_model <- file.path(
+      nfidd.nowcasting::nfidd_stan_path(), paste0(model_name, ".stan")
     )
 
-    if (stan_model == "") {
+    if (!file.exists(stan_model)) {
       stop(sprintf("Model '%s.stan' not found in NFIDD package", model_name))
     }
   } else {

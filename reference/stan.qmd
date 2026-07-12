@@ -98,6 +98,21 @@ Stan uses the No-U-TURN sampler a form of Hamiltonian Monte Carlo sampler to eff
 This has been shown to be efficient across a wide range of models
 It's main limitation is that it doesn't support discrete latent parameters.
 
+::: {.callout-tip collapse="true"}
+## How does simple MCMC work?
+
+Metropolis-Hastings is the simplest version, and every other flavour is a refinement of it.
+
+- Start at some value of $\theta$.
+- Propose a nearby value.
+- Work out how much more or less probable the proposal is than where you are, using the likelihood times the prior.
+- Always move if the proposal is more probable, and move with that probability if it is less probable.
+- Record where you are and repeat.
+
+Keeping the less probable moves some of the time is what makes the chain spend time in each region in proportion to its posterior probability, so the recorded path is a set of samples from the posterior.
+Hamiltonian Monte Carlo makes the same walk, but uses the gradient of the posterior to propose distant values that are still probable, which is why it needs many fewer steps.
+:::
+
 ## 3. Stan Basics for This Course
 
 ### Model Structure
@@ -195,6 +210,7 @@ quantile(prior_delays, c(0.025, 0.5, 0.975))
 - Do the parameter estimates make sense?
 
 Use posterior predictive checks to see if your model can reproduce data similar to what you observed:
+
 - Does it capture the central tendency of the data?
 - Does it get the right amount of variability?
 - Can it reproduce extreme values appropriately?
