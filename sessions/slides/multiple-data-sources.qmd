@@ -84,38 +84,6 @@ A *Bayesian workflow* is the iterative loop of **building**, **checking**, and *
 
 4. **Observation model per source** — a delay + a scaling + a likelihood
 
-### Modularise & validate
-
-![](figures/workflow-diagram.png){height="340px"}
-
-5. **Modularise & validate** — check each sub-model on its own before combining
-
-### Data integration choices
-
-![](figures/workflow-diagram.png){height="340px"}
-
-6. **Data integration choices** — how to combine the data sources; conflict reveals misspecification
-
-### Inference, checking & iteration
-
-![](figures/workflow-diagram.png){height="340px"}
-
-7. **Inference, checking & iteration** — fit, check, revise
-
-### One outbreak, several data sources
-
-So far: estimate $R_t$ from a *single* observed time series.
-
-In reality we watch an outbreak through *several* data sources at once:
-
-- **Cases** — timely, but depend on testing; only a fraction ascertained
-- **Deaths** — stable, but long-delayed and severity-dependent
-- **Wastewater** — independent of care-seeking, but indirect, noisy, and on its own scale
-
-### The question
-
-Our target is unchanged: recover the latent **infections** and **$R_t$** as quickly and with as little bias as we can.
-
 ### What is a DAG?
 
 A **directed acyclic graph** draws a model as a picture.
@@ -126,6 +94,48 @@ Each quantity is a **node**, and an **arrow** runs from a quantity to whatever i
 
 The DAG *is* the TLDR of the model.
 
+### Modularise
+
+![](figures/workflow-diagram.png){height="340px"}
+
+5. **Modularise** — split into sub-models that can be checked on their own
+
+### Inference & computation choices
+
+![](figures/workflow-diagram.png){height="340px"}
+
+6. **Inference & computation choices** — how to fit the model
+
+### Implementation
+
+![](figures/workflow-diagram.png){height="340px"}
+
+7. **Implementation** — write the model
+
+### Model validation
+
+![](figures/workflow-diagram.png){height="340px"}
+
+8. **Model validation** — check each piece against data
+
+### Data integration
+
+![](figures/workflow-diagram.png){height="340px"}
+
+9. **Data integration** — how to combine the data sources; conflict reveals misspecification
+
+### The question
+
+Our target is unchanged: recover the latent **infections** and **$R_t$** as quickly and with as little bias as we can.
+
+### Now we introduce our data sources
+
+To answer that question we bring in *several* data sources at once, each a delayed, scaled view of the same infections:
+
+- **Cases** — timely, but depend on testing; only a fraction ascertained
+- **Deaths** — stable, but long-delayed and severity-dependent
+- **Wastewater** — independent of care-seeking; *thought to lead* cases, but indirect, noisy, and on its own scale
+
 ## Wastewater: a tangent
 
 ### What is wastewater surveillance? {.smaller}
@@ -135,7 +145,7 @@ Measuring pathogen RNA shed into sewage — a **population-level** signal.
 Why people are interested:
 
 - Does **not** depend on testing, care-seeking, or ascertainment
-- Can **lead** case reports, and picks up **asymptomatic** infection
+- **Thought to lead** case reports, and picks up **asymptomatic** infection
 - Relatively **cheap** at scale (one sample covers a whole catchment)
 
 . . .
@@ -144,7 +154,7 @@ Challenges: it is **noisy** and **indirect**, and needs **scaling / normalisatio
 
 ### A DAG for wastewater
 
-Even one data source hides a chain of steps. From infections to what we measure:
+From infections to what we measure:
 
 ```{=html}
 <div style="display:flex;justify-content:center;margin-top:0.4em;">
@@ -179,8 +189,6 @@ Even one data source hides a chain of steps. From infections to what we measure:
 </svg>
 </div>
 ```
-
-Our model collapses this whole chain into *one delay + one scaling + log-normal noise*.
 
 ## Back to joint modelling
 
@@ -218,9 +226,9 @@ obs |>
 
 Each data source is a delayed, rescaled echo of the same infection curve.
 
-### Parallel observation of shared infections {.smaller}
+### Steps 2–4 in one picture {.smaller}
 
-*One* way to combine them: every data source is its own convolution *of the shared latent infections*, conditionally independent given $I$.
+We defined the **question** (step 1). This is **steps 2–4**: the shared process, the data sources, and an observation model for each — every data source a convolution of the shared latent infections, conditionally independent given $I$.
 
 $$
 \text{cases}_t \sim f\big(\text{convolve}(I, p_\text{cases})\big), \quad
@@ -264,8 +272,6 @@ $$
 
 ### Build it in parts
 
-One Stan model, three `use_*` switches — fit any subset of data sources:
-
 1. **Each data source on its own** — does it recover infections through its delay and scaling?
 2. **Link two data sources** — cases + deaths share one infection process
 3. **Add the third** — wastewater too; infections and $R_t$ informed by all
@@ -276,8 +282,6 @@ One Stan model, three `use_*` switches — fit any subset of data sources:
 :::: {.columns}
 
 ::: {.column width="42%"}
-Data sources **conflict** when those implied trajectories can't both come from one $R_t$ path:
-
 - changing ascertainment (testing policy)
 - mis-specified delays or scalings (e.g. drifting IFR)
 - truly different populations
@@ -326,7 +330,7 @@ ggplot(fork, aes(day, infections, colour = stream)) +
 
 ### Conflict distorts the joint fit
 
-A single shared $I$ can't be both falling (cases, wastewater) and rising (deaths), so the model **splits the difference** — and $R_t$ is faithful to no data source.
+A single shared $I$ can't be both falling (cases, wastewater) and rising (deaths), so the model **splits the difference**.
 
 ```{r conflict-distort, echo = FALSE, fig.width = 11, fig.height = 5}
 ## Schematic: the shared fit is pulled away from the true (declining) trajectory

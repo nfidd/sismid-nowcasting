@@ -83,9 +83,13 @@ The point is not to memorise it but to take from it an order of work: according 
 2.  **Process model.** A single shared epidemic process, a geometric random walk on $R_t$ feeding the renewal equation, so there is *one* infection trajectory underneath everything (next section).
 3.  **Data source selection.** Catalogue the data sources available to us (cases, deaths, wastewater) and what each one measures and how it is biased.
 4.  **Observation model per source.** For *each* data source, a delay (infection to observation), a scaling (what fraction of infections, on what scale) and a likelihood. These are separate sub-models, one per data source.
-5.  **Modularisation and validation.** Break the model into those sub-models and check each on its own, fitting each data source to see whether it recovers the shared process before we combine anything.
-6.  **Data integration choices.** Only once the pieces work do we choose how to combine the per-source observation models. The diagram flags two things here: the *choice* of how to integrate sources, and a feedback arrow warning that *conflict between data sources reveals model misspecification*.
-7.  **Inference, checking and revision.** Fit the combined model, check it against each data source, and let identifiability problems or conflict between sources send us back to revise it.
+5.  **Modularisation.** Break the model into those sub-models so each can be built and checked on its own.
+6.  **Inference and computation choices.** How we fit the model (here, Hamiltonian Monte Carlo via Stan).
+7.  **Implementation.** Write the model, mapping each DAG component to code.
+8.  **Model validation.** Check each piece against data, fitting each data source on its own to see whether it recovers the shared process before we combine anything.
+9.  **Data integration.** Only once the pieces work do we choose how to combine the per-source observation models. The diagram flags two things here: the *choice* of how to integrate sources, and a feedback arrow warning that *conflict between data sources reveals model misspecification*.
+
+We work through these in the session, revising earlier steps as later ones send us back.
 
 # The process model
 
