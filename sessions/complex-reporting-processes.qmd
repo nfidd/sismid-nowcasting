@@ -771,11 +771,14 @@ So we read the reporting day off the aggregated data rather than hard-coding it,
 ```{r weekly-daily-scaffold}
 # Both models must see their last report on the same date, or the comparison
 # below is confounded by one model simply having fresher data
-report_dow <- weekdays(max(weekly_long$report_date))
+report_dow <- weekdays(max(weekly_long$report_date, na.rm = TRUE))
 report_dow
 
 weekly_rep_data <- enw_complete_dates(weekly_enw_long, timestep = "day")
 weekly_rep_data[, day_of_week := weekdays(report_date)]
+# If the reporting day were absent from the daily grid we would blank every
+# count and fit to nothing, so fail loudly rather than silently
+stopifnot(report_dow %in% weekly_rep_data$day_of_week)
 weekly_rep_data[
   , confirm := fifelse(day_of_week == report_dow, confirm, NA_real_)
 ]
@@ -937,8 +940,9 @@ Read the comparison plot (`weekly-compare`), where both weekly nowcasts are show
    At the recent falling week the weekly-daily median is lower and closer to the eventual total, while the weekly-weekly median sits above it: with only a handful of weekly points, its weekly random walk carries the recent level forward and overshoots a week that is falling fast.
    Both intervals still cover the eventual total, but the weekly-weekly one only just does, with the truth near its lower edge.
 2. The two models see the same *reports*, but not at the same resolution.
-   Within one weekly release, each day of the preceding week has had a different amount of time to be reported, so the same delay distribution implies a different degree of completeness for each day.
-   The daily model uses that to reconstruct the shape *within* the week and can see the decline under way; the weekly model collapses the week to a single number and has nothing left to read the within-week trend from.
+   A weekly release still breaks its counts down by the day the event happened, so one Monday report already carries a count for each daily reference date, not a single weekly total.
+   The weekly-daily model keeps that daily breakdown, so it can see the decline under way within the week; the weekly-weekly model aggregates those same daily counts into one weekly bucket and then has nothing left to read a within-week trend from.
+   Completeness is what the model then has to correct for: each day of the recent week has had a different amount of time to be reported, so the delay distribution tells the model how much is still missing from each day's count.
 :::
 
 # Other reporting complications
