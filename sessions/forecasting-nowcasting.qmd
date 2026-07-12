@@ -1,6 +1,6 @@
 ---
 title: "Combining nowcasting and forecasting"
-order: 14
+order: 7
 bibliography: ../nfidd.bib
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: "Using delay distributions to model the data generating process"
-order: 4
+order: 3
 bibliography: ../nfidd.bib
 ---
 

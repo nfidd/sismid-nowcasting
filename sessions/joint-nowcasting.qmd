@@ -1,6 +1,6 @@
 ---
 title: "Nowcasting with an unknown reporting delay"
-order: 6.5
+order: 6
 bibliography: ../nfidd.bib
 ---
 
