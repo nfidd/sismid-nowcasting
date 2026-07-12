@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 A course and living resource for learning about nowcasting of infectious disease dynamics, originally developed by the [nfidd](https://nfidd.github.io/nfidd) team and adapted for [SISMID](https://sismid.sph.emory.edu/).
 
-This course runs in the **first half of the SISMID week (Monday to Wednesday midday)** and covers delay distributions, biases in delays, the renewal equation and $R_t$ estimation, and nowcasting, building up to a bridge into forecasting.
+This course runs in the **first half of the SISMID week** and covers delay distributions, biases in delays, the renewal equation and $R_t$ estimation, and nowcasting, building up to a bridge into forecasting.
 
 It is one of a pair of SISMID courses: this **Nowcasting & $R_t$ estimation** course covers the first half of the week, and the companion [Forecasting & evaluation](https://nfidd.github.io/sismid-forecasting/) course covers the second half. See the [umbrella SISMID course](https://nfidd.github.io/sismid/) for the combined material.
 
