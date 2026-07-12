@@ -38,6 +38,7 @@ library("dplyr")
 library("tidyr")
 library("ggplot2")
 library("tidybayes")
+library("ggdist")
 library("purrr")
 ```
 
@@ -128,7 +129,28 @@ Each data source will be one of the branches in the DAG we design next, and revi
 
 Each is a delayed, scaled and noisy window on the *same* infections, which is what makes combining them worthwhile: the timely data sources sharpen the recent trajectory while the stable ones anchor the level.
 
+::: {.callout-tip}
+## Take a few minutes
+
+If you could only bring in these data sources *one at a time*, in what order would you investigate them, and why?
+:::
+
+::: {.callout-note collapse="true"}
+## Solution
+
+There is no single right answer: it depends on timeliness, how easily you can get the data, and what stakeholders will act on.
+
+- **Deaths** are the most stable and least noisy, so they are often the safest first choice.
+- **Cases** are the more traditional starting point and are timely, though noisier and dependent on testing.
+- **Wastewater** is attractive but is not grounded to anything directly actionable for public health, so it often comes last.
+:::
+
 # Designing a DAG of the observation process
+
+With the data sources catalogued, the next step is to draw those relationships as a directed acyclic graph (DAG): a picture of how each quantity generates the next, from the shared process at the top down to the observations at the bottom.
+For our question the DAG is small.
+A geometric random walk on $R_t$ drives a single shared latent infection series $I$ through the renewal equation.
+Each data source then takes that *same* $I$, passes it through its own delay and scaling to give an expected signal, and observes that signal through its own likelihood: cases as overdispersed (negative binomial) counts, deaths as Poisson counts, wastewater as a log-normal concentration.
 
 ::: {.callout-note}
 ## What is a DAG?
@@ -139,11 +161,6 @@ Reading the arrows off the graph shows how the data are generated and makes the 
 A model DAG is, in effect, the TLDR of the model.
 See @abbottWorkflowInfectiousDisease2026 for how DAGs structure process and observation models in a state-space framework.
 :::
-
-With the data sources catalogued, the next step is to draw those relationships as a directed acyclic graph (DAG): a picture of how each quantity generates the next, from the shared process at the top down to the observations at the bottom.
-For our question the DAG is small.
-A geometric random walk on $R_t$ drives a single shared latent infection series $I$ through the renewal equation.
-Each data source then takes that *same* $I$, passes it through its own delay and scaling to give an expected signal, and observes that signal through its own likelihood: cases as overdispersed (negative binomial) counts, deaths as Poisson counts, wastewater as a log-normal concentration.
 
 ```{=html}
 <figure style="margin:1.2em 0;">
@@ -192,25 +209,10 @@ Each data source then takes that *same* $I$, passes it through its own delay and
 </figure>
 ```
 
-## Breaking the DAG into components
-
-The workflow's next step is to break that DAG into modular components, or sub-models.
-Ours splits cleanly: the shared process (the $R_t$ random walk and the renewal equation) is one module, and each data source's delay-scaling-likelihood branch is another, self-contained module hanging off the shared infections.
-That decomposition is exactly what lets us **build the model in parts** rather than in one leap: we can bring in one branch at a time and check it before adding the next.
-
-::: {.callout-note}
-## Top-down vs bottom-up
-
-We are working *top-down* here: sketch the full model we would ideally like, then build it up in parts.
-That is not the only order.
-A perfectly valid *bottom-up* alternative is to start from the smallest subset of data you actually need to answer the question, design a DAG for just that, and add components as more data (or more need) arrives.
-The two meet in the middle; which you prefer often comes down to whether you already know the full picture or are discovering it as you go.
-:::
-
 ::: {.callout-note .optional collapse="true"}
 ## Parallel (joint) vs sequential modelling
 
-The "data integration choices" box hides a decision about how the data sources relate to each other.
+The DAG above is *one* choice of how the data sources relate to each other; it is worth being explicit about the alternative.
 
 In a **parallel** model -- the approach we use in this session -- every data source is its own convolution *of the shared latent infections*, and the data sources are *conditionally independent given those infections*.
 Schematically:
@@ -244,6 +246,21 @@ These keep some sequential structure without pretending that a reported data sou
 
 The trade-off is really about the validity of that generative assumption rather than about one formulation having uniquely good diagnostics or uncertainty; you can diagnose conflict and propagate uncertainty under any of them.
 We use the **parallel** formulation throughout, which keeps the infection process as the one shared quantity that every data source informs and avoids privileging any single data source, but a sequential or intermediate linkage can be the right choice when the chain genuinely holds, for example when a downstream count really is a subset of an upstream one.
+:::
+
+## Breaking the DAG into components
+
+The workflow's next step is to break that DAG into modular components, or sub-models.
+Ours splits cleanly: the shared process (the $R_t$ random walk and the renewal equation) is one module, and each data source's delay-scaling-likelihood branch is another, self-contained module hanging off the shared infections.
+That decomposition is exactly what lets us **build the model in parts** rather than in one leap: we can bring in one branch at a time and check it before adding the next.
+
+::: {.callout-note}
+## Top-down vs bottom-up
+
+We are working *top-down* here: sketch the full model we would ideally like, then build it up in parts.
+That is not the only order.
+A perfectly valid *bottom-up* alternative is to start from the smallest subset of data you actually need to answer the question, design a DAG for just that, and add components as more data (or more need) arrives.
+The two meet in the middle; which you prefer often comes down to whether you already know the full picture or are discovering it as you go.
 :::
 
 # Simulating a shared infection trajectory
@@ -348,7 +365,7 @@ if (use_deaths) {
 }
 ```
 1. Cases: overdispersed (negative binomial) counts of the expected cases (the cases observation node). Reporting noise usually exceeds the Poisson, so cases get an extra overdispersion parameter; the reciprocal-overdispersion form near zero recovers the Poisson.
-2. Deaths: Poisson counts of the expected deaths. We will meet the wastewater likelihood, which is log-normal, when we add that data source.
+2. Deaths: Poisson counts of the expected deaths. Wastewater is a log-normal likelihood on the log concentration (in the maths below); we switch it on in Part 3.
 
 ::: {.callout-note collapse="true"}
 ## Mathematical definition
@@ -506,20 +523,18 @@ prior_pp <- bind_rows(
   ungroup() |>
   ## the most explosive prior draws overflow the count RNG to NA; drop them
   filter(is.finite(.value)) |>
-  group_by(source, day) |>
-  median_qi(.value, .width = 0.9) |>
+  ## clip draws for display -- the bands really extend far higher
   left_join(caps, by = "source") |>
-  mutate(.upper = pmin(.upper, cap))
+  mutate(.value = pmin(.value, cap))
 
 ggplot(prior_pp, aes(x = day, y = .value)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), fill = "#9ecae1",
-              alpha = 0.7) +
-  geom_line(colour = "#08519c", linewidth = 0.8) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_point(data = prior_obs, aes(y = value), colour = "red", size = 0.8) +
   facet_wrap(~source, scales = "free_y") +
   labs(title = "Prior predictive check: cases and deaths",
-       subtitle = paste("Prior median and 90% band (blue, clipped at top --",
-                        "it extends far higher) vs simulated data (red)"),
+       subtitle = paste("Prior 30/60/90% bands (blue, clipped for display --",
+                        "they extend far higher) vs simulated data (red)"),
        x = "Day", y = NULL)
 ```
 
@@ -578,16 +593,14 @@ single_inf <- bind_rows(
   fit_cases  |> gather_draws(infections[day]) |> mutate(model = "cases only"),
   fit_deaths |> gather_draws(infections[day]) |> mutate(model = "deaths only")
 ) |>
-  ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
   ungroup()
 
-ggplot(single_inf, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+ggplot(single_inf, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   facet_wrap(~model) +
-  labs(title = "Infections from single-source fits (grey) vs truth (red)",
+  labs(title = "Infections from single-source fits (bands) vs truth (red)",
        x = "Day", y = "Infections")
 ```
 
@@ -600,18 +613,15 @@ single_r <- bind_rows(
   fit_cases  |> gather_draws(R[day]) |> mutate(model = "cases only"),
   fit_deaths |> gather_draws(R[day]) |> mutate(model = "deaths only")
 ) |>
-  ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
   ungroup()
 
-ggplot(single_r, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+ggplot(single_r, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model) +
-  coord_cartesian(ylim = c(0, 3)) +
-  labs(title = "Rt from single-source fits (sampled trajectories)",
-       x = "Day", y = "Rt")
+  coord_cartesian(ylim = c(0, 2)) +
+  labs(title = "Rt from single-source fits", x = "Day", y = "Rt")
 ```
 
 ::: {.callout-tip}
@@ -627,7 +637,7 @@ What does the long infection-to-death delay do to the deaths-only fit near the p
 
 The cases-only fit constrains the recent infections relatively well, because the infection-to-report delay is short, so recent infections still feed into observed cases.
 The deaths-only fit is much more uncertain near the present: with a long infection-to-death delay, recent infections have barely begun to show up in deaths, so the most recent infections are informed almost entirely by the prior.
-Each data source is a valid but partial view of the same infections, which is why combining them is attractive.
+The longer, more dispersed death delay also blurs *sharp changes*, so turning points (when infections peak and turn over) are timed less precisely from deaths than from the timelier cases.
 :::
 
 ## Part 2: link cases and deaths through the shared infections
@@ -648,13 +658,13 @@ By linking the timely cases with the stable (if delayed) deaths, the two data so
 ```{r plot_two}
 two_inf <- fit_cd |>
   gather_draws(infections[day]) |>
-  ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  ungroup()
 
-ggplot(two_inf, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+ggplot(two_inf, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
-  labs(title = "Infections, cases + deaths jointly (grey) vs truth (red)",
+  labs(title = "Infections, cases + deaths jointly (bands) vs truth (red)",
        subtitle = "Two data sources sharing one latent infection process")
 ```
 
@@ -663,15 +673,14 @@ The two-source fit gives us $R_t$ as well, now informed by both data sources at 
 ```{r plot_two_r}
 two_r <- fit_cd |>
   gather_draws(R[day]) |>
-  ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  ungroup()
 
-ggplot(two_r, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+ggplot(two_r, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  coord_cartesian(ylim = c(0, 3)) +
-  labs(title = "Rt, cases + deaths jointly (sampled trajectories)",
-       x = "Day", y = "Rt")
+  coord_cartesian(ylim = c(0, 2)) +
+  labs(title = "Rt, cases + deaths jointly", x = "Day", y = "Rt")
 ```
 
 ## Part 3: introduce wastewater and fit it on its own
@@ -702,7 +711,7 @@ Dedicated tools build these steps explicitly.
 See `EpiSewer` [@lisonRobustRealtimeEstimation2025; @lisonEpiSewer2025] and the CDC `ww-inference-model` [@johnsonWwinference2026], a fuller version of this kind of model that jointly fits wastewater and hospital admissions from a hierarchical renewal process [@johnsonBayesianGenerative2026], to go further.
 :::
 
-This is the third data source's observation node, the one likelihood we deferred earlier.
+This is the third data source's observation node.
 It is the same delay-scaling-then-observe pattern as the count data sources, but with a log-normal likelihood rather than Poisson:
 
 ```stan
@@ -756,13 +765,13 @@ fit_ww <- fit_streams(ww_data, use_cases = 0, use_deaths = 0, use_ww = 1)
 ```{r plot_ww}
 ww_inf <- fit_ww |>
   gather_draws(infections[day]) |>
-  ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  ungroup()
 
-ggplot(ww_inf, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+ggplot(ww_inf, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
-  labs(title = "Infections, wastewater only (grey) vs truth (red)",
+  labs(title = "Infections, wastewater only (bands) vs truth (red)",
        subtitle = "A short-delay data source on its own scale")
 ```
 
@@ -788,8 +797,7 @@ We extract the posterior for the shared infections and reproduction number from 
 ```{r posteriors}
 posteriors <- fit |>
   gather_draws(infections[day], R[day]) |>
-  ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  ungroup()
 ```
 
 The infections are now informed by all three data sources at once:
@@ -797,15 +805,16 @@ The infections are now informed by all three data sources at once:
 ```{r plot_inf}
 inf_posterior <- posteriors |>
   filter(.variable == "infections")
-ggplot(inf_posterior, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+ggplot(inf_posterior, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
-  labs(title = "Infections, estimated (grey) and true (red)",
+  labs(title = "Infections, estimated (bands) and true (red)",
        subtitle = "Joint model fit to cases, deaths and wastewater")
 ```
 
 and so is the reproduction number.
-Rather than plot it on its own, we compare $R_t$ as we build up the model, overlaying the cases + deaths fit, the wastewater-only fit, and the full three-source fit:
+Rather than plot it on its own, we compare $R_t$ as we build up the model, side by side for the cases + deaths fit, the wastewater-only fit, and the full three-source fit:
 
 ```{r plot_r}
 r_progression <- bind_rows(
@@ -816,21 +825,17 @@ r_progression <- bind_rows(
   ungroup() |>
   mutate(model = factor(
     model, levels = c("cases + deaths", "wastewater only", "all three")
-  )) |>
-  group_by(model, day) |>
-  median_qi(.value, .width = 0.9)
+  ))
 
-ggplot(r_progression, aes(x = day, y = .value, colour = model, fill = model)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.15, colour = NA) +
-  geom_line(linewidth = 0.9) +
+ggplot(r_progression, aes(x = day, y = .value)) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  scale_colour_brewer(palette = "Set1") +
-  scale_fill_brewer(palette = "Set1") +
-  coord_cartesian(ylim = c(0, 3)) +
+  facet_wrap(~model) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt as we add data sources",
-       subtitle = "Posterior median and 90% credible interval from each fit",
-       x = "Day", y = "Rt", colour = NULL, fill = NULL) +
-  theme(legend.position = "bottom")
+       subtitle = "30/60/90% credible intervals from each fit",
+       x = "Day", y = "Rt")
 ```
 
 ## Checking the joint fit against every data source
@@ -838,7 +843,7 @@ ggplot(r_progression, aes(x = day, y = .value, colour = model, fill = model)) +
 *Workflow stage: model checking.*
 Before we trust the joint fit we should check it reproduces each data source it was fitted to.
 The model gives us posterior predictive draws for each data source (`pp_cases`, `pp_deaths`, `pp_ww`): simulated observations *with* each data source's own observation noise, so we can compare them like for like with the data.
-We overlay sampled predictive trajectories for the shared infections and all three data sources against the simulated data.
+We overlay posterior predictive bands for the shared infections and all three data sources against the simulated data.
 
 ```{r ppc_streams}
 levels_ppc <- c("infections", "cases", "deaths", "wastewater")
@@ -848,9 +853,6 @@ ppc_streams <- bind_rows(
   fit |> gather_draws(pp_deaths[day])  |> mutate(stream = "deaths"),
   fit |> gather_draws(pp_ww[day])      |> mutate(stream = "wastewater")
 ) |>
-  ungroup() |>
-  group_by(stream) |>
-  filter(.draw %in% sample(.draw, 100)) |>
   ungroup() |>
   mutate(stream = factor(stream, levels = levels_ppc))
 
@@ -863,13 +865,13 @@ observed_streams <- bind_rows(
   mutate(stream = factor(stream, levels = levels_ppc))
 
 ggplot(ppc_streams, aes(x = day, y = .value)) +
-  geom_line(aes(group = .draw), alpha = 0.1) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_point(data = observed_streams, aes(y = value),
              colour = "red", size = 0.6) +
   facet_wrap(~stream, scales = "free_y") +
   labs(title = "Posterior predictive check: infections and each data source",
-       subtitle = paste("Sampled trajectories with observation error (grey)",
-                        "vs simulated data (red)"),
+       subtitle = "30/60/90% predictive bands (blue) vs simulated data (red)",
        x = "Day", y = NULL)
 ```
 
@@ -948,8 +950,6 @@ rt_snapshots <- map_dfr(cutoffs, function(ct) {
     fit_at_cutoff(ct, f[1], f[2], f[3], adapt_delta = ad) |>
       gather_draws(R[day]) |>
       ungroup() |>
-      group_by(day) |>
-      median_qi(.value, .width = 0.9) |>
       mutate(model = nm)
   }) |>
     mutate(cutoff = ct)
@@ -966,30 +966,56 @@ rt_snapshots <- map_dfr(cutoffs, function(ct) {
 We put both snapshots on one figure, coloured by cutoff and faceted into a 2 x 3 grid of single sources (top row) and pairs (bottom row), so that within each panel we can read the real-time (day 20) estimate against the retrospective (day 40) goal.
 
 ```{r realtime_plot, fig.width = 10, fig.height = 6}
-ggplot(rt_snapshots, aes(x = day, y = .value,
-                         colour = cutoff_label, fill = cutoff_label)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.15, colour = NA) +
-  geom_line(linewidth = 0.8) +
+ggplot(rt_snapshots, aes(x = day, y = .value, fill = cutoff_label)) +
+  stat_lineribbon(aes(fill_ramp = after_stat(level)),
+                  .width = c(0.3, 0.6, 0.9), colour = NA) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model, nrow = 2) +
-  scale_colour_brewer(palette = "Set1") +
-  scale_fill_brewer(palette = "Set1") +
-  coord_cartesian(ylim = c(0, 3)) +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Real-time (day 20) vs retrospective (day 40) Rt",
-       subtitle = paste("Median and 90% CI; each fit uses only data up to its",
+       subtitle = paste("30/60/90% CIs; each fit uses only data up to its",
                         "cutoff, with the day-40 estimate the retrospective goal"),
-       x = "Day", y = "Rt", colour = NULL, fill = NULL) +
+       x = "Day", y = "Rt") +
+  theme(legend.position = "bottom")
+```
+
+The grid leaves out the full model, so we fit all three data sources together at each cutoff and show it on its own.
+
+```{r realtime_joint, results = 'hide', message = FALSE}
+rt_joint <- map_dfr(cutoffs, function(ct) {
+  fit_at_cutoff(ct, 1, 1, 1, adapt_delta = 0.95) |>
+    gather_draws(R[day]) |>
+    ungroup() |>
+    mutate(cutoff = ct)
+}) |>
+  mutate(cutoff_label = factor(
+    if_else(cutoff == 20, "real-time (day 20)", "retrospective (day 40)"),
+    levels = c("real-time (day 20)", "retrospective (day 40)")
+  ))
+```
+
+```{r realtime_joint_plot}
+ggplot(rt_joint, aes(x = day, y = .value, fill = cutoff_label)) +
+  stat_lineribbon(aes(fill_ramp = after_stat(level)),
+                  .width = c(0.3, 0.6, 0.9), colour = NA) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  coord_cartesian(ylim = c(0, 2)) +
+  labs(title = "Real-time vs retrospective Rt: full three-source model",
+       x = "Day", y = "Rt") +
   theme(legend.position = "bottom")
 ```
 
 ::: {.callout-tip}
 ## Take 5 minutes
 
-The grid shows six models, three single sources (top row) and three pairs (bottom row), at both cutoffs.
+The grid shows six models, three single sources (top row) and three pairs (bottom row), at both cutoffs, and the plot below adds the full three-source model.
 In each panel compare the real-time (day 20) band with the retrospective (day 40) band over their overlapping days.
 
 - Which *single* source's day-20 estimate lands closest to its day-40 goal?
 - Which *pair* does best, and what does adding a second source do to the day-20 estimate?
+- Does the full three-source model beat the best pair in real time?
 :::
 
 ::: {.callout-note collapse="true"}
@@ -1055,23 +1081,19 @@ We compare the $R_t$ estimates from the consistent and conflicting fits.
 r_consistent <- fit |>
   gather_draws(R[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100)) |>
   mutate(data = "consistent")
 
 r_conflict <- fit_conflict |>
   gather_draws(R[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100)) |>
   mutate(data = "conflicting deaths")
 
-ggplot(
-  rbind(r_consistent, r_conflict),
-  aes(x = day, y = .value, group = .draw, colour = data)
-) +
-  geom_line(alpha = 0.1) +
+ggplot(rbind(r_consistent, r_conflict), aes(x = day, y = .value, fill = data)) +
+  stat_lineribbon(aes(fill_ramp = after_stat(level)),
+                  .width = c(0.3, 0.6, 0.9), colour = NA) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  scale_colour_brewer(palette = "Set1") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt under consistent vs conflicting data sources") +
   theme(legend.position = "bottom")
 ```
@@ -1088,9 +1110,9 @@ Is the result closer to the "true" declining $R_t$, the rising signal implied by
 
 <!-- verified against the rendered consistent-vs-conflicting figure -->
 
-- **Direction.** The conflicting-deaths fit pulls $R_t$ in the second half of the outbreak *upwards*, away from the true declining trajectory.
-- **Why.** One shared infection process cannot be both declining (to match cases and wastewater) and rising (to match deaths), so the model splits the difference.
-- **Result.** The joint $R_t$ ends up *between* the two signals, faithful to no single data source.
+- **Direction.** Through the *early* part of the second half the conflicting-deaths fit pulls $R_t$ *upwards*, away from the true declining trajectory, as it tries to accommodate the rising deaths. Later it over-compensates and dips *below* the consistent fit.
+- **Why.** One shared infection process cannot be both declining (to match cases and wastewater) and rising (to match deaths), so the model splits the difference and the compromise wanders either side of the truth.
+- **Result.** The joint $R_t$ is faithful to no single data source: neither the true declining path nor the rising one the deaths imply.
 :::
 
 ::: {.callout-tip .optional collapse="true"}
@@ -1113,14 +1135,11 @@ It shows up in three linked ways, and a principled workflow looks for all of the
 **1. Poor fit to one data source.**
 The clearest symptom is a *posterior predictive check*: simulate each data source from the fitted model, *with* its observation noise, and overlay it on the data.
 Because the shared infections are dragged towards a compromise, at least one data source ends up fitted badly.
-We draw the posterior predictive counts for each data source (`pp_cases`, `pp_deaths`, from each data source's own likelihood) and compare sampled trajectories to the conflicting data.
+We draw the posterior predictive counts for each data source (`pp_cases`, `pp_deaths`, from each data source's own likelihood) and compare the predictive bands to the conflicting data.
 
 ```{r ppc_conflict}
 pp_conflict <- fit_conflict |>
   gather_draws(pp_cases[day], pp_deaths[day]) |>
-  ungroup() |>
-  group_by(.variable) |>
-  filter(.draw %in% sample(.draw, 100)) |>
   ungroup()
 
 obs_long <- obs_conflict |>
@@ -1129,15 +1148,16 @@ obs_long <- obs_conflict |>
   mutate(.variable = paste0("pp_", stream))
 
 ggplot(pp_conflict, aes(x = day, y = .value)) +
-  geom_line(aes(group = .draw), alpha = 0.1) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_point(data = obs_long, aes(y = value), colour = "red", size = 0.6) +
   facet_wrap(~.variable, scales = "free_y") +
   labs(title = "Posterior predictive fit under conflicting data sources",
-       subtitle = "Sampled predictive trajectories (grey) vs observed (red)",
+       subtitle = "30/60/90% predictive bands (blue) vs observed (red)",
        x = "Day", y = NULL)
 ```
 
-The compromise infection trajectory cannot match both data sources: typically the predictive draws systematically *under*-shoot the late, rising deaths while *over*-shooting the declining cases (or vice versa), with the data points drifting outside the spread of trajectories on one or both panels.
+The compromise infection trajectory cannot match both data sources: typically the predictive draws systematically *under*-shoot the late, rising deaths while *over*-shooting the declining cases (or vice versa), with the data points drifting outside the predictive bands on one or both panels.
 A consistent run of points on one side of the predictive draws for a single data source is the tell-tale sign that that data source is fighting the others.
 
 **2. Tension in the shared latent infections.**
@@ -1206,9 +1226,6 @@ ppc_for <- function(fit, label) {
   fit |>
     gather_draws(pp_cases[day], pp_deaths[day]) |>
     ungroup() |>
-    group_by(.variable) |>
-    filter(.draw %in% sample(.draw, 100)) |>
-    ungroup() |>
     mutate(model = label)
 }
 
@@ -1218,11 +1235,12 @@ resolved_draws <- bind_rows(
 )
 
 ggplot(resolved_draws, aes(x = day, y = .value)) +
-  geom_line(aes(group = .draw), alpha = 0.1) +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_point(data = obs_long, aes(y = value), colour = "red", size = 0.6) +
   facet_grid(.variable ~ model, scales = "free_y") +
   labs(title = "Posterior predictive fit: before and after modelling the drift",
-       subtitle = "Sampled predictive trajectories (grey) vs observed (red)",
+       subtitle = "30/60/90% predictive bands (blue) vs observed (red)",
        x = "Day", y = NULL)
 ```
 
@@ -1235,16 +1253,14 @@ r_resolved <- bind_rows(
   fit_resolved |> gather_draws(R[day]) |>
     mutate(model = "time-varying death scaling")
 ) |>
-  ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
   ungroup()
 
-ggplot(r_resolved, aes(x = day, y = .value, group = .draw, colour = model)) +
-  geom_line(alpha = 0.1) +
+ggplot(r_resolved, aes(x = day, y = .value, fill = model)) +
+  stat_lineribbon(aes(fill_ramp = after_stat(level)),
+                  .width = c(0.3, 0.6, 0.9), colour = NA) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  scale_colour_brewer(palette = "Set1") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  scale_fill_brewer(palette = "Set1", name = NULL) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt before and after modelling the drifting death scaling") +
   theme(legend.position = "bottom")
 ```
@@ -1252,15 +1268,15 @@ ggplot(r_resolved, aes(x = day, y = .value, group = .draw, colour = model)) +
 ```{r recovered_scale}
 fit_resolved |>
   gather_draws(death_scale[day]) |>
-  median_qi(.value, .width = 0.9) |>
+  ungroup() |>
   ggplot(aes(x = day, y = .value)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.3) +
-  geom_line() +
+  stat_lineribbon(.width = c(0.3, 0.6, 0.9), colour = NA) +
+  scale_fill_brewer(palette = "Blues", name = "interval") +
   geom_line(
     data = tibble(day = seq_len(n), .value = ifr_drift),
     colour = "red"
   ) +
-  labs(title = "Recovered death scaling (black) vs truth (red)",
+  labs(title = "Recovered death scaling (bands) vs truth (red)",
        x = "Day", y = "Death scaling")
 ```
 
