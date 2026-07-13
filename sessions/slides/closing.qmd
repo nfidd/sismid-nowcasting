@@ -16,7 +16,7 @@ How can we use data typically collected in an outbreak to answer questions like
 
 - what **is** the number of cases now? (*nowcasting*)
 - is it rising/falling and by how much? (*$R_t$ estimation*)
-- what does this mean for the near future (*forecasting*, in the [companion course](https://nfidd.github.io/sismid-forecasting/))
+- what does this mean for the near future (*forecasting*)
 
 in real time.
 
@@ -29,8 +29,8 @@ in real time.
 - $R_t$ estimation and the renewal equation
 - nowcasting, and joint estimation of delays and nowcasts
 - linking nowcasting and forecasting
+- jointly fitting multiple data sources
 - modelling more complex reporting processes
-- jointly fitting multiple surveillance data streams
 :::
 
 # Key takeaways
@@ -62,35 +62,34 @@ in real time.
 
 ![](figures/complete_reporting_triangle.png)
 
-### Complex reporting processes {.smaller}
+### From nowcasting to forecasting {.smaller}
 
-- real reporting has structure beyond a single fixed delay: **day-of-week**, **time-varying**, **batched**, and by **strata**
-- a **modular framework** (e.g. [`epinowcast`](https://package.epinowcast.org/)) generalises our joint model — each component is a swappable module
-- the course model is the base; each extension is a one-line formula change
+- nowcasts feed naturally into **forecasts** of the near future
+- including a nowcast can improve **forecasting performance**
+- we can assess them using **proper scoring rules** (e.g. CRPS)
 
-![](figures/reporting_triangle.png)
+![](figures/nowcasting-forecasting-data.png)
 
 ### Jointly fitting multiple data sources {.smaller}
 
-- several surveillance data sources are **delayed, scaled measurements** of the same infections
-- a **shared latent infection process**, with a swappable observation model per data source
-- together they constrain infections better than any one — but **conflict reveals model misspecification**
+- several data sources are **delayed, scaled measurements** of the same infections
+- a **modelling workflow** takes us from single-source models to a joint model, checking each step as we build it up
+- this lets us build models that use **multiple sources of information** to improve nowcasts and forecasts
 
 ![](figures/multiple-data-sources.png)
 
-### Bridge: from nowcasting to forecasting {.smaller}
+### Complex reporting processes {.smaller}
 
-- nowcasts feed naturally into **forecasts** of the near future
-- meaningful nowcasts and forecasts are **probabilistic**
-- we can assess them using **proper scoring rules** (e.g. CRPS)
-- the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) (second half of the week) covers forecasting models, evaluation, ensembles, and hubs
+- real reporting has structure beyond a single fixed delay: **day-of-week**, **time-varying**, **batched**, and by **strata**
+- a **modular** approach (e.g. [`epinowcast`](https://package.epinowcast.org/)) generalises our joint model — each component is a swappable module
+- modelling these complexities can improve the **performance** and **reliability** of a nowcast
 
-![](figures/nowcasting-forecasting-data.png)
+![](figures/reporting_triangle.png)
 
 ### Outlook {.smaller}
 
 - the methods introduced here have **wide applications** in infectious disease epidemiology
-- **open-source tools** ([`epinowcast`](https://package.epinowcast.org/), [`EpiNow2`](https://epiforecasts.io/EpiNow2/)) make this easier in practice
+- **open-source tools** ([`epinowcast`](https://package.epinowcast.org/), [`EpiNow2`](https://epiforecasts.io/EpiNow2/), [`EpiAware`](https://epiaware.org/)) make this easier in practice
 
 ### Feedback {.smaller}
 

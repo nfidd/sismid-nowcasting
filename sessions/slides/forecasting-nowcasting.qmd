@@ -12,7 +12,7 @@ format:
 
 ### What is a forecast?
 
-A forecast is a **probabilistic statement about dates with *no data yet*** — an unconditional prediction of the future. The [forecasting course](https://nfidd.github.io/sismid-forecasting/) covers it in full; here is the motivation.
+A forecast is a **probabilistic statement about dates with *no data yet*** — an unconditional prediction of the future.
 
 - Good forecasts are **probabilistic**; uncertainty grows with the horizon
 - Our renewal model is already *generative*: keep simulating $R_t$ forward to forecast

@@ -7,10 +7,7 @@ bibliography: ../nfidd.bib
 # Introduction
 
 Throughout this course we have focused on **nowcasting**: estimating what current data will look like once all delayed reports are in.
-In this final session we take a first **taste of forecasting** - predicting future trends - and see how naturally it extends the nowcasting and renewal-equation models you have already built.
-
-This is the bridge to the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/), which runs in the second half of the week and covers forecasting, forecast evaluation, ensembles, and forecast hubs in much more depth.
-Here we give just enough of a taste to motivate that course and to show why nowcasting and forecasting belong together.
+In this session we take a first **taste of forecasting** - predicting future trends - and see how naturally it extends the nowcasting and renewal-equation models you have already built.
 
 In real-time epidemic analysis nowcasting and forecasting are connected.
 When we want to forecast from the most recent data, we face the problem that this data is incomplete due to reporting delays - exactly the problem nowcasting is designed to solve.
@@ -31,7 +28,7 @@ This session aims to give a taste of forecasting and to show how to combine nowc
 - We have, in fact, already done most of the work needed to forecast. The renewal-equation model from the [$R_t$ estimation session](R-estimation-and-the-renewal-equation) is a *generative* model: once it has estimated the recent reproduction number, we can keep simulating the random walk for $R_t$ forward in time to generate infections, and therefore onsets, on future days. That extension is exactly what turns an estimation model into a forecasting model, and the Stan model we use below (`estimate-inf-and-r-rw-forecast`) does precisely this.
 - To know whether a forecast was any good we **evaluate** it by comparing the predicted distribution against what was eventually observed, using a *proper scoring rule* (we use the Continuous Ranked Probability Score, CRPS, below).
 
-That is the entire forecasting toolkit we need here. The [forecasting course](https://nfidd.github.io/sismid-forecasting/) develops each of these ideas - generative and time-series forecasting models, scoring rules, ensembles, and hubs - in full.
+That is the entire forecasting toolkit we need here.
 
 ::: {.callout-note collapse="true"}
 
@@ -123,8 +120,6 @@ Real surveillance streams behave differently in ways worth keeping in mind:
 
 The methods in this session adapt to these settings: the joint modelling framework can handle bidirectional revisions with minor modifications, while pipeline approaches may need separate models for upward and downward revisions.
 Whether dealing with simple delays or more complex revisions, combining nowcasting and forecasting improves predictions.
-
-The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) works with real surveillance data of this kind and explores these issues in depth.
 :::
 
 ## Generate the underlying epidemic
@@ -822,7 +817,6 @@ The `score()` output reports the CRPS along with a breakdown of it.
 - Guiding principle: as **sharp** as possible while staying **calibrated**.
 - The CRPS breaks down into *overprediction* / *underprediction* (predicting too high or too low) and *dispersion* (a forecast that is too wide).
   A narrow forecast is not penalised through dispersion; if it misses the observation, that shows up as over- or underprediction instead.
-- The companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation) develops the CRPS, proper scoring rules and these components in depth.
 :::
 
 ::: {.callout-tip .optional collapse="true"}
