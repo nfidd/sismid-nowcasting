@@ -461,10 +461,10 @@ death_delay_pmf <- censored_delay_pmf(rgamma, max = 12, shape = 8, rate = 1)
 
 ascertainment <- 0.4
 ifr <- 0.1
-## negative-binomial size: smaller = noisier cases. At size 20 the case
-## variance is a few times the Poisson variance at the peak, so the cases
-## are clearly overdispersed but still carry the signal.
-case_dispersion <- 20
+## negative-binomial size: smaller = noisier cases. At size 10 the case
+## variance is several times the Poisson variance at the peak, so the cases
+## are heavily overdispersed but still carry the signal.
+case_dispersion <- 10
 
 exp_cases  <- ascertainment * convolve_with_delay(infections, case_delay_pmf)
 exp_deaths <- ifr * convolve_with_delay(infections, death_delay_pmf)
@@ -601,7 +601,7 @@ single_inf <- bind_rows(
   sample_draws(100)
 
 ggplot(single_inf, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+  geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   facet_wrap(~model) +
   labs(title = "Infections from single-source fits (grey) vs truth (red)",
@@ -621,7 +621,7 @@ single_r <- bind_rows(
   sample_draws(100)
 
 ggplot(single_r, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model) +
   coord_cartesian(ylim = c(0, 2)) +
@@ -667,7 +667,7 @@ two_inf <- fit_cd |>
   sample_draws(100)
 
 ggplot(two_inf, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+  geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   labs(title = "Infections, cases + deaths jointly (grey) vs truth (red)",
        subtitle = "Two data sources sharing one latent infection process")
@@ -682,7 +682,7 @@ two_r <- fit_cd |>
   sample_draws(100)
 
 ggplot(two_r, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt, cases + deaths jointly (sampled trajectories)",
@@ -775,7 +775,7 @@ ww_inf <- fit_ww |>
   sample_draws(100)
 
 ggplot(ww_inf, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+  geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   labs(title = "Infections, wastewater only (grey) vs truth (red)",
        subtitle = "A short-delay data source on its own scale")
@@ -790,7 +790,7 @@ ww_r <- fit_ww |>
   sample_draws(100)
 
 ggplot(ww_r, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt, wastewater only (sampled trajectories)",
@@ -829,7 +829,7 @@ The infections are now informed by all three data sources at once:
 inf_posterior <- posteriors |>
   filter(.variable == "infections")
 ggplot(inf_posterior, aes(x = day)) +
-  geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
+  geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   labs(title = "Infections, estimated (grey) and true (red)",
        subtitle = "Joint model fit to cases, deaths and wastewater")
@@ -841,7 +841,7 @@ and so is the reproduction number.
 r_posterior <- posteriors |>
   filter(.variable == "R")
 ggplot(r_posterior, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt, joint model (sampled trajectories)",
@@ -886,14 +886,18 @@ r_by_model <- bind_rows(
     "all three"
   )))
 
-ggplot(r_by_model, aes(x = day, y = .value, group = .draw)) +
-  geom_line(alpha = 0.1) +
+ggplot(r_by_model, aes(x = day, y = .value,
+                       group = .draw, colour = model)) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model, nrow = 3) +
+  scale_colour_brewer(palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt from each single source, each pair, and the joint fit",
-       subtitle = "Sampled trajectories from each fit",
-       x = "Day", y = "Rt")
+       subtitle = "Sampled trajectories from each fit, coloured by model",
+       x = "Day", y = "Rt") +
+  theme(legend.position = "bottom")
 ```
 
 ## Checking the joint fit against every data source
@@ -926,7 +930,7 @@ observed_streams <- bind_rows(
   mutate(stream = factor(stream, levels = levels_ppc))
 
 ggplot(ppc_streams, aes(x = day, y = .value)) +
-  geom_line(aes(group = .draw), alpha = 0.1) +
+  geom_line(aes(group = .draw), alpha = 0.05) +
   geom_point(data = observed_streams, aes(y = value),
              colour = "red", size = 0.6) +
   facet_wrap(~stream, scales = "free_y") +
@@ -1165,7 +1169,7 @@ ggplot(
   bind_rows(r_consistent, r_conflict),
   aes(x = day, y = .value, group = interaction(.draw, data), colour = data)
 ) +
-  geom_line(alpha = 0.1) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
@@ -1225,7 +1229,7 @@ obs_long <- obs_conflict |>
   mutate(.variable = paste0("pp_", stream))
 
 ggplot(pp_conflict, aes(x = day, y = .value)) +
-  geom_line(aes(group = .draw), alpha = 0.1) +
+  geom_line(aes(group = .draw), alpha = 0.05) +
   geom_point(data = obs_long, aes(y = value), colour = "red", size = 0.6) +
   facet_wrap(~.variable, scales = "free_y") +
   labs(title = "Posterior predictive fit under conflicting data sources",
@@ -1338,7 +1342,7 @@ resolved_draws <- bind_rows(
 )
 
 ggplot(resolved_draws, aes(x = day, y = .value)) +
-  geom_line(aes(group = .draw), alpha = 0.1) +
+  geom_line(aes(group = .draw), alpha = 0.05) +
   geom_point(data = obs_long, aes(y = value), colour = "red", size = 0.6) +
   facet_grid(.variable ~ model, scales = "free_y") +
   labs(title = "Posterior predictive fit: before and after modelling the drift",
@@ -1361,7 +1365,7 @@ r_resolved <- bind_rows(
 
 ggplot(r_resolved, aes(x = day, y = .value,
                        group = interaction(.draw, model), colour = model)) +
-  geom_line(alpha = 0.1) +
+  geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
