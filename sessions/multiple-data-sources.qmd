@@ -891,7 +891,9 @@ ggplot(r_by_model, aes(x = day, y = .value,
   geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model, nrow = 3) +
-  scale_colour_brewer(palette = "Set1") +
+  ## Dark2 rather than Set1: Set1's sixth colour is a pale yellow that all
+  ## but disappears as faint spaghetti on white
+  scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt from each single source, each pair, and the joint fit",
@@ -962,7 +964,7 @@ Why might the *absolute level* of infections be harder to pin down than the *tra
 ## Solution
 
 The data narrows the scalings only modestly.
-Their posteriors (`ascertainment` 0.41 ± 0.04, `ifr` 0.11 ± 0.01, `ww_scale` 1.86 ± 0.19) are roughly a third to a half tighter than the priors (sd 0.06, 0.02, 0.3), so they stay pinned largely by prior information rather than by the data.
+Each posterior sits close to its prior mean, and its standard deviation is only somewhat smaller than the prior standard deviation (0.06, 0.02 and 0.3 respectively), so the scalings stay pinned largely by prior information rather than by the data.
 
 - **Why the level is weak.** Each data source constrains only infections *times* its scaling. Multiply the infections by a constant $c$ and divide *every* scaling by $c$, and each data source's expected signal is unchanged, so the *shape* (and hence $R_t$) is identified but the *absolute level* is not.
 - **What pins the level here.** Only prior information: the scaling priors, the prior on the seeded starting level `seed_base`, and the `<lower = 0, upper = 1>` bounds on `ascertainment` and `ifr`. Since $I \to cI$ is exactly `seed_base` $\to c \times$ `seed_base`, that seeding prior constrains the level directly.
