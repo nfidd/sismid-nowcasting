@@ -480,17 +480,6 @@ We can plot the two simulated count data sources, the same way we plotted simula
 Each is a delayed, rescaled echo of the same infection curve: deaths peak later than cases.
 Cases carry reporting noise beyond the Poisson, which the negative binomial adds, so the case series scatters further around its expectation than Poisson counts of the same magnitude would.
 
-::: {.callout-note}
-## How noisy should we make the cases?
-
-The negative-binomial `size` sets how far the cases can stray from their expectation.
-It has to be chosen with care.
-Push it too low (say `size = 5`) and the case counts here become close to pure noise around a slowly moving mean.
-A model fitted to those cases still picks up the early growth, but it cannot see the turn.
-The case likelihood is nearly flat, so the random-walk prior on $R_t$ takes over, the estimated infections stop declining, and they sit well above the truth through the second half of the outbreak.
-That is a property of the simulated data rather than of the model, and it is worth knowing that an observation model can be right and still leave a data source uninformative.
-:::
-
 ```{r plot_cd}
 obs |>
   select(day, cases, deaths) |>
@@ -539,7 +528,7 @@ prior_pp <- bind_rows(
   group_by(source, day) |>
   median_qi(.value, .width = 0.9) |>
   left_join(caps, by = "source") |>
-  mutate(.upper = pmin(.upper, cap))
+  mutate(across(c(.value, .lower, .upper), \(x) pmin(x, cap)))
 
 ggplot(prior_pp, aes(x = day, y = .value)) +
   geom_ribbon(aes(ymin = .lower, ymax = .upper), fill = "#9ecae1",
@@ -609,9 +598,7 @@ single_inf <- bind_rows(
   fit_deaths |> gather_draws(infections[day]) |> mutate(model = "deaths only")
 ) |>
   ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
-  ungroup()
+  sample_draws(100)
 
 ggplot(single_inf, aes(x = day)) +
   geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
@@ -631,9 +618,7 @@ single_r <- bind_rows(
   fit_deaths |> gather_draws(R[day]) |> mutate(model = "deaths only")
 ) |>
   ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
-  ungroup()
+  sample_draws(100)
 
 ggplot(single_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
@@ -679,7 +664,7 @@ By linking the timely cases with the stable (if delayed) deaths, the two data so
 two_inf <- fit_cd |>
   gather_draws(infections[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  sample_draws(100)
 
 ggplot(two_inf, aes(x = day)) +
   geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
@@ -694,7 +679,7 @@ The two-source fit gives us $R_t$ as well, now informed by both data sources at 
 two_r <- fit_cd |>
   gather_draws(R[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  sample_draws(100)
 
 ggplot(two_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
@@ -755,7 +740,7 @@ obs <- obs |>
 ::: {.callout-note}
 ## Take 2 minutes
 
-The wastewater data source is modelled on the *log* scale with log-normal noise, whereas cases and deaths are counts with a Poisson model.
+The wastewater data source is modelled on the *log* scale with log-normal noise, whereas cases and deaths are counts, observed as negative-binomial and Poisson draws respectively.
 Why might a log-normal observation model be a more natural choice for a continuous concentration measurement than a count distribution?
 :::
 
@@ -787,7 +772,7 @@ fit_ww <- fit_streams(ww_data, use_cases = 0, use_deaths = 0, use_ww = 1)
 ww_inf <- fit_ww |>
   gather_draws(infections[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  sample_draws(100)
 
 ggplot(ww_inf, aes(x = day)) +
   geom_line(aes(y = .value, group = .draw), alpha = 0.1) +
@@ -819,7 +804,7 @@ We extract the posterior for the shared infections and reproduction number from 
 posteriors <- fit |>
   gather_draws(infections[day], R[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100))
+  sample_draws(100)
 ```
 
 The infections are now informed by all three data sources at once:
@@ -864,9 +849,7 @@ r_by_model <- bind_rows(
   fit        |> gather_draws(R[day]) |> mutate(model = "all three")
 ) |>
   ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
-  ungroup() |>
+  sample_draws(100) |>
   mutate(model = factor(model, levels = c(
     "cases only", "deaths only", "wastewater only",
     "cases + deaths", "cases + wastewater", "deaths + wastewater",
@@ -900,7 +883,7 @@ ppc_streams <- bind_rows(
 ) |>
   ungroup() |>
   group_by(stream) |>
-  filter(.draw %in% sample(.draw, 100)) |>
+  sample_draws(100) |>
   ungroup() |>
   mutate(stream = factor(stream, levels = levels_ppc))
 
@@ -1141,17 +1124,17 @@ We compare the $R_t$ estimates from the consistent and conflicting fits.
 r_consistent <- fit |>
   gather_draws(R[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100)) |>
+  sample_draws(100) |>
   mutate(data = "consistent")
 
 r_conflict <- fit_conflict |>
   gather_draws(R[day]) |>
   ungroup() |>
-  filter(.draw %in% sample(.draw, 100)) |>
+  sample_draws(100) |>
   mutate(data = "conflicting deaths")
 
 ggplot(
-  rbind(r_consistent, r_conflict),
+  bind_rows(r_consistent, r_conflict),
   aes(x = day, y = .value, group = interaction(.draw, data), colour = data)
 ) +
   geom_line(alpha = 0.1) +
@@ -1207,7 +1190,7 @@ pp_conflict <- fit_conflict |>
   gather_draws(pp_cases[day], pp_deaths[day]) |>
   ungroup() |>
   group_by(.variable) |>
-  filter(.draw %in% sample(.draw, 100)) |>
+  sample_draws(100) |>
   ungroup()
 
 obs_long <- obs_conflict |>
@@ -1322,7 +1305,7 @@ ppc_for <- function(fit, label) {
     gather_draws(pp_cases[day], pp_deaths[day]) |>
     ungroup() |>
     group_by(.variable) |>
-    filter(.draw %in% sample(.draw, 100)) |>
+    sample_draws(100) |>
     ungroup() |>
     mutate(model = label)
 }
@@ -1352,9 +1335,7 @@ r_resolved <- bind_rows(
     mutate(model = "time-varying death scaling")
 ) |>
   ungroup() |>
-  group_by(model) |>
-  filter(.draw %in% sample(.draw, 100)) |>
-  ungroup()
+  sample_draws(100)
 
 ggplot(r_resolved, aes(x = day, y = .value,
                        group = interaction(.draw, model), colour = model)) +
