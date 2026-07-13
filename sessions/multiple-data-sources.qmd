@@ -927,7 +927,6 @@ Why might the *absolute level* of infections be harder to pin down than the *tra
 ::: {.callout-note collapse="true"}
 ## Solution
 
-<!-- verified against the rendered fit_summary -->
 The data narrows the scalings only modestly.
 Their posteriors (`ascertainment` 0.41 ± 0.04, `ifr` 0.11 ± 0.01, `ww_scale` 1.86 ± 0.19) are roughly a third to a half tighter than the priors (sd 0.06, 0.02, 0.3), so they stay pinned largely by prior information rather than by the data.
 
@@ -1061,7 +1060,6 @@ In each panel compare the real-time (day 20) band with the retrospective (day 40
 ::: {.callout-note collapse="true"}
 ## Solution
 
-<!-- verified against the rendered 2x3 figure -->
 The deaths do carry signal at day 20, but it is *old* signal.
 Over the first ten days or so the deaths-only day-20 estimate sits on top of its day-40 goal.
 It is the *recent* end that the deaths cannot see: with a long infection-to-death delay, infections from the last week have barely begun to cause deaths, so the estimate keeps $R_t$ near the level the earlier data implied instead of turning it over.
@@ -1156,8 +1154,6 @@ Is the result closer to the "true" declining $R_t$, the rising signal implied by
 ::: {.callout-note collapse="true"}
 ## Solution
 
-<!-- verified against the rendered consistent-vs-conflicting figure -->
-
 - **Direction.** Through the *early* part of the second half the conflicting-deaths fit pulls $R_t$ *upwards*, away from the true declining trajectory, as it tries to accommodate the rising deaths. Later it over-compensates and dips *below* the consistent fit.
 - **Why.** One shared infection process cannot be both declining (to match cases and wastewater) and rising (to match deaths), so the model splits the difference and the compromise wanders either side of the truth.
 - **Result.** The joint $R_t$ is faithful to no single data source: neither the true declining path nor the rising one the deaths imply.
@@ -1209,7 +1205,7 @@ ggplot(pp_conflict, aes(x = day, y = .value)) +
 
 The compromise infection trajectory cannot match both data sources at once.
 Here the rising deaths pull the shared infections up, so the predictive draws for the *cases* run above the observed cases through the second half of the outbreak while the deaths are still fitted.
-A run of points sitting on one side of the predictive draws for a single data source is the sign that that data source is losing the argument with the others.
+A run of points sitting on one side of the predictive draws for a single data source is the sign that that data source is conflicting with the others.
 
 **2. Tension in the shared latent infections.**
 Conflict does not stay neatly inside one data source.
@@ -1220,7 +1216,7 @@ A latent quantity that suddenly becomes much more uncertain, or that no longer m
 When the geometry of the posterior is contorted by trying to satisfy contradictory data, the sampler can struggle.
 That surfaces as divergent transitions, low effective sample sizes, or high `rhat` in the fit summary.
 It is the least reliable of the three symptoms, as we are about to see.
-It is always worth scanning the diagnostics of the conflicting fit (`fit_conflict`) and comparing them to the clean fit, because sampler complaints are not just a computational nuisance and can be a signature of a misspecified model.
+It is always worth scanning the diagnostics of the conflicting fit (`fit_conflict`) and comparing them to the clean fit.
 
 ```{r conflict_diagnostics}
 diagnostics <- function(f, label) {
@@ -1250,8 +1246,6 @@ Do the sampler diagnostics look worse than for the consistent fit?
 ::: {.callout-note collapse="true"}
 ## Solution
 
-<!-- verified against the rendered ppc_conflict figure and diagnostics table -->
-
 **Cases are fitted worst.**
 From about day 20 the observed cases (red) sit *below* the bulk of the predictive draws, and the gap widens through the second half of the outbreak: the model over-predicts the cases.
 That is the shared infections being dragged *up* by the rising deaths, which the constant death scaling can only explain as more infections.
@@ -1259,10 +1253,8 @@ The deaths panel, by contrast, is fitted reasonably well, with the latest points
 This is the asymmetry to expect: the source that drives the misspecification gets fitted at the expense of the sources that disagree with it.
 
 The sampler diagnostics barely move.
-`rhat` is 1.01 for both fits and neither has any divergent transitions.
-The only sign of strain is the effective sample size, which drops from around 830 for the consistent fit to around 550 for the conflicting one.
+The only sign of strain is the effective sample size.
 So it is the posterior predictive check, not the sampler, that exposes this conflict.
-Degraded sampling is a useful symptom when it appears, but a model can be badly misspecified and still sample cleanly, which is why the checks in this session do not rely on it.
 :::
 
 ## What should a modeller do about conflict?
@@ -1389,8 +1381,7 @@ With a time-varying death scaling the deaths are fitted well *and* the cases are
 The case predictive draws tighten around the data, which is the clearest sign that the compromise has gone.
 $R_t$ returns to the declining trajectory the cases and wastewater imply, and the recovered death scaling tracks the drift we built in.
 The sampler diagnostics improve, but modestly.
-The effective sample size recovers, from around 550 for the constant-scaling fit to around 840 once the drift is modelled, while `rhat` stays at 1.01 and neither fit has divergent transitions.
-That is the pattern to expect here: the constant-scaling fit already sampled acceptably, so the clearest evidence that the conflict has gone is the fit to the data, not the sampler.
+The effective sample size recovers.
 :::
 
 This loop of building in parts, checking each addition, and letting conflict and identifiability send us back to revise is the core of this modelling workflow [@abbottWorkflowInfectiousDisease2026].
