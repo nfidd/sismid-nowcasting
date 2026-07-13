@@ -544,7 +544,7 @@ The infection estimates are the least uncertain from any model and potentially o
 
 We can now plot all the Rt trajectories from the models together to compare them.
 
-```{r plot_r_posteriors}
+```{r plot_r_posteriors, fig.width = 8, fig.height = 7}
 ## earlier posteriors
 r_posterior <- r_posterior |>
   mutate(data = "infections")
@@ -554,10 +554,16 @@ rw_r_inf_posterior <- rw_r_inf_posterior |>
   mutate(data = "onsets (random walk)")
 
 all_posteriors <- rbind(
+  r_posterior,
   r_inf_posterior,
-  rw_r_inf_posterior,
-  r_posterior
-)
+  rw_r_inf_posterior
+) |>
+  mutate(
+    data = factor(
+      data,
+      levels = c("infections", "onsets (normal)", "onsets (random walk)")
+    )
+  )
 
 ggplot(
   all_posteriors,
@@ -565,16 +571,19 @@ ggplot(
                 colour = data)
 ) +
   geom_line(alpha = 0.1) +
-  scale_fill_brewer(palette = "Set1") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  facet_wrap(~ data, ncol = 1) +
+  scale_colour_brewer(palette = "Set1") +
+  coord_cartesian(ylim = c(0, 3)) +
   labs(
     title = "Rt estimates from renewal equation models",
     subtitle = paste(
       "Estimates from infections, from symptom onsets, and from onsets with a",
       "random walk"
-    )
+    ),
+    x = "Infection day", y = "Rt"
   ) +
-  guides(colour = guide_legend(override.aes = list(alpha = 1))) + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "none")
 ```
 
 ::: callout-tip

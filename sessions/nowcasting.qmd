@@ -283,14 +283,14 @@ As we found in the [using delay distributions to model the data generating proce
 :::
 
 ::: {.callout-tip .optional collapse="true"}
-## Interactive: the simplest nowcast
+## Interactive: scaling up by the proportion reported
 
 ```{=html}
-<iframe class="nfidd-embed" src="../interactive/nowcasting.html?embed=simple" title="the simplest nowcast interactive" loading="lazy" style="width:100%;height:720px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<iframe class="nfidd-embed" src="../interactive/nowcasting.html?embed=simple" title="the simplest nowcast interactive" loading="lazy" style="width:100%;height:780px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
 <script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
 ```
 
-Spread each recent day's reports forward by the delay, cut them off at "now", and scale the observed part back up by the proportion reported.
+Read off the proportion of a reference date reported by now, the delay CDF at the "now" line, and scale the observed count back up by it.
 :::
 
 ::: {.callout-important .optional}
