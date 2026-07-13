@@ -37,7 +37,7 @@ How can we use data typically collected in an outbreak to answer questions like
 
 - what **is** the number of cases now? (*nowcasting*)
 - is it rising/falling and by how much? (*$R_t$ estimation*)
-- what does this mean for the near future (*forecasting*, covered in the [companion course](https://nfidd.github.io/sismid-forecasting/))
+- what does this mean for the near future (*forecasting*)
 
 in real time.
 
@@ -47,7 +47,7 @@ Throughout the course we will
 
 1. use models to simulate data sets in **R** <br>
 (the *generative model* of the simulated data)
-   
+
 ```{r outbreak-plot, fig.width=5, fig.height=3, fig.align='center'}
 library(ggplot2)
 library(nfidd.nowcasting)
@@ -71,21 +71,7 @@ Throughout the course we will
    - learn about the system (conduct inference)
    - **make predictions** (nowcasting/forecasting)
 
-### Approach
-
-Throughout the course we will
-
-3. build up to **nowcasting**: estimating what current counts will be once delayed reports arrive
-
-### Approach
-
-Throughout the course we will
-
-4. finish by linking nowcasting and forecasting, bridging into the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/)
-
 ### Timeline
-
-This is the **nowcasting** course (first half of the week, Monday to Wednesday midday):
 
 ::: {.incremental}
 - delay distributions and how to estimate them
@@ -94,15 +80,14 @@ This is the **nowcasting** course (first half of the week, Monday to Wednesday m
 - $R_t$ estimation and the renewal equation
 - nowcasting, and joint estimation of delays and nowcasts
 - linking nowcasting and forecasting
-- modelling more complex reporting processes
 - jointly fitting multiple data sources
+- modelling more complex reporting processes
 :::
 
 #
 
 To start the course go to:
 [https://nfidd.github.io/sismid-nowcasting/](https://nfidd.github.io/sismid-nowcasting/)
-and get started on the first session (*Delay distributions*)
 
 #
 

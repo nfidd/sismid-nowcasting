@@ -7,14 +7,14 @@ order: 0
 
 ### Aim of the course
 
-This is the **nowcasting** course, the first half of the SISMID week (Monday to Wednesday midday).
+This is the **nowcasting** course, the first half of the SISMID week.
 It is paired with a companion [forecasting course](https://nfidd.github.io/sismid-forecasting/) that runs in the second half of the week.
 
 In this course we will address how can we use data typically collected in an outbreak, or in routine surveillance, to answer questions like
 
 -   What is the number of cases now (*nowcasting*)
 -   Are infections rising/falling and by how much (*$R_t$ estimation*)
--   What does this mean for the near future (*forecasting*, covered in the companion course)
+-   What does this mean for the near future (*forecasting*)
 
 To answer these questions, we need to understand the epidemiological processes that create the kinds of data that we typically have available for outbreak analysis and infectious disease surveillance.
 
@@ -32,9 +32,9 @@ Both of these processes involve time delays which makes analysing data in real t
 :::
 
 In this course, we first focus on making sense of the delays and biases in the data we are able to access in real time as part of infectious disease surveillance.
-We'll combine this with the process of infectious disease transmission, with the reproduction number as a key component.
+We'll combine this with the process of infectious disease transmission by thinking about the reproduction number.
 With that, we can start to interpret the present (nowcasting) and predict the future (forecasting).
-We then extend these ideas to more realistic settings: reporting processes that are more complex than a single fixed delay, and jointly fitting multiple surveillance data streams to estimate transmission from several sources at once.
+We then extend these ideas to more realistic settings, jointly fitting multiple data sources to estimate transmission from several sources at once, and modelling reporting processes that are more complex than a single fixed delay.
 
 ### Why this course?
 
@@ -66,7 +66,7 @@ For those attending the in-person version the course also:
 
 ### Timeline for the course
 
-This nowcasting course is taught in-person over the first half of the SISMID week (Monday to Wednesday midday), but of course if you are studying this on your own using the web site you can go through the material at your own pace and in your own time.
+This nowcasting course is taught in-person over the first half of the SISMID week, but of course if you are studying this on your own using the web site you can go through the material at your own pace and in your own time.
 Broadly, the intended timeline is:
 
 -   delay distributions and how to estimate them
@@ -74,9 +74,9 @@ Broadly, the intended timeline is:
 -   using delays to model the data generating process
 -   $R_t$ estimation and the renewal equation
 -   nowcasting, and joint estimation of delays and nowcasts
--   linking nowcasting and forecasting (bridge to the [forecasting course](https://nfidd.github.io/sismid-forecasting/))
--   modelling more complex reporting processes with `epinowcast`
--   jointly fitting multiple surveillance data streams
+-   linking nowcasting and forecasting
+-   jointly fitting multiple data sources
+-   modelling more complex reporting processes
 
 Let's get started!
 
