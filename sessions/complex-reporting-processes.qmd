@@ -164,8 +164,7 @@ Our simulation is already complete so this changes nothing here, but on real dat
 ref_date0 <- as.Date("2023-01-02")
 # The nowcast is made once reports up to this date are in
 nowcast_date <- ref_date0 + (cutoff - 1)
-# Only the most recent dates are nowcast, so we zoom the result plots to a
-# recent window around the nowcast horizon rather than the whole series
+# Zoom the result plots to a recent window around the nowcast horizon
 plot_from <- nowcast_date - 35
 
 # Format the complete (eventually-reported) data in epinowcast's long format
@@ -267,7 +266,7 @@ A random effect by day, `~ 0 + (1 | day)`, therefore makes $r_t$ independent noi
 Writing `~ rw(day)` instead would put a random walk on the *growth rate*, so the expected counts would follow a smoother trend that carries the current growth forward.
 On this data that model extrapolates the recent trend and its nowcast misses the eventual counts at some of the most recent dates, so we use the random effect by day for the daily models here.
 The right choice depends on the data.
-When reports arrive only once a week, later in this session, we go the other way and constrain the growth rate to a weekly random walk.
+When reports arrive only once a week, later in this session, we keep the same structure but move it to the weekly timestep, `~ 0 + (1 | week)`.
 :::
 
 ::: {.callout-tip .optional collapse="true"}
@@ -686,7 +685,7 @@ We show both here on the same simulated series.
 `epinowcast`'s [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) works through these patterns in full, including a daily benchmark and a scoring comparison.
 
 The two approaches differ most when the epidemic is changing rapidly near the nowcast date.
-When the most recent, still-incomplete week is rising or falling steeply, collapsing it to a single weekly value discards the within-week trend, and the weekly-weekly model has to extrapolate that fast-moving week from a short weekly random walk with only a handful of points.
+When the most recent, still-incomplete week is rising or falling steeply, collapsing it to a single weekly value discards the within-week trend, so the weekly-weekly model can only carry the recent weekly level forward.
 A daily process keeps the resolution and can still track the change.
 
 To make this visible we deliberately place the nowcast in a steep decline, keeping data up to a later date than the rest of the session so the most recent week is falling fast.
@@ -744,7 +743,7 @@ The model is the course model again; only the timestep of the data has changed.
 ```{r weekly-fit, message = FALSE, results = "hide"}
 weekly_nowcast <- epinowcast(
   weekly_pobs,
-  expectation = enw_expectation(~ rw(week), data = weekly_pobs),
+  expectation = enw_expectation(~ 0 + (1 | week), data = weekly_pobs),
   reference = enw_reference(~ 1, data = weekly_pobs),
   obs = enw_obs(family = "poisson", data = weekly_pobs),
   fit = fit_opts_hard
@@ -802,9 +801,9 @@ Because most daily cells are imputed rather than observed, we also point the obs
 
 The expected counts also need a different treatment here.
 Elsewhere in the session we gave the growth rate a random effect by day, which lets the expected counts move freely from day to day.
-With only one report a week there is little in the data to pin down that much daily freedom, so we give the growth rate a weekly random walk instead.
+With only one report a week there is little in the data to pin down that much daily freedom, so we give the growth rate a random effect by week instead.
 The expected counts still change every day, but the rate at which they change is only allowed to move from week to week.
-This is the choice `epinowcast` recommends when reporting is sparse.
+This keeps the same structure we justified for the daily models, a random effect on the growth rate at the model's time unit, and only coarsens the unit to match how often the data arrive.
 
 ```{r weekly-daily-fit, message = FALSE, results = "hide"}
 # Structural variants need a little less adapt_delta and more tree depth
@@ -822,7 +821,7 @@ structural <- enw_dayofweek_structural_reporting(
 
 weekly_daily_nowcast <- epinowcast(
   weekly_rep_pobs,
-  expectation = enw_expectation(~ rw(week), data = weekly_rep_pobs),
+  expectation = enw_expectation(~ 0 + (1 | week), data = weekly_rep_pobs),
   report = enw_report(structural = structural, data = weekly_rep_pobs),
   obs = enw_obs(
     family = "poisson", observation_indicator = ".observed",
@@ -839,7 +838,7 @@ For each, say what it does and what would go wrong if you left it out.
 
 1. `report = enw_report(structural = structural, ...)` instead of a report formula.
 2. `observation_indicator = ".observed"` in `enw_obs()`.
-3. `expectation = enw_expectation(~ rw(week), ...)` rather than the random effect by day we used for the daily-reporting models.
+3. `expectation = enw_expectation(~ 0 + (1 | week), ...)` rather than the random effect by day we used for the daily-reporting models.
 :::
 
 ::: {.callout-note collapse="true"}
@@ -851,8 +850,8 @@ For each, say what it does and what would go wrong if you left it out.
    Imputing carries the cumulative count forward, so every cell that is not a reporting day has an incident count of exactly zero.
    Without the indicator the model would take all of those zeros as data and try to fit zero reporting on those days, on top of the reporting schedule it already knows about.
 3. The data still have a daily timestep, so the expected counts change from one day to the next and the model can track a trend developing *within* the most recent week, which is what gives us a daily nowcast.
-   The weekly random walk applies to the growth rate, so the rate of change is held fixed within a week.
-   A random effect by day would leave the growth rate free every day, with only one report a week to learn it from, and the nowcast would be much less certain.
+   The random effect by week applies to the growth rate, so the rate of change is held fixed within a week.
+   A random effect by day would leave the growth rate free every day, with only one report a week to learn it from, so there would be little in the data to pin it down.
 :::
 
 The nowcast is now on the daily scale even though reports only arrived weekly, so we compare it against the eventually-complete daily data.
@@ -917,8 +916,8 @@ The weekly-weekly model sees only whole-week totals, so it cannot tell where wit
 The weekly-daily model keeps a daily process, so it can see the decline happening *within* the week and its central estimate lands closer to the eventual total.
 On the earlier week, which is almost fully reported, the two agree closely.
 
-Both intervals contain the eventual total at the recent week, and they are of a similar width, so this is a difference in central estimate rather than one model being flatly wrong.
-The weekly-weekly interval is the more overconfident of the two: the eventual total sits close to its lower edge, so a slightly sharper turn would have taken it outside.
+Both intervals contain the eventual total at the recent week, so this is a difference in central estimate rather than one model being flatly wrong.
+The weekly-weekly interval is the narrower of the two, and the eventual total sits close to its lower edge, so a slightly sharper turn would have taken it outside.
 
 The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a slower fit.
 The [temporal aggregation guide](https://package.epinowcast.org/articles/temporal-aggregation.html) scores these approaches against a fully daily benchmark if you want to see how much each one gives up.
@@ -948,7 +947,7 @@ Read the comparison plot (`weekly-compare`), where both weekly nowcasts are show
 1. On the earlier week both models sit close to the eventual total, so they are hard to tell apart there.
    At the recent falling week the weekly-daily median sits a little below the eventual total and the weekly-weekly median well above it, so the daily model is the closer of the two.
    The weekly model works from whole-week totals alone, so it carries the recent level forward and overshoots a week that is falling fast.
-   Both intervals still cover the eventual total, but the weekly-weekly one only just does, with the truth near its lower edge.
+   At the recent week both intervals cover the eventual total, but the weekly-weekly one only just does, with the truth near its lower edge.
 2. The two models see the same *reports*, but not at the same resolution.
    Within one weekly release, each day of the preceding week has had a different amount of time to be reported, so the same delay distribution implies a different degree of completeness for each day.
    The daily model uses that to reconstruct the shape *within* the week and can see the decline under way; the weekly model collapses the week to a single number and has nothing left to read the within-week trend from.
