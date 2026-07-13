@@ -1,7 +1,7 @@
 Package: nfidd.nowcasting
 Title: Material to support course on nowcasting of infectious
     disease dynamics
-Version: 1.2.0.9000
+Version: 1.3.0
 Authors@R: c(
     person(
       given = "NFIDD SISMID course contributors",
