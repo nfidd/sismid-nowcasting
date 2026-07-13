@@ -822,7 +822,7 @@ The `score()` output reports the CRPS along with a breakdown of it.
 ::: {.callout-tip .optional collapse="true"}
 ## Interactive: the CRPS
 
-Drag the observation or widen the forecast and watch the area — and the score — change. (From the companion [forecasting course](https://nfidd.github.io/sismid-forecasting/sessions/forecast-evaluation).)
+Drag the observation or widen the forecast and watch the area — and the score — change.
 
 ```{=html}
 <iframe class="nfidd-embed" src="https://nfidd.github.io/sismid-forecasting/interactive/forecast-evaluation.html?embed=crps" title="CRPS interactive" loading="lazy" style="width:100%;height:640px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
