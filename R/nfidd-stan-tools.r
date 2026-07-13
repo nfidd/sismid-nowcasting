@@ -1,89 +1,12 @@
-#' Find the Stan code in a package source tree
-#'
-#' Walks up from `path` looking for the source tree of this package, i.e. a
-#' `DESCRIPTION` naming `nfidd.nowcasting` next to an `inst/stan` directory.
-#' Returns `NULL` when there is no such directory above `path`.
-#'
-#' @param path Character string, the directory to start from.
-#'
-#' @return A character string with the path to `inst/stan`, or `NULL`.
-#'
-#' @keywords internal
-.nfidd_source_stan_path <- function(path = getwd()) {
-  path <- normalizePath(path, mustWork = FALSE)
-  repeat {
-    description <- file.path(path, "DESCRIPTION")
-    stan_path <- file.path(path, "inst", "stan")
-    if (file.exists(description) && dir.exists(stan_path)) {
-      package <- tryCatch(
-        read.dcf(description, fields = "Package")[1, 1],
-        error = function(e) NA_character_
-      )
-      if (isTRUE(package == "nfidd.nowcasting")) {
-        return(stan_path)
-      }
-    }
-    parent <- dirname(path)
-    if (identical(parent, path)) {
-      return(NULL)
-    }
-    path <- parent
-  }
-}
-
 #' Get the path to Stan code
 #'
-#' This is the single place the Stan code is resolved, for both the models and
-#' the functions they include. It looks in three places, in order.
-#'
-#' 1. The `nfidd.nowcasting.stan_path` option, if it is set. Set this to point
-#'    the Stan tools at your own Stan code.
-#' 2. The package source tree, if the working directory sits in a clone of the
-#'    course repository. Rendering the course site, or running a session, from
-#'    a clone therefore uses the Stan code in that clone rather than whichever
-#'    version of the package happens to be installed. Without this a model
-#'    added to `inst/stan` is invisible to [nfidd_stan_models()] and the rest
-#'    of the Stan tools until the package is reinstalled. Using the source tree
-#'    over an installed package is reported once per session, so it is never a
-#'    silent switch. The report is only made in an interactive session, where
-#'    someone is there to read it, and so never lands in a rendered page.
-#' 3. The installed package.
-#'
-#' @return A character vector of directories holding the Stan code. This is a
-#'   single directory unless the option names more than one.
+#' @return A character string with the path to the Stan code
 #'
 #' @family stantools
 #'
 #' @export
 nfidd_stan_path <- function() {
-  option_path <- getOption("nfidd.nowcasting.stan_path")
-  if (!is.null(option_path)) {
-    return(option_path)
-  }
-
-  source_path <- .nfidd_source_stan_path()
-  installed_path <- system.file("stan", package = "nfidd.nowcasting")
-  if (!is.null(source_path)) {
-    if (nzchar(installed_path) && rlang::is_interactive()) {
-      rlang::inform(
-        c(
-          paste0("Using the Stan code in ", source_path, "."),
-          i = paste(
-            "This is the course repository you are working in, not the",
-            "installed package."
-          ),
-          i = paste(
-            "Set the `nfidd.nowcasting.stan_path` option to use Stan code",
-            "from somewhere else."
-          )
-        ),
-        .frequency = "once",
-        .frequency_id = "nfidd_stan_path_source_tree"
-      )
-    }
-    return(source_path)
-  }
-  installed_path
+  system.file("stan", package = "nfidd.nowcasting")
 }
 
 #' Count the number of unmatched braces in a line
@@ -162,34 +85,14 @@ nfidd_stan_path <- function() {
   }
 }
 
-#' Make Stan file paths relative to the Stan path they were found under
-#'
-#' `stan_path` can hold more than one directory, so each root is stripped in
-#' turn. Matching is on a literal prefix rather than a pattern, so a root
-#' holding regular expression characters cannot over-match.
-#'
-#' @param files Character vector of Stan file paths.
-#' @param stan_path Character vector of Stan path roots.
-#'
-#' @return `files`, with any leading Stan path root removed.
-#'
-#' @keywords internal
-.relative_to_stan_path <- function(files, stan_path) {
-  for (root in stan_path) {
-    prefix <- paste0(root, "/")
-    under_root <- startsWith(files, prefix)
-    files[under_root] <- substring(files[under_root], nchar(prefix) + 1)
-  }
-  files
-}
-
 #' Get Stan function names from Stan files
 #'
 #' This function reads all Stan files in the specified directory and extracts
 #' the names of all functions defined in those files.
 #'
-#' @param stan_path Character vector of directories holding Stan files, as
-#' returned by [nfidd_stan_path()]. May name more than one directory.
+#' @param stan_path Character string specifying the path to the directory
+#' containing Stan files. Defaults to the Stan path of the nfidd
+#' package.
 #'
 #' @return A character vector containing unique names of all functions found in
 #' the Stan files.
@@ -254,8 +157,10 @@ nfidd_stan_function_files <- function(
       }
     }
 
-    # remove the Stan path from the file names
-    matching_files <- .relative_to_stan_path(matching_files, stan_path)
+    # remove the path from the file names
+    matching_files <- sub(
+      paste0(stan_path, "/"), "", matching_files
+    )
     return(matching_files)
   }
 }
@@ -265,8 +170,8 @@ nfidd_stan_function_files <- function(
 #' @param functions Character vector of function names to load. Defaults to all
 #' functions.
 #'
-#' @param stan_path Character vector of directories holding Stan files, as
-#' returned by [nfidd_stan_path()]. May name more than one directory.
+#' @param stan_path Character string, the path to the Stan code. Defaults to the
+#' path to the Stan code in the nfidd package.
 #'
 #' @param wrap_in_block Logical, whether to wrap the functions in a
 #' `functions{}` block. Default is FALSE.
@@ -335,8 +240,8 @@ nfidd_load_stan_functions <- function(
 #' This function finds all available Stan models in the NFIDD package and
 #' returns their names without the .stan extension.
 #'
-#' @param stan_path Character vector of directories holding Stan files, as
-#'   returned by [nfidd_stan_path()]. May name more than one directory.
+#' @param stan_path Character string specifying the path to Stan files. Defaults
+#'   to the result of `nfidd_stan_path()`.
 #'
 #' @return A character vector of available Stan model names.
 #'
@@ -351,8 +256,8 @@ nfidd_stan_models <- function(stan_path = nfidd.nowcasting::nfidd_stan_path()) {
     recursive = FALSE
   )
 
-  # Remove .stan extension. The same model can sit under more than one root.
-  model_names <- unique(tools::file_path_sans_ext(stan_files))
+  # Remove .stan extension
+  model_names <- tools::file_path_sans_ext(stan_files)
 
   return(model_names)
 }
@@ -366,9 +271,9 @@ nfidd_stan_models <- function(stan_path = nfidd.nowcasting::nfidd_stan_path()) {
 #'   the NFIDD package. Ignored if model_file is provided.
 #' @param model_file Character string specifying the path to a custom Stan file.
 #'   If provided, this takes precedence over model_name.
-#' @param include_paths Character vector of directories to include for Stan
-#'   compilation. Defaults to the result of [nfidd_stan_path()], which also
-#'   honours the "nfidd.nowcasting.stan_path" option.
+#' @param include_paths Character vector of paths to include for Stan
+#'   compilation. Defaults to the result of `nfidd_stan_path()` or can be
+#'   overridden using the R option "nfidd.nowcasting.stan_path".
 #' @param ... Additional arguments passed to cmdstanr::cmdstan_model().
 #'
 #' @return A CmdStanModel object.
@@ -389,7 +294,7 @@ nfidd_stan_models <- function(stan_path = nfidd.nowcasting::nfidd_stan_path()) {
 nfidd_cmdstan_model <- function(
     model_name = NULL,
     model_file = NULL,
-    include_paths = nfidd.nowcasting::nfidd_stan_path(),
+    include_paths = getOption("nfidd.nowcasting.stan_path", nfidd.nowcasting::nfidd_stan_path()),
     ...) {
 
   # Determine which Stan file to use
@@ -400,22 +305,15 @@ nfidd_cmdstan_model <- function(
     }
     stan_model <- model_file
   } else if (!is.null(model_name)) {
-    # Take the model from the same Stan code as the functions it includes. The
-    # Stan path can hold more than one directory, so take the first one that
-    # has the model in it.
-    candidates <- file.path(
-      nfidd.nowcasting::nfidd_stan_path(), paste0(model_name, ".stan")
+    # Use model from NFIDD package
+    stan_model <- system.file(
+      "stan", paste0(model_name, ".stan"),
+      package = "nfidd.nowcasting"
     )
-    found <- candidates[file.exists(candidates)]
 
-    if (length(found) == 0) {
-      stop(sprintf(
-        "Model '%s.stan' not found in: %s",
-        model_name,
-        paste(nfidd.nowcasting::nfidd_stan_path(), collapse = ", ")
-      ))
+    if (stan_model == "") {
+      stop(sprintf("Model '%s.stan' not found in NFIDD package", model_name))
     }
-    stan_model <- found[1]
   } else {
     stop("Either model_name or model_file must be provided")
   }

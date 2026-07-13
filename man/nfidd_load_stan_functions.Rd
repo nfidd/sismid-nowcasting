@@ -16,8 +16,8 @@ nfidd_load_stan_functions(
 \item{functions}{Character vector of function names to load. Defaults to all
 functions.}
 
-\item{stan_path}{Character vector of directories holding Stan files, as
-returned by [nfidd_stan_path()]. May name more than one directory.}
+\item{stan_path}{Character string, the path to the Stan code. Defaults to the
+path to the Stan code in the nfidd package.}
 
 \item{wrap_in_block}{Logical, whether to wrap the functions in a
 `functions{}` block. Default is FALSE.}
