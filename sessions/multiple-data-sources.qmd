@@ -514,10 +514,11 @@ prior_obs <- bind_rows(
   obs |> transmute(day, source = "deaths", value = deaths)
 )
 ## the geometric random-walk prior lets infections wander a long way, so the
-## prior predictive 90% upper runs into the thousands; clip it to twice the
-## observed maximum for display -- the band really extends far higher
+## prior predictive upper limits run into the thousands; clip them to twice
+## the observed maximum for display -- the bands really extend far higher
 caps <- prior_obs |> group_by(source) |> summarise(cap = 2 * max(value))
 
+## one row per source, day and width, so the clipping applies within each band
 prior_pp <- bind_rows(
   fit_prior |> gather_draws(pp_cases[day])  |> mutate(source = "cases"),
   fit_prior |> gather_draws(pp_deaths[day]) |> mutate(source = "deaths")
@@ -526,24 +527,28 @@ prior_pp <- bind_rows(
   ## the most explosive prior draws overflow the count RNG to NA; drop them
   filter(is.finite(.value)) |>
   group_by(source, day) |>
-  median_qi(.value, .width = 0.9) |>
+  median_qi(.value, .width = c(0.5, 0.8, 0.95)) |>
   left_join(caps, by = "source") |>
   mutate(across(c(.value, .lower, .upper), \(x) pmin(x, cap)))
 
 ggplot(prior_pp, aes(x = day, y = .value)) +
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), fill = "#9ecae1",
-              alpha = 0.7) +
-  geom_line(colour = "#08519c", linewidth = 0.8) +
+  geom_lineribbon(
+    aes(ymin = .lower, ymax = .upper,
+        fill = ordered(.width, levels = c(0.95, 0.8, 0.5))),
+    colour = "#08519c", linewidth = 0.8
+  ) +
+  scale_fill_brewer(palette = "Blues", name = "Credible interval") +
   geom_point(data = prior_obs, aes(y = value), colour = "red", size = 0.8) +
   facet_wrap(~source, scales = "free_y") +
   labs(title = "Prior predictive check: cases and deaths",
-       subtitle = paste("Prior median and 90% band (blue, clipped at top --",
-                        "it extends far higher) vs simulated data (red)"),
+       subtitle = paste("Prior median and 50%, 80% and 95% credible intervals",
+                        "(blue, clipped at top -- they extend far higher)",
+                        "vs simulated data (red)"),
        x = "Day", y = NULL)
 ```
 
-The data sit comfortably inside the prior band, so the priors are not obviously mis-scaled.
-The band is very wide because the random-walk prior on $R_t$ permits a lot of growth before any data constrain it, which is itself worth knowing before we fit.
+The data sit comfortably inside the prior intervals, so the priors are not obviously mis-scaled.
+Even the inner 50% interval spans a wide range, and the 95% interval is wider still, because the random-walk prior on $R_t$ permits a lot of growth before any data constrain it, which is itself worth knowing before we fit.
 
 ::: {.callout-note}
 ## Do this at every step
