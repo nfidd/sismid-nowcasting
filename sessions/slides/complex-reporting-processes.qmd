@@ -58,11 +58,13 @@ Ideal for *learning*, and fine when the reporting process is simple.
 
 A single, fixed delay cannot capture:
 
+::: {.incremental}
 - **Day-of-week effects** (fewer onsets or reports at weekends, or delays that differ by weekday)
 - **Time-varying delays** (delays drift as a system gains or loses capacity)
 - **Weekly / batched reporting** (data released weekly, not daily)
 - **Strata** (delays differ by age, region, ...)
 - **Missing reference dates**
+:::
 
 ```{r reports-dip, echo = FALSE, fig.width = 7, fig.height = 3.2}
 tibble(day = days, reports = base * rep_dow_effect[(days %% 7) + 1]) |>
@@ -74,12 +76,12 @@ tibble(day = days, reports = base * rep_dow_effect[(days %% 7) + 1]) |>
   theme(legend.position = "top")
 ```
 
-### What is the downside in bespoke Stan? {.smaller}
+### What is the downside of using Stan directly? {.smaller}
 
 To add a day-of-week effect *and* a time-varying delay by hand:
 
 - Turn the delay vector into a matrix $p_{t,d}$, times a report-date factor $w_{(t+d)\bmod 7}$
-- A random walk on the delay parameters (`meanlog[t]`, `sdlog[t]`) with priors
+- A random walk on the delay parameters with priors
 - Re-impose the per-date sum-to-one constraint every day
 - More parameters, bigger `transformed parameters`, slower gradients, more to test
 
@@ -136,29 +138,35 @@ If you understand the joint nowcasting session, you already understand what `epi
 </div>
 ```
 
-The **expectation**, **reference** and **observation** modules mirror what we built by hand; the **report date** and **missing data** modules are new — they handle effects on the report date (e.g. day-of-week) and reports with an unknown reference date. Adding a feature is a one-line formula change.
+The **expectation**, **reference** and **observation** modules mirror what we built by hand.
+The **report date** module is new and handles effects on the report date, such as day-of-week reporting.
+The **missing data** module is also new and handles reports with an unknown reference date.
 
 ### Mapping back to the bespoke model {.smaller}
 
 | Bespoke model | `epinowcast` module |
 |---|---|
-| $\lambda_{t}$ random walk | `enw_expectation(~ rw(day))` |
+| $\lambda_{t}$ random walk | <code>enw_expectation(~ 0 + (1 &#124; day))</code> |
 | $p_{t,d}$ delay distribution | `enw_reference(~ 1)` |
 | report-date effects | `enw_report(~ ...)` |
 | Poisson likelihood | `enw_obs(family = "poisson")` |
 
-The course model is just these modules; everything else is an extension of one of them.
+::: {.callout-note}
+The `enw_expectation()` formula acts on the daily growth rate, so a random effect by day gives a geometric random walk on the expected counts.
+:::
 
 ### Day-of-week effects {.smaller}
 
 A weekly pattern can enter in *three* distinct places:
 
+::: {.incremental}
 - **Reference date, on the counts**: events truly happen at different rates by day of week
   → goes in the **expectation** module
 - **Reference date, on the delay**: the delay distribution itself differs by the onset day of week
   → goes in the **reference** module
 - **Report date**: the system processes reports at different rates by day of week
   → goes in the **report** module
+:::
 
 ```{r dow-effects, echo = FALSE, fig.width = 9, fig.height = 3}
 sdlog <- 0.5
@@ -227,13 +235,13 @@ enw_preprocess_data(weekly, max_delay = 3, timestep = "week")
 
 ### Others, same idea {.smaller}
 
-Each is a change to one formula, not a new model:
-
-- **Strata** (age, region): `enw_reference(~ (1 | age_group))` — own delay per stratum, partial pooling across strata
+- **Strata** (age, region): `enw_reference(~ (1 | age_group))`, own delay per stratum, partial pooling across strata
 - **Missing reference dates**: a dedicated `enw_missing()` module
 
 ::: {.callout-note}
-`epinowcast` is one tool among several. Bespoke Stan models, `baselinenowcast` benchmarks, and other frameworks all have their place; the right choice depends on the problem.
+`epinowcast` is one tool among several.
+Models written using Stan directly, `baselinenowcast` benchmarks, and other frameworks all have their place.
+The right choice depends on the problem.
 :::
 
 ## `r fontawesome::fa("laptop-code", "white")` Your Turn {background-color="#447099" transition="fade-in"}
