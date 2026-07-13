@@ -472,10 +472,6 @@ fit_opts_hard <- enw_fit_opts(
 )
 ```
 
-Each day-of-week term is a fixed effect.
-Every day of the week appears many times in the data, so there is little to gain from partially pooling the seven levels towards each other, and using the same kind of effect in all three modules keeps them comparable.
-Partial pooling, written `(1 | ...)`, is worth reaching for when a level is seen rarely, as for the age strata at the end of the session.
-
 ```{r dow-fit, message = FALSE, results = "hide"}
 dow_long <- enw_filter_report_dates(
   to_enw_format(dow_triangle), latest_date = nowcast_date
