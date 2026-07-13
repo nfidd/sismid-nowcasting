@@ -1067,7 +1067,7 @@ It is the *recent* end that the deaths cannot see: with a long infection-to-deat
 - **Single sources.** Cases and wastewater have short delays, so their day-20 estimates track the day-40 goal over almost the whole overlapping window. The deaths-only day-20 estimate stays around 1.4 to 1.5 and flat, while the day-40 fit shows $R_t$ already back near 1 by day 20, so deaths miss the turn.
 - **Pairs.** Every pair here contains a timely source, so all three track the goal reasonably. Cases + wastewater is the closest match and the tightest, which is what we would expect from two short-delay sources.
 - **What a second source buys.** Pairing deaths with a timely source (cases + deaths, deaths + wastewater) pulls the day-20 estimate off the deaths-only plateau and back onto the retrospective trajectory. The gain is largest where the single source was weakest, at the recent end.
-- **Does the full model beat the best pair?** Not by much. The three-source day-20 estimate sits on its day-40 goal about as closely as cases + wastewater does, and it dips a little below the goal over the last few days. Once two timely sources are in the model, adding the delayed one has little left to say about the present, which is worth remembering before paying to add a data source.
+- **Does the full model beat the best pair?** Not by much. The three-source day-20 estimate sits on its day-40 goal about as closely as cases + wastewater does, and it dips a little below the goal over the last few days. Once two timely sources are in the model, adding the delayed one has little left to say about the present, which is worth remembering before taking the time to add a data source.
 :::
 
 # When data sources conflict
