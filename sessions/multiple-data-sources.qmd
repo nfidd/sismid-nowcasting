@@ -781,6 +781,22 @@ ggplot(ww_inf, aes(x = day)) +
        subtitle = "A short-delay data source on its own scale")
 ```
 
+Wastewater identifies the trend through a short delay, so its $R_t$ is informative right up to the recent end of the time series.
+
+```{r plot_ww_r}
+ww_r <- fit_ww |>
+  gather_draws(R[day]) |>
+  ungroup() |>
+  sample_draws(100)
+
+ggplot(ww_r, aes(x = day, y = .value, group = .draw)) +
+  geom_line(alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  coord_cartesian(ylim = c(0, 2)) +
+  labs(title = "Rt, wastewater only (sampled trajectories)",
+       x = "Day", y = "Rt")
+```
+
 ## Part 4: add wastewater to the model
 
 *Workflow stage: data integration choice.*
@@ -819,7 +835,21 @@ ggplot(inf_posterior, aes(x = day)) +
        subtitle = "Joint model fit to cases, deaths and wastewater")
 ```
 
-and so is the reproduction number, which we come to next.
+and so is the reproduction number.
+
+```{r plot_r_all}
+r_posterior <- posteriors |>
+  filter(.variable == "R")
+ggplot(r_posterior, aes(x = day, y = .value, group = .draw)) +
+  geom_line(alpha = 0.1) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  coord_cartesian(ylim = c(0, 2)) +
+  labs(title = "Rt, joint model (sampled trajectories)",
+       subtitle = "Informed by cases, deaths and wastewater together",
+       x = "Day", y = "Rt")
+```
+
+Seen on its own, the joint $R_t$ says little about what each data source contributed to it, so we next place it side by side with the estimates from the other combinations of data sources.
 
 ## Comparing $R_t$ across data sources
 
