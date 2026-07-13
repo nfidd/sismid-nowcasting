@@ -1,6 +1,6 @@
 ---
 title: "Biases in delay distributions"
-order: 3
+order: 2
 bibliography: ../nfidd.bib
 ---
 

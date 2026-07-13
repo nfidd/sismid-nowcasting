@@ -1,6 +1,6 @@
 ---
 title: "Jointly fitting multiple data sources"
-order: 14.7
+order: 8
 bibliography: ../nfidd.bib
 ---
 

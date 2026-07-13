@@ -50,14 +50,6 @@ While examples often use outbreak scenarios for clarity, participants should con
 - understanding of population-level modelling with observation error
 - understanding of the link between Rt estimation and nowcasting
 
-## Jointly fitting multiple data sources
-
-- understanding of why combining multiple surveillance data sources can improve inference
-- understanding of the difference between parallel (conditionally independent given infections) and sequential modelling of data sources
-- familiarity with extending the renewal-with-delays model to several parallel data sources with their own delays, scalings and likelihoods
-- understanding of the joint estimation of $R_t$ and infections from cases, deaths and a wastewater signal
-- awareness of the data-conflict problem and how a shared latent process maybe used to reconcile disagreeing streams
-
 ## Combining nowcasting and forecasting (bridge to the forecasting course)
 
 - understanding of the challenges of forecasting with incomplete data due to reporting delays
@@ -66,4 +58,22 @@ While examples often use outbreak scenarios for clarity, participants should con
 - understanding of joint approaches for simultaneous nowcasting and forecasting
 - understanding of the trade-offs between timeliness and completeness in real-time analysis
 - familiarity with evaluating nowcasts and short-horizon forecasts using proper scoring rules (e.g. the Continuous Ranked Probability Score, CRPS)
+
+## Jointly fitting multiple data sources
+
+- understanding of why combining multiple data sources can improve inference
+- understanding of the step from the informal, iterative model building used through the rest of the course to a more formal modelling workflow
+- familiarity with the steps of that workflow, from the research question, through the process model and an observation model for each data source, to the choices about data integration and inference
+- understanding of how model checking, identifiability and conflict between data sources feed back into revising the model
+- familiarity with extending the renewal-with-delays model to several data sources with their own delays, scalings and likelihoods
+- understanding of the joint estimation of $R_t$ and infections from cases, deaths and a wastewater signal
+- awareness of the data-conflict problem and how a shared latent process may be used to reconcile disagreeing data sources
+
+## Modelling complex reporting processes
+
+- awareness of the complex, multi-dimensional reporting processes found in real surveillance data
+- understanding of the different kinds of day-of-week effect, on the expected counts by reference date, on the delay distribution by reference date, and on the reporting process by report date
+- understanding of batch reporting, where data are reported less often than events occur, and of the trade-off between modelling the process at the reporting timestep and keeping a daily process
+- understanding of delays that vary over time, and of how a random walk on the delay lets a nowcast follow that drift
+- familiarity with `epinowcast` as a way of modelling these features by extending individual modules of the model
 
