@@ -624,7 +624,7 @@ ggplot(single_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model) +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt from single-source fits (sampled trajectories)",
        x = "Day", y = "Rt")
 ```
@@ -684,7 +684,7 @@ two_r <- fit_cd |>
 ggplot(two_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt, cases + deaths jointly (sampled trajectories)",
        x = "Day", y = "Rt")
 ```
@@ -860,7 +860,7 @@ ggplot(r_by_model, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.1) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model, nrow = 3) +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt from each single source, each pair, and the joint fit",
        subtitle = "Sampled trajectories from each fit",
        x = "Day", y = "Rt")
@@ -1007,7 +1007,7 @@ ggplot(rt_snapshots, aes(x = day, y = .value,
   facet_wrap(~model, nrow = 2) +
   scale_colour_brewer(palette = "Set1") +
   scale_fill_brewer(palette = "Set1") +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Real-time (day 20) vs retrospective (day 40) Rt",
        subtitle = paste("Median and 90% CI; each fit uses only data up to its",
                         "cutoff, with day 40 the retrospective goal"),
@@ -1040,7 +1040,7 @@ ggplot(rt_joint, aes(x = day, y = .value,
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   scale_fill_brewer(palette = "Set1") +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Real-time vs retrospective Rt: full three-source model",
        x = "Day", y = "Rt", colour = NULL, fill = NULL) +
   theme(legend.position = "bottom")
@@ -1139,7 +1139,7 @@ ggplot(
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt under consistent vs conflicting data sources") +
   theme(legend.position = "bottom")
 ```
@@ -1335,7 +1335,7 @@ ggplot(r_resolved, aes(x = day, y = .value,
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 2)) +
   labs(title = "Rt before and after modelling the drifting death scaling") +
   theme(legend.position = "bottom")
 ```
