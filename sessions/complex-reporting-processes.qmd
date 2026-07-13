@@ -696,8 +696,8 @@ We re-simulate the same reporting process at this later cutoff and leave everyth
 weekly_cutoff <- 106
 weekly_nowcast_date <- ref_date0 + (weekly_cutoff - 1)
 weekly_plot_from <- weekly_nowcast_date - 35
-# The weekly-weekly model fits 10 whole weeks; the weekly-daily model below
-# reuses the shorter daily history (n_history) to stay fast
+# Both weekly models fit the same 10 whole weeks of reference dates, so the
+# comparison between them is not confounded by one seeing more history
 weekly_n_history <- 70
 
 # Re-seed so this weekly reporting triangle is reproducible on its own
@@ -781,9 +781,9 @@ So we read the reporting day off the aggregated data rather than hard-coding it,
 report_dow <- weekdays(max(weekly_long$report_date))
 report_dow
 
-weekly_rep_data <- weekly_enw_long |>
-  enw_filter_reference_dates(include_days = n_history) |>
-  enw_complete_dates(timestep = "day")
+# Start from the same reference window as the weekly-weekly model, so the two
+# differ only in how they model the reporting schedule
+weekly_rep_data <- enw_complete_dates(weekly_enw_long, timestep = "day")
 weekly_rep_data[, day_of_week := weekdays(report_date)]
 weekly_rep_data[
   , confirm := fifelse(day_of_week == report_dow, confirm, NA_real_)
