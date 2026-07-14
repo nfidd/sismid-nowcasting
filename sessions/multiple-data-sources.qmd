@@ -1217,7 +1217,6 @@ A latent quantity that suddenly becomes much more uncertain, or that no longer m
 When the geometry of the posterior is contorted by trying to satisfy contradictory data, the sampler can struggle.
 That surfaces as divergent transitions, low effective sample sizes, or high `rhat` in the fit summary.
 It is the least reliable of the three symptoms, as we are about to see.
-It is always worth scanning the diagnostics of the conflicting fit (`fit_conflict`) and comparing them to the clean fit.
 
 ```{r conflict_diagnostics}
 diagnostics <- function(f, label) {
