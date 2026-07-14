@@ -309,7 +309,7 @@ The full model is on [GitHub](https://github.com/nfidd/sismid-nowcasting/blob/ma
 We use a single Stan file here because it is what the rest of the course uses, but Stan is not an ideal language for building models *modularly* like this.
 Stan has no built-in way to package the shared process and each observation branch as separate, reusable components and then compose them: in practice you end up with one monolithic file, as we have.
 You *can* get some way there by vendoring Stan functions between projects with tooling such as [`primarycensored`](https://primarycensored.epinowcast.org/), which packages reusable Stan functions (for censored and truncated delays) and copies them into your model at build time.
-Other probabilistic programming languages support this modular, composable style more naturally; see the Julia prototype [`ComposableTuringIDModels.jl`](https://github.com/EpiAware/ComposableTuringIDModels.jl) for one take on building this kind of model from swappable components.
+Other probabilistic programming languages support this modular, composable style more naturally; see the Julia prototype [`ComposableTuringIDModels.jl`](https://composableturingidmodels.epiaware.org/dev/) for one take on building this kind of model from swappable components.
 :::
 
 The top of the DAG is the shared process: the $R_t$ random walk and the renewal equation that turns it into one latent infection series.
@@ -539,7 +539,7 @@ ggplot(prior_pp, aes(x = day, y = .value)) +
   facet_wrap(~source, scales = "free_y") +
   labs(title = "Prior predictive check: cases and deaths",
        subtitle = paste("Prior median and 30%, 60% and 90% credible intervals",
-                        "(blue, clipped at top -- they extend far higher)",
+                        "(blue, clipped at top --\nthey extend far higher)",
                         "vs simulated data (red)"),
        x = "Day", y = NULL)
 ```
@@ -633,7 +633,7 @@ ggplot(single_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model) +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt from single-source fits (sampled trajectories)",
        x = "Day", y = "Rt")
 ```
@@ -693,7 +693,7 @@ two_r <- fit_cd |>
 ggplot(two_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt, cases + deaths jointly (sampled trajectories)",
        x = "Day", y = "Rt")
 ```
@@ -801,7 +801,7 @@ ww_r <- fit_ww |>
 ggplot(ww_r, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt, wastewater only (sampled trajectories)",
        x = "Day", y = "Rt")
 ```
@@ -853,7 +853,7 @@ r_posterior <- posteriors |>
 ggplot(r_posterior, aes(x = day, y = .value, group = .draw)) +
   geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt, joint model (sampled trajectories)",
        subtitle = "Informed by cases, deaths and wastewater together",
        x = "Day", y = "Rt")
@@ -900,7 +900,7 @@ ggplot(r_by_model, aes(x = day, y = .value,
   facet_wrap(~model, nrow = 3) +
   scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt from each single source, each pair, and the joint fit",
        subtitle = "Sampled trajectories from each fit, coloured by model",
        x = "Day", y = "Rt") +
@@ -1049,7 +1049,7 @@ ggplot(rt_snapshots, aes(x = day, y = .value,
   facet_wrap(~model, ncol = 3) +
   scale_colour_brewer(palette = "Set1") +
   scale_fill_brewer(palette = "Set1") +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Real-time (day 20) vs retrospective (day 40) Rt",
        subtitle = paste("Median and 90% CI; each fit uses only data up to its",
                         "cutoff, with day 40 the retrospective goal"),
@@ -1084,12 +1084,13 @@ It is the *recent* end that the deaths cannot see: with a long infection-to-deat
 # When data sources conflict
 
 Combining data sources works well when they tell a consistent story, but real surveillance data sources can *disagree*.
-This is the feedback arrow in the workflow that we singled out earlier: *conflict between data sources reveals model misspecification*.
+This is the feedback arrow in the workflow that we singled out earlier, where *conflict between data sources reveals model misspecification*.
 
 ## What does it mean for data sources to conflict?
 
 Because every data source is a delayed, scaled view of the *same* latent infections, each implicitly carries its own answer to the question "what must the infection trajectory have looked like?".
-Two data sources **conflict** when those implied trajectories are incompatible: the cases imply infections that are falling while the deaths imply infections that are still rising, say, and no single $R_t$ path can produce both at once.
+Two data sources **conflict** when those implied trajectories are incompatible.
+The cases imply infections that are falling while the deaths imply infections that are still rising, say, and no single $R_t$ path can produce both at once.
 
 Why does this happen in practice?
 The model assumes each data source is the shared infections convolved with a *fixed* delay and multiplied by a *constant* scaling.
@@ -1100,7 +1101,7 @@ Conflict is what we see when one of those assumptions is wrong for at least one 
 - **Mis-specified scalings.** A drifting infection fatality ratio (e.g. with changing age structure or treatment) or a reporting artefact pushes a data source off the level the others support.
 - **Truly different populations.** Streams that sample different groups (e.g. hospital deaths vs community cases) need not share one infection process at all.
 
-To see conflict in action we give it a concrete **mechanism**: a *drifting infection fatality ratio*.
+To see conflict in action we give it a concrete **mechanism**, a *drifting infection fatality ratio*.
 We re-simulate the deaths from the *same* shared infections as before, but let the death scaling rise over the second half of the outbreak (as it might if severity increased with age structure or a new variant).
 Cases and wastewater are unchanged.
 Under our constant-scaling model the rising deaths therefore *look like* a rising epidemic, which the flat-scaling cases and wastewater flatly contradict.
@@ -1116,7 +1117,7 @@ obs_conflict <- obs |>
 
 ## Fitting the constant-scaling model to conflicting data sources
 
-We refit the same joint, three-source model -- still assuming a *constant* death scaling -- to this conflicting data, reusing the helpers and just swapping in the conflicting deaths.
+We refit the same joint, three-source model, still assuming a *constant* death scaling, to this conflicting data, reusing the helpers and just swapping in the conflicting deaths.
 
 ```{r fit_conflict, results = 'hide', message = FALSE}
 data_conflict <- full_data
@@ -1140,7 +1141,7 @@ ggplot(
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-  coord_cartesian(ylim = c(0.5, 2)) +
+  coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt under consistent vs conflicting data sources") +
   theme(legend.position = "bottom")
 ```
@@ -1157,7 +1158,7 @@ Is the result closer to the "true" declining $R_t$, the rising signal implied by
 
 - **Direction.** Through the *early* part of the second half the conflicting-deaths fit pulls $R_t$ *upwards*, away from the true declining trajectory, as it tries to accommodate the rising deaths. Later it over-compensates and dips *below* the consistent fit.
 - **Why.** One shared infection process cannot be both declining (to match cases and wastewater) and rising (to match deaths), so the model splits the difference and the compromise wanders either side of the truth.
-- **Result.** The joint $R_t$ is faithful to no single data source: neither the true declining path nor the rising one the deaths imply.
+- **Result.** The joint $R_t$ is faithful to no single data source, neither the true declining path nor the rising one the deaths imply.
 :::
 
 ::: {.callout-tip .optional collapse="true"}
@@ -1175,10 +1176,11 @@ Drag the death-scaling drift to open a conflict, then let the scaling vary to sn
 
 The $R_t$ comparison above already hints at trouble, but in a real analysis we would not know the truth to compare against.
 So how would conflict actually announce itself?
-It shows up in three linked ways, and a principled workflow looks for all of them.
+It shows up in three linked ways, and a good workflow looks for all of them.
 
 **1. Poor fit to one data source.**
-The clearest symptom is a *posterior predictive check*: simulate each data source from the fitted model, *with* its observation noise, and overlay it on the data.
+The clearest symptom is a *posterior predictive check*.
+We simulate each data source from the fitted model, *with* its observation noise, and overlay it on the data.
 Because the shared infections are dragged towards a compromise, at least one data source ends up fitted badly.
 We draw the posterior predictive counts for each data source (`pp_cases`, `pp_deaths`, from each data source's own likelihood) and compare sampled trajectories to the conflicting data.
 
@@ -1246,20 +1248,32 @@ In a real check we would scan `rhat` and `ess_bulk` *per parameter* (the full `f
 ## Take 5 minutes
 
 Look at the posterior predictive plot and at the diagnostics printed above.
-Which data source is fitted worst, and in which direction does the model miss?
-Do the sampler diagnostics look worse than for the consistent fit?
+
+- Which data source is fitted worst, and in which direction does the model miss?
+- Neither panel is fitted well. Which data source would you nonetheless *suspect* of being the misspecified one, and why?
+- Which of the assumptions in the list above would you relax first?
+- Do the sampler diagnostics look worse than for the consistent fit?
 :::
 
 ::: {.callout-note collapse="true"}
 ## Solution
 
-**Cases are fitted worst.**
-From about day 20 the observed cases (red) sit *below* the bulk of the predictive draws, and the gap widens through the second half of the outbreak: the model over-predicts the cases.
-That is the shared infections being dragged *up* by the rising deaths, which the constant death scaling can only explain as more infections.
-The deaths panel, by contrast, is fitted reasonably well, with the latest points sitting at the top edge of the predictive draws rather than outside them.
-This is the asymmetry to expect: the source that drives the misspecification gets fitted at the expense of the sources that disagree with it.
+**Neither count source is fitted well, and that is the point.**
+The compromise infection trajectory cannot satisfy both at once, so the model misses in opposite directions.
+From about day 15 the observed cases sit *below* the bulk of the predictive draws (the model over-predicts them), while the later deaths ride the *top* edge of their draws, with the last few points at or above it.
+The shared infections are being dragged *up* by the rising deaths, which a constant death scaling can only explain as more infections, and the cases pay for it.
 
-The sampler diagnostics barely move.
+**Why suspect the deaths.**
+The posterior predictive check tells us the sources disagree, but not which one is wrong; that takes an argument, and two things point at the deaths.
+
+- **The other two sources agree with each other.** Cases and wastewater have different delays, different scalings and different likelihoods, yet they imply the same declining infections. It is more plausible that the one source out of step is misspecified than that the two independent ones are wrong in the same way.
+- **The mismatch grows over time.** A constant error in a scaling would offset a source by a constant factor, and a wrong delay would shift or blur its *timing*. What we see instead is a gap that widens through the second half, which is the signature of something in the deaths branch *drifting*.
+
+So the assumption to relax first is the constant death scaling, and we do exactly that below.
+Note we are cheating slightly, because we built the drift in, so we know the answer.
+On real data this step is a hypothesis, and the check is whether relaxing that assumption reconciles the sources without breaking anything else.
+
+**The sampler diagnostics barely move.**
 The only sign of strain is the effective sample size.
 So it is the posterior predictive check, not the sampler, that exposes this conflict.
 :::
@@ -1267,24 +1281,24 @@ So it is the posterior predictive check, not the sampler, that exposes this conf
 ## What should a modeller do about conflict?
 
 It is worth being clear about what the shared latent process does and does not do here.
-Sharing one infection process across data sources *surfaces* a conflict (the symptoms above) and yields a single compromise estimate, but it does not *resolve* the disagreement: the compromise is faithful to no data source and, as we have seen, can be actively misleading about $R_t$.
-Real resolution comes from modelling the *reason* the data sources disagree, not from averaging the data sources together.
+Sharing one infection process across data sources *surfaces* a conflict (the symptoms above) and yields a single compromise estimate, but it does not *resolve* the disagreement.
+The compromise is faithful to no data source and, as we have seen, can be actively misleading about $R_t$.
 
 ::: {.callout-note}
 ## Options for resolving conflict
 
-When a principled model check flags conflict between data sources, there are a handful of standard responses [@presanis2013conflict; @deangelis2018analysing; @gelman2020bayesian]:
+When a model check flags conflict between data sources, there are several potential responses [@presanis2013conflict; @deangelis2018analysing; @gelman2020bayesian]:
 
-- **Model the differing mechanism.** Extend the model so the suspected source of divergence is explicit -- a time-varying ascertainment or IFR, a re-estimated or more dispersed delay, or data source-specific reporting effects. This is the principled default when the data sources really do observe the same infections [@deangelis2018analysing; @nicholson2022interoperability].
+- **Model the differing mechanism.** Extend the model so the suspected source of divergence is explicit, such as a time-varying ascertainment or IFR, a re-estimated or more dispersed delay, or data source-specific reporting effects. This is the default when the data sources really do observe the same infections [@deangelis2018analysing; @nicholson2022interoperability].
 - **Expand or relax the observation model.** Allow overdispersion, or weaken an over-confident likelihood, so a data source is no longer forced onto a level it cannot support.
-- **Down-weight or drop a data source.** If a data source measures a truly different population, or carries an artefact you cannot model, it may be right to exclude it -- but only once you understand *why* [@presanis2013conflict].
+- **Down-weight or drop a data source.** If a data source measures a truly different population, or carries an artefact you cannot model, it may be right to exclude it, but only once you understand *why* [@presanis2013conflict].
 - **Revisit the data.** Conflict is sometimes a data problem (a definition change, a reporting glitch) rather than a model problem, and is best fixed upstream.
 
-Conflict diagnostics in Bayesian evidence synthesis make this formal: they quantify how much each source disagrees with the rest before deciding what to do [@presanis2013conflict].
+Conflict diagnostics in Bayesian evidence synthesis make this formal by quantifying how much each source disagrees with the rest before deciding what to do [@presanis2013conflict].
 :::
 
-We will *do* the first of these: model the mechanism behind the divergence.
-We suspected a drifting death scaling, so we relax the constant-IFR assumption and let the death scaling follow its own random walk over time.
+We will *do* the first of these and model the mechanism behind the divergence.
+The reasoning in the solution above pointed at the deaths (they are the one source out of step with the other two, and their mismatch *widens* over time rather than sitting at a constant offset), so the assumption we relax is the constant IFR, and we let the death scaling follow its own random walk over time.
 The model already has a switch for this, `tv_death_scale`; setting it to `1` turns the scalar `ifr` into a geometric random walk.
 
 ```{r fit_resolved, results = 'hide', message = FALSE}
@@ -1324,10 +1338,12 @@ ggplot(resolved_draws, aes(x = day, y = .value)) +
 ```
 
 Letting the death scaling drift lets the deaths panel track the rising data without dragging the shared infections up, so both data sources are fitted well at once.
-We can confirm that $R_t$ no longer chases the deaths, by comparing it to the true declining trajectory the cases and wastewater came from.
+We can confirm that $R_t$ no longer chases the deaths.
+We add the original fit to the *consistent* data as a reference, since that is the estimate we would like to recover.
 
 ```{r r_resolved}
 r_resolved <- bind_rows(
+  r_draws(fit, "consistent data (reference)"),
   r_draws(fit_conflict, "constant scaling"),
   r_draws(fit_resolved, "time-varying death scaling")
 ) |>
@@ -1339,8 +1355,10 @@ ggplot(r_resolved, aes(x = day, y = .value,
   geom_hline(yintercept = 1, linetype = "dashed") +
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-  coord_cartesian(ylim = c(0.5, 2)) +
-  labs(title = "Rt before and after modelling the drifting death scaling") +
+  coord_cartesian(ylim = c(0.4, 2)) +
+  labs(title = "Rt before and after modelling the drifting death scaling",
+       subtitle = "With the fit to the consistent data as a reference",
+       x = "Day", y = "Rt") +
   theme(legend.position = "bottom")
 ```
 
@@ -1413,7 +1431,7 @@ Combining this multi-source approach with the nowcasting models from the [joint 
 -   `EpiSewer` is a Bayesian generative model for estimating transmission dynamics from a wastewater signal, with a carefully specified shedding and measurement model [@lisonRobustRealtimeEstimation2025; @lisonEpiSewer2025].
 -   The CDC's wastewater-informed modelling work jointly fits wastewater concentration data and epidemiological count data to produce nowcasts and forecasts [@johnsonWwinference2026; @johnsonBayesianGenerative2026]. Unlike our deliberately single-site example, it combines *multiple* wastewater sites with hierarchical structure -- a multi-site, multi-resolution extension of the ideas in this session.
 -   [`epinowcast`](https://package.epinowcast.org/) is a flexible Bayesian nowcasting framework that can also jointly fit *multiple* datasets (for example several reporting streams, sites or strata), sharing structure across them through partially pooled modules [@epinowcastPackage2024].
--   [`ComposableTuringIDModels.jl`](https://github.com/EpiAware/ComposableTuringIDModels.jl) is a Julia prototype that builds this kind of multi-source model from swappable, composable components, an example of tooling designed to make the modular workflow in this session easier than it is in a single Stan file.
+-   [`ComposableTuringIDModels.jl`](https://composableturingidmodels.epiaware.org/dev/) is a Julia prototype that builds this kind of multi-source model from swappable, composable components, an example of tooling designed to make the modular workflow in this session easier than it is in a single Stan file.
 -   The workflow paper itself works through schematic case studies (no code) that apply these steps to real modelling problems, a useful set of worked examples of the workflow we followed here [@abbottWorkflowInfectiousDisease2026].
 
 # Wrap up
