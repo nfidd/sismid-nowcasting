@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Modelling complex reporting processes – SISMID: Nowcasting</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../nfidd-favicon.png" rel="icon" type="image/png">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-51ec0baac84c74459878fd0df95b10e6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-85585e03464b8122d6e45615df21cdfa.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-51ec0baac84c74459878fd0df95b10e6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+<meta property="og:title" content="Modelling complex reporting processes – SISMID: Nowcasting">
+<meta property="og:description" content="Nowcasting infectious disease dynamics - SISMID">
+<meta property="og:image" content="https://nfidd.github.io/sismid-nowcasting/sessions/complex-reporting-processes_files/figure-html/preprocess-plot-1.png">
+<meta property="og:site_name" content="SISMID: Nowcasting">
+<meta property="og:image:height" content="960">
+<meta property="og:image:width" content="1344">
+</head>
+
+<body class="nav-sidebar docked nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">SISMID: Nowcasting</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../getting-started.html"> 
+<span class="menu-text">Getting started</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../timetable.html"> 
+<span class="menu-text">Timetable</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-sessions" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Sessions</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-sessions">    
+        <li>
+    <a class="dropdown-item" href="../sessions/introduction-and-course-overview.html">
+ <span class="dropdown-text">Introduction and course overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/delay-distributions.html">
+ <span class="dropdown-text">Delay distributions</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/biases-in-delay-distributions.html">
+ <span class="dropdown-text">Biases in delay distributions</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic.html">
+ <span class="dropdown-text">Using delay distributions to model the data generating process</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/R-estimation-and-the-renewal-equation.html">
+ <span class="dropdown-text"><span class="math inline">\(R_t\)</span> estimation and the renewal equation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/nowcasting.html">
+ <span class="dropdown-text">Nowcasting concepts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/joint-nowcasting.html">
+ <span class="dropdown-text">Nowcasting with an unknown reporting delay</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/forecasting-nowcasting.html">
+ <span class="dropdown-text">Combining nowcasting and forecasting</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/multiple-data-sources.html">
+ <span class="dropdown-text">Jointly fitting multiple data sources</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/complex-reporting-processes.html">
+ <span class="dropdown-text">Modelling complex reporting processes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/methods-in-the-real-world.html">
+ <span class="dropdown-text">Methods in the real world</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../sessions/end-of-course-summary-and-discussion.html">
+ <span class="dropdown-text">End of course summary and discussion</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-reference" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Reference</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-reference">    
+        <li>
+    <a class="dropdown-item" href="../reference/learning_objectives.html">
+ <span class="dropdown-text">Learning outcomes</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/help.html">
+ <span class="dropdown-text">Getting help</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/further_reading.html">
+ <span class="dropdown-text">Further reading</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/stan.html">
+ <span class="dropdown-text">Stan Reference</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/using-our-stan-models.html">
+ <span class="dropdown-text">Using our Stan models</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../reference/model-index.html">
+ <span class="dropdown-text">Stan model index</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="../authors.html"> 
+<span class="menu-text">Authors</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/nfidd/sismid-nowcasting"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../sessions/complex-reporting-processes.html">Modelling complex reporting processes</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/introduction-and-course-overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction and course overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/delay-distributions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Delay distributions</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/biases-in-delay-distributions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Biases in delay distributions</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/using-delay-distributions-to-model-the-data-generating-process-of-an-epidemic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Using delay distributions to model the data generating process</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/R-estimation-and-the-renewal-equation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="math inline">\(R_t\)</span> estimation and the renewal equation</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/nowcasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Nowcasting concepts</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/joint-nowcasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Nowcasting with an unknown reporting delay</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/forecasting-nowcasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Combining nowcasting and forecasting</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/multiple-data-sources.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Jointly fitting multiple data sources</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/complex-reporting-processes.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Modelling complex reporting processes</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/methods-in-the-real-world.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Methods in the real world</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../sessions/end-of-course-summary-and-discussion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">End of course summary and discussion</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#slides" id="toc-slides" class="nav-link" data-scroll-target="#slides">Slides</a></li>
+  <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives">Objectives</a></li>
+  </ul></li>
+  <li><a href="#why-real-reporting-is-more-complex-than-our-models-have-assumed-so-far" id="toc-why-real-reporting-is-more-complex-than-our-models-have-assumed-so-far" class="nav-link" data-scroll-target="#why-real-reporting-is-more-complex-than-our-models-have-assumed-so-far">Why real reporting is more complex than our models have assumed so far</a></li>
+  <li><a href="#introducing-epinowcast" id="toc-introducing-epinowcast" class="nav-link" data-scroll-target="#introducing-epinowcast">Introducing <code>epinowcast</code></a></li>
+  <li><a href="#the-course-model-in-epinowcast" id="toc-the-course-model-in-epinowcast" class="nav-link" data-scroll-target="#the-course-model-in-epinowcast">The course model, in <code>epinowcast</code></a>
+  <ul class="collapse">
+  <li><a href="#putting-the-data-into-epinowcast-format" id="toc-putting-the-data-into-epinowcast-format" class="nav-link" data-scroll-target="#putting-the-data-into-epinowcast-format">Putting the data into <code>epinowcast</code> format</a></li>
+  <li><a href="#preprocessing-and-fitting" id="toc-preprocessing-and-fitting" class="nav-link" data-scroll-target="#preprocessing-and-fitting">Preprocessing and fitting</a></li>
+  <li><a href="#plotting-the-nowcast" id="toc-plotting-the-nowcast" class="nav-link" data-scroll-target="#plotting-the-nowcast">Plotting the nowcast</a></li>
+  </ul></li>
+  <li><a href="#extending-the-model-day-of-week-effects" id="toc-extending-the-model-day-of-week-effects" class="nav-link" data-scroll-target="#extending-the-model-day-of-week-effects">Extending the model: day-of-week effects</a></li>
+  <li><a href="#extending-the-model-a-time-varying-delay" id="toc-extending-the-model-a-time-varying-delay" class="nav-link" data-scroll-target="#extending-the-model-a-time-varying-delay">Extending the model: a time-varying delay</a></li>
+  <li><a href="#extending-the-model-weekly-batched-reporting" id="toc-extending-the-model-weekly-batched-reporting" class="nav-link" data-scroll-target="#extending-the-model-weekly-batched-reporting">Extending the model: weekly (batched) reporting</a>
+  <ul class="collapse">
+  <li><a href="#weekly-weekly" id="toc-weekly-weekly" class="nav-link" data-scroll-target="#weekly-weekly">Weekly-weekly</a></li>
+  <li><a href="#weekly-daily-structural-reporting" id="toc-weekly-daily-structural-reporting" class="nav-link" data-scroll-target="#weekly-daily-structural-reporting">Weekly-daily (structural reporting)</a></li>
+  </ul></li>
+  <li><a href="#other-reporting-complications" id="toc-other-reporting-complications" class="nav-link" data-scroll-target="#other-reporting-complications">Other reporting complications</a></li>
+  <li><a href="#going-further" id="toc-going-further" class="nav-link" data-scroll-target="#going-further">Going further</a></li>
+  <li><a href="#wrap-up" id="toc-wrap-up" class="nav-link" data-scroll-target="#wrap-up">Wrap up</a>
+  <ul class="collapse">
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/nfidd/sismid-nowcasting/blob/main/sessions/complex-reporting-processes.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/nfidd/sismid-nowcasting/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Modelling complex reporting processes</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>In the <a href="joint-nowcasting">joint nowcasting session</a> we built a nowcasting model in Stan that jointly estimated the delay distribution and the nowcast from the reporting triangle, and then added a renewal process so transmission informed the nowcast. That model assumed a single delay distribution, the same on every day.</p>
+<p>Bespoke models like that are ideal for <em>learning</em> how nowcasting works, and they remain a reasonable choice for real analyses when you understand the reporting process well. But routine surveillance data is usually messier: the reporting process itself can be complicated in ways a single fixed delay cannot capture. In this session we introduce <a href="https://package.epinowcast.org/"><code>epinowcast</code></a> <span class="citation" data-cites="epinowcastPackage2024">(<a href="#ref-epinowcastPackage2024" role="doc-biblioref">Sam Abbott et al. 2024</a>)</span>, one flexible framework for these situations. We reproduce the joint nowcasting model in <code>epinowcast</code>, then <em>extend</em> it to handle reporting complications the bespoke model cannot: a day-of-week reporting effect, a delay that drifts over time, and weekly (batched) reporting. Throughout we simulate data with the feature, fit a model that handles it, and look at the result.</p>
+<section id="slides" class="level2">
+<h2 class="anchored" data-anchor-id="slides">Slides</h2>
+<ul>
+<li><a href="slides/complex-reporting-processes">Modelling complex reporting processes</a></li>
+</ul>
+</section>
+<section id="objectives" class="level2">
+<h2 class="anchored" data-anchor-id="objectives">Objectives</h2>
+<p>This session shows why real reporting processes are more complex than a single fixed delay allows, reproduces the joint nowcasting model in <code>epinowcast</code>, and extends it to complex reporting features through worked examples.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Setup
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<section id="source-file" class="level2">
+<h2 class="anchored" data-anchor-id="source-file">Source file</h2>
+<p>The source file of this session is located at <code>sessions/complex-reporting-processes.qmd</code>.</p>
+</section>
+<section id="libraries-used" class="level2">
+<h2 class="anchored" data-anchor-id="libraries-used">Libraries used</h2>
+<p>In this session we will use the <code>nfidd.nowcasting</code> package to load infection times and the simulation helpers we have used throughout, the <code>dplyr</code> and <code>tidyr</code> packages for data wrangling, and the <code>ggplot2</code> library for plotting. The worked examples additionally use the <code>epinowcast</code> package and the <code>data.table</code> package that it uses for its data structures.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"nfidd.nowcasting"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"tidyr"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"epinowcast"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"data.table"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="initialisation" class="level2">
+<h2 class="anchored" data-anchor-id="initialisation">Initialisation</h2>
+<p>We set a random seed for reproducibility. We also tell <code>epinowcast</code> not to warn about partially specified initial conditions, which keeps the output tidy.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">cmdstanr_warn_inits =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="why-real-reporting-is-more-complex-than-our-models-have-assumed-so-far" class="level1">
+<h1>Why real reporting is more complex than our models have assumed so far</h1>
+<p>Recall the joint nowcasting model: we modelled each cell of the reporting triangle as</p>
+<p><span class="math display">\[
+  n_{t,d} \mid \lambda_{t}, p_{t,d} \sim \text{Poisson}\left(\lambda_{t} \times p_{t,d}\right),
+\]</span></p>
+<p>where <span class="math inline">\(\lambda_{t}\)</span> is the expected number of onsets on day <span class="math inline">\(t\)</span> and <span class="math inline">\(p_{t,d}\)</span> is the probability that an onset on day <span class="math inline">\(t\)</span> is reported with a delay of <span class="math inline">\(d\)</span> days. We gave <span class="math inline">\(\lambda_{t}\)</span> a daily geometric random walk (or a renewal process) and <span class="math inline">\(p_{t,d}\)</span> a single delay distribution, the same on every day.</p>
+<p>That worked in our simulated examples because we simulated from almost exactly that model. Real data rarely cooperate so neatly. Routine surveillance data often shows features a single fixed delay does not capture: day-of-week reporting effects, reporting delays that vary over time or by strata such as age or region, weekly or batched reporting, and missing or late reports.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think about the joint nowcasting model you built. What would you have to change in that Stan code to add a day-of-week reporting effect <em>and</em> let the delay distribution change over the course of the outbreak?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>There is no single right answer, but the concrete changes add up quickly.</p>
+<ul>
+<li><strong>A day-of-week reporting effect.</strong> The reporting probability would have to depend on the calendar day the report lands on, not just the delay <span class="math inline">\(d\)</span>. In practice you would turn the delay vector into a matrix indexed by reference date <em>and</em> delay, <span class="math inline">\(p_{t,d}\)</span>, and multiply each cell by a day-of-week factor <span class="math inline">\(w_{(t+d)\,\bmod\,7}\)</span> keyed on the <em>report</em> date <span class="math inline">\(t+d\)</span>. That means seven new parameters (a <code>simplex</code> or sum-to-zero vector for identifiability) and an extra loop over cells in <code>transformed parameters</code>.</li>
+<li><strong>A time-varying delay.</strong> You would put a random walk on the parameters of the delay distribution, for example <code>meanlog[t] = meanlog[t-1] + sigma * eta[t]</code> (and similarly for <code>sdlog</code>), each with its own prior, then recompute the delay PMF for every reference date <span class="math inline">\(t\)</span> rather than once. That is a new vector of innovations <code>eta</code>, a new standard-deviation parameter <code>sigma</code> with a prior, and a per-date PMF calculation.</li>
+<li><strong>Keeping it a valid distribution.</strong> The probabilities for each reference date must still sum to one over delays after both changes, so you would re-impose the per-date normalisation (a simplex or an explicit renormalisation) every day instead of reusing one shared, pre-normalised vector.</li>
+</ul>
+<p>None of this is impossible, and writing it yourself remains a reasonable option. But it is the point at which reaching for a general framework that already implements these features lets us focus on the modelling choices rather than the implementation.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="introducing-epinowcast" class="level1">
+<h1>Introducing <code>epinowcast</code></h1>
+<p><a href="https://package.epinowcast.org/"><code>epinowcast</code></a> <span class="citation" data-cites="epinowcastPackage2024">(<a href="#ref-epinowcastPackage2024" role="doc-biblioref">Sam Abbott et al. 2024</a>)</span> is a Bayesian framework for real-time infectious disease surveillance. It is <em>one</em> of several tools for this kind of modelling, and it is a direct generalisation of the joint nowcasting model we built: it works from the reporting triangle and jointly estimates the expected counts and the reporting process, but it makes each component more flexible and exposes them through a formula interface rather than hand-written Stan code.</p>
+<p><code>epinowcast</code> decomposes the problem into modular pieces.</p>
+<ul>
+<li>An <strong>expectation</strong> model for the expected counts <span class="math inline">\(\lambda_{t}\)</span> (the analogue of our geometric random walk or renewal process).</li>
+<li>A <strong>reference date</strong> model for the delay distribution by date of the epidemiological event (the analogue of our <span class="math inline">\(p_{t,d}\)</span>, but allowed to vary over time and by covariates).</li>
+<li>A <strong>report date</strong> model, new to us, for effects that act on the <em>report</em> date, such as day-of-week reporting effects.</li>
+<li>A <strong>missing data</strong> model, also new to us, for reports whose reference date is missing or not yet known.</li>
+<li>An <strong>observation</strong> model for the likelihood linking expected to observed counts (the analogue of our Poisson likelihood for <span class="math inline">\(n_{t,d}\)</span>).</li>
+</ul>
+<p>Each piece is specified with an R formula, so adding a day-of-week effect or a time-varying delay is a one-line change rather than a rewrite of the model. Internally, <code>epinowcast</code> still builds and fits a Stan model.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We are treating <code>epinowcast</code> as a tool here rather than dissecting its internals. The mapping back to the bespoke model is deliberate: if you understand the joint nowcasting session, you already understand what <code>epinowcast</code> is doing, just with more flexible components.</p>
+</div>
+</div>
+</section>
+<section id="the-course-model-in-epinowcast" class="level1">
+<h1>The course model, in <code>epinowcast</code></h1>
+<p>Before adding anything new, let us reproduce the joint nowcasting model we already built, but in <code>epinowcast</code>. We simulate exactly as in the <a href="joint-nowcasting">joint nowcasting session</a>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ip_pmf <span class="ot">&lt;-</span> <span class="fu">make_ip_pmf</span>()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>onset_df <span class="ot">&lt;-</span> <span class="fu">simulate_onsets</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">make_daily_infections</span>(infection_times), ip_pmf</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>cutoff <span class="ot">&lt;-</span> <span class="dv">71</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>reporting_delay_pmf <span class="ot">&lt;-</span> <span class="fu">censored_delay_pmf</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  rlnorm, <span class="at">max =</span> <span class="dv">15</span>, <span class="at">meanlog =</span> <span class="dv">1</span>, <span class="at">sdlog =</span> <span class="fl">0.5</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>reporting_triangle <span class="ot">&lt;-</span> onset_df <span class="sc">|&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(day <span class="sc">&lt;</span> cutoff) <span class="sc">|&gt;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">reporting_delay =</span> <span class="fu">list</span>(</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tibble</span>(<span class="at">d =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">15</span>, <span class="at">reporting_delay =</span> reporting_delay_pmf)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(reporting_delay) <span class="sc">|&gt;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_day =</span> day <span class="sc">+</span> d,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_onsets =</span> <span class="fu">rpois</span>(<span class="fu">n</span>(), onsets <span class="sc">*</span> reporting_delay)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="putting-the-data-into-epinowcast-format" class="level2">
+<h2 class="anchored" data-anchor-id="putting-the-data-into-epinowcast-format">Putting the data into <code>epinowcast</code> format</h2>
+<p><code>epinowcast</code> expects data in a “long” format with one row per (reference date, report date) pair, where <code>confirm</code> is the <strong>cumulative</strong> count for that reference date as known on that report date. This is the same reporting triangle we have been using, just with calendar dates instead of integer days and cumulative rather than incremental counts.</p>
+<p>We attach arbitrary calendar dates (so that, later, weekends line up with a day-of-week effect) and let <code>epinowcast</code>’s own <code>enw_add_cumulative()</code> form the cumulative counts from the incident <code>new_confirm</code> column, rather than computing the cumulative sum by hand. Because we reuse this transformation in each example below, we wrap it in a small helper.</p>
+<p>Our simulation already generates every report an onset will ever receive (all delays <span class="math inline">\(d = 0, \ldots, 15\)</span>), so <code>to_enw_format()</code> formats the <em>complete</em> eventually-reported data. From that one complete data set we derive the two things we need using <code>epinowcast</code> functions:</p>
+<ul>
+<li>the data available <strong>as of the nowcast</strong>, which we fit to, using <code>enw_filter_report_dates()</code> to keep only reports that had arrived by the nowcast date;</li>
+<li>the <strong>eventually-reported</strong> data, which we judge the nowcast against, using <code>enw_latest_data()</code> to take the most recent report for each reference date.</li>
+</ul>
+<p>After filtering to the as-of-nowcast reports we call <code>enw_complete_dates()</code> to make the reporting triangle explicitly complete, so any reference-date and delay cell that never received a report is filled with a zero rather than left missing. Our simulation is already complete so this changes nothing here, but on real data it guards against gaps in the triangle before preprocessing.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Day 0 of the simulation is a Monday</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ref_date0 <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(<span class="st">"2023-01-02"</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The nowcast is made once reports up to this date are in</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>nowcast_date <span class="ot">&lt;-</span> ref_date0 <span class="sc">+</span> (cutoff <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Zoom the result plots to a recent window around the nowcast horizon</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>plot_from <span class="ot">&lt;-</span> nowcast_date <span class="sc">-</span> <span class="dv">35</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit only the most recent reference dates to keep the models fast</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>n_history <span class="ot">&lt;-</span> <span class="dv">35</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Format the complete (eventually-reported) data in epinowcast's long format</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>to_enw_format <span class="ot">&lt;-</span> <span class="cf">function</span>(triangle) {</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  triangle <span class="sc">|&gt;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">reference_date =</span> ref_date0 <span class="sc">+</span> day,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">report_date =</span> ref_date0 <span class="sc">+</span> reported_day,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">new_confirm =</span> reported_onsets</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(reference_date, report_date) <span class="sc">|&gt;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.data.table</span>() <span class="sc">|&gt;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">enw_add_cumulative</span>()</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># The as-of-nowcast snapshot we fit to</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>enw_long <span class="ot">&lt;-</span> <span class="fu">to_enw_format</span>(reporting_triangle) <span class="sc">|&gt;</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_report_dates</span>(<span class="at">latest_date =</span> nowcast_date) <span class="sc">|&gt;</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_reference_dates</span>(<span class="at">include_days =</span> n_history) <span class="sc">|&gt;</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_complete_dates</span>(<span class="at">max_delay =</span> <span class="dv">16</span>, <span class="at">missing_reference =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(enw_long)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Key: &lt;reference_date, report_date&gt;
+   report_date reference_date new_confirm confirm
+        &lt;IDat&gt;         &lt;IDat&gt;       &lt;int&gt;   &lt;int&gt;
+1:  2023-02-07     2023-02-07           0       0
+2:  2023-02-08     2023-02-07           1       1
+3:  2023-02-09     2023-02-07           0       1
+4:  2023-02-10     2023-02-07           0       1
+5:  2023-02-11     2023-02-07           1       2
+6:  2023-02-12     2023-02-07           1       3</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>enw_filter_report_dates()</code> plus <code>enw_latest_data()</code> makes the two data sets explicit, which is why we use them here. <code>enw_retrospective()</code> is a one-shot helper that produces an as-of-nowcast snapshot and its eventual-data comparison together, and is worth knowing about for real analyses.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 2 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>How does this data structure relate to the reporting triangle from the <a href="joint-nowcasting">joint nowcasting session</a>?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>It is the same idea in a different layout. Each <code>reference_date</code> is a row of the triangle, each <code>report_date</code> gives a column, <code>new_confirm</code> is the cell count <span class="math inline">\(n_{t,d}\)</span>, and <code>confirm</code> is its cumulative version over delays. <code>epinowcast</code> works with the cumulative <code>confirm</code> and converts it back into the reporting triangle internally during preprocessing.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="preprocessing-and-fitting" class="level2">
+<h2 class="anchored" data-anchor-id="preprocessing-and-fitting">Preprocessing and fitting</h2>
+<p><code>epinowcast</code> preprocesses the data into its internal reporting-triangle representation, where we also choose the maximum delay we will model. Note that <code>max_delay</code> counts delay <em>classes</em>, and delays are zero-indexed: <code>max_delay = 16</code> models <span class="math inline">\(d = 0, \ldots, 15\)</span>, which is exactly the support we simulated from. Setting it to 15 would quietly drop the last delay class rather than model it.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>pobs <span class="ot">&lt;-</span> <span class="fu">enw_preprocess_data</span>(enw_long, <span class="at">max_delay =</span> <span class="dv">16</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The preprocessed object has a <code>print()</code> method that summarises what <code>epinowcast</code> has built from our data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>pobs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>── Preprocessed nowcast data ─────────────────────────────────────────────────── 
+Groups: 1 | Timestep: day | Max delay: 16 
+Observations: 35 timepoints x 35 snapshots 
+Max date: 2023-03-13 
+
+Datasets (access with `enw_get_data(x, "&lt;name&gt;")`): 
+  obs                :     440 x 8 
+  new_confirm        :     440 x 9 
+  latest             :      35 x 8 
+  missing_reference  :       0 x 4 
+  reporting_triangle :      35 x 18 
+  metareference      :      35 x 8 
+  metareport         :      50 x 10 
+  metadelay          :      16 x 5 </code></pre>
+</div>
+</div>
+<p>It also has its own <code>plot()</code> method. By default it shows the latest observed notifications by reference date (<code>type = "obs"</code>), which is the incomplete picture the nowcast will correct.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pobs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/preprocess-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The same method also exposes <code>epinowcast</code>’s delay diagnostics through the <code>type</code> argument, which are worth inspecting before fitting. <code>type = "delay_cumulative"</code> shows the empirical cumulative proportion reported by delay, so we can see how quickly reports accumulate and check that our <code>max_delay</code> is long enough to capture most of the distribution.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pobs, <span class="at">type =</span> <span class="st">"delay_cumulative"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/preprocess-delay-cumulative-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><code>type = "delay_fraction"</code> shows the same information as a heatmap of the fraction reported by delay and reference date, which makes any drift in the delay over time easier to spot.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pobs, <span class="at">type =</span> <span class="st">"delay_fraction"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/preprocess-delay-fraction-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now we specify the model. We define each module explicitly so the mapping back to the bespoke model is visible.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected counts lambda_t: a random effect by day on the growth rate, which</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># gives a geometric random walk on the expected counts</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>expectation_module <span class="ot">&lt;-</span> <span class="fu">enw_expectation</span>(<span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> day), <span class="at">data =</span> pobs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ The r design matrix is sparse (&gt;90% zeros). Consider using `sparse_design = TRUE` in `enw_fit_opts()` to potentially reduce memory usage and computation time.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Delay distribution p_{t,d} by reference date: a single parametric lognormal</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># delay, constant over time (epinowcast's default reference model)</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>reference_module <span class="ot">&lt;-</span> <span class="fu">enw_reference</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> pobs)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Observation model: Poisson, as in n_{t,d} ~ Poisson(lambda_t * p_{t,d})</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>obs_module <span class="ot">&lt;-</span> <span class="fu">enw_obs</span>(<span class="at">family =</span> <span class="st">"poisson"</span>, <span class="at">data =</span> pobs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The expectation formula is on the growth rate
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The formula in <code>enw_expectation()</code> describes the daily growth rate <span class="math inline">\(r_t\)</span>, not the expected counts directly. <code>epinowcast</code> builds the expected counts by accumulating it, <span class="math inline">\(\log \lambda_t = \log \lambda_0 + \sum_{s \le t} r_s\)</span>. A random effect by day, <code>~ 0 + (1 | day)</code>, therefore makes <span class="math inline">\(r_t\)</span> independent noise and <span class="math inline">\(\log \lambda_t\)</span> a random walk, which is the geometric random walk we used in the course model. Writing <code>~ rw(day)</code> instead would put a random walk on the <em>growth rate</em>, so the expected counts would follow a smoother trend that carries the current growth forward. On this data that model extrapolates the recent trend and its nowcast misses the eventual counts at some of the most recent dates, so we use the random effect by day for the daily models here. The right choice depends on the data. When reports arrive only once a week, later in this session, we keep the same structure but move it to the weekly timestep, <code>~ 0 + (1 | week)</code>.</p>
+</div>
+</div>
+<div class="optional callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Reproducing the bespoke model exactly
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>To match the bespoke joint-nowcast model exactly, estimate the delay nonparametrically as a free per-delay distribution (a simplex over delays) instead of the parametric lognormal:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>reference_module <span class="ot">&lt;-</span> <span class="fu">enw_reference</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parametric =</span> <span class="sc">~</span> <span class="dv">0</span>, <span class="at">distribution =</span> <span class="st">"none"</span>, <span class="at">non_parametric =</span> <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> pobs</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>This makes the delay a free per-delay distribution matching the bespoke model, but fits noticeably more slowly, which is why the session defaults to the parametric lognormal above.</p>
+</div>
+</div>
+</div>
+<p>We collect the fitting options once and reuse them across the session. These play the same role as the arguments to <code>nfidd_sample()</code> did in earlier sessions, and we set them to match: four chains run in parallel with 500 warmup and 500 sampling iterations each.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>fit_opts <span class="ot">&lt;-</span> <span class="fu">enw_fit_opts</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">save_warmup =</span> <span class="cn">FALSE</span>, <span class="at">pp =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">500</span>, <span class="at">iter_sampling =</span> <span class="dv">500</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_messages =</span> <span class="cn">FALSE</span>, <span class="at">refresh =</span> <span class="dv">0</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We then fit the model, passing each module explicitly.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>course_nowcast <span class="ot">&lt;-</span> <span class="fu">epinowcast</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  pobs,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">expectation =</span> expectation_module,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference =</span> reference_module,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">obs =</span> obs_module,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> fit_opts</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 3 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Compare these modules to the choices we made in the <a href="joint-nowcasting">joint nowcasting session</a>. Which module corresponds to <span class="math inline">\(\lambda_{t}\)</span>, which to <span class="math inline">\(p_{t,d}\)</span>, and which to the likelihood?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><code>enw_expectation()</code> plays the role of <span class="math inline">\(\lambda_{t}\)</span>: a random effect by day on the growth rate, which accumulates into the geometric random walk on expected onsets that we used.</li>
+<li><code>enw_reference(~ 1)</code> plays the role of the delay distribution <span class="math inline">\(p_{t,d}\)</span>: a single parametric lognormal delay held constant over time. (The optional callout above shows how to recover the nonparametric free-PMF delay used in the bespoke joint-nowcast model.)</li>
+<li><code>enw_obs(family = "poisson")</code> plays the role of the likelihood <span class="math inline">\(n_{t,d} \sim \text{Poisson}(\lambda_{t} p_{t,d})\)</span>.</li>
+</ul>
+<p>This is the <em>same</em> joint nowcasting model we built by hand, now expressed as a handful of modules. Everything that follows is an extension of one of these modules, or the addition of a report-date module for report-date effects.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="plotting-the-nowcast" class="level2">
+<h2 class="anchored" data-anchor-id="plotting-the-nowcast">Plotting the nowcast</h2>
+<p><code>epinowcast</code> objects come with <code>plot()</code> and <code>summary()</code> methods, so we do not have to extract draws by hand as we did with our bespoke fits. To judge the nowcast we want to compare it against what was <em>eventually</em> reported, so we take the latest report for each reference date from the complete data with <code>enw_latest_data()</code> and pass it to <code>plot()</code> via <code>latest_obs</code>. Building the comparison data from the complete data matters.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>latest_obs <span class="ot">&lt;-</span> <span class="fu">enw_latest_data</span>(<span class="fu">to_enw_format</span>(reporting_triangle))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(course_nowcast, <span class="at">latest_obs =</span> latest_obs) <span class="sc">+</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(plot_from, nowcast_date))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/course-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As in our bespoke nowcasts, the most recent dates are the most uncertain because they are the least complete. This default plot is the nowcast by <em>reference</em> date. <code>epinowcast</code> can also plot the model’s posterior predictions against the data that were reported at the time with <code>type = "posterior_prediction"</code>, which we facet by reference date to check the fit to each date’s reports.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only the recent reference dates so each facet is legible</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>pp_recent <span class="ot">&lt;-</span> <span class="fu">plot</span>(course_nowcast, <span class="at">type =</span> <span class="st">"posterior_prediction"</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>pp_recent<span class="sc">$</span>data <span class="ot">&lt;-</span> pp_recent<span class="sc">$</span>data[reference_date <span class="sc">&gt;</span> nowcast_date <span class="sc">-</span> <span class="dv">9</span>]</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>pp_recent <span class="sc">+</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(reference_date), <span class="at">scales =</span> <span class="st">"free"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?
+`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/course-plot-pp-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="extending-the-model-day-of-week-effects" class="level1">
+<h1>Extending the model: day-of-week effects</h1>
+<p>Now we add a complication the bespoke model could not handle comfortably. A day-of-week pattern can enter the data in <em>three</em> distinct places, and it helps to keep them separate because each belongs in a different module.</p>
+<ul>
+<li>A <strong>reference-date effect on the expected counts</strong>: events truly happen at different rates by day of week. For onset data, for example, fewer onsets may be recorded at weekends. This belongs in <code>enw_expectation()</code>.</li>
+<li>A <strong>reference-date effect on the delay</strong>: the reporting <em>delay distribution</em> itself differs by the day of week an event occurred, for example weekend onsets take longer to be reported than weekday onsets. This belongs in <code>enw_reference()</code>.</li>
+<li>A <strong>report-date effect</strong>: the reporting system processes reports at different rates by day of week, so fewer reports land at weekends regardless of when the onset occurred. This belongs in <code>enw_report()</code>.</li>
+</ul>
+<p>We build a simulation with all three, one step at a time, so it is clear how each effect enters the data. Assume day 0 of the simulation is a Monday, so day of week is <code>day %% 7</code> (0 = Monday).</p>
+<p>We start from the underlying onsets and apply a <strong>reference-date</strong> day-of-week effect on the expected counts, thinning the expected onsets by a weekly weight on the onset day.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Multiplicative weekly weights for Mon, Tue, ..., Sun</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>ref_dow_effect <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="fl">0.95</span>, <span class="fl">0.7</span>, <span class="fl">0.7</span>) <span class="co"># fewer onsets at weekends</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>rep_dow_effect <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="fl">0.9</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>)  <span class="co"># fewer reports at weekends</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>dow_onsets <span class="ot">&lt;-</span> onset_df <span class="sc">|&gt;</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(day <span class="sc">&lt;</span> cutoff) <span class="sc">|&gt;</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">ref_dow =</span> day <span class="sc">%%</span> <span class="dv">7</span>,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">onsets =</span> onsets <span class="sc">*</span> ref_dow_effect[ref_dow <span class="sc">+</span> <span class="dv">1</span>]</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Next we apply the <strong>reporting delay</strong>, but now we let the delay depend on the onset day of week: weekend onsets are reported with a longer delay (a larger <code>meanlog</code>) than weekday onsets. This is a reference-date effect on the <em>delay</em> rather than on the counts.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Longer delay for weekend onsets (Sat, Sun): a reference-date delay effect</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>delay_meanlog_dow <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="fl">1.4</span>, <span class="fl">1.4</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>dow_delayed <span class="ot">&lt;-</span> dow_onsets <span class="sc">|&gt;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">reporting_delay =</span> <span class="fu">list</span>(</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tibble</span>(</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">d =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">15</span>,</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">reporting_delay =</span> <span class="fu">censored_delay_pmf</span>(</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>          rlnorm, <span class="at">max =</span> <span class="dv">15</span>,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>          <span class="at">meanlog =</span> delay_meanlog_dow[ref_dow <span class="sc">+</span> <span class="dv">1</span>], <span class="at">sdlog =</span> <span class="fl">0.5</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(reporting_delay) <span class="sc">|&gt;</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">reported_day =</span> day <span class="sc">+</span> d)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Finally we apply a <strong>report-date</strong> day-of-week effect, thinning by a weekly weight on the <em>report</em> day, and draw the observed counts.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>dow_triangle <span class="ot">&lt;-</span> dow_delayed <span class="sc">|&gt;</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">rep_dow =</span> reported_day <span class="sc">%%</span> <span class="dv">7</span>,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">rep_weight =</span> rep_dow_effect[rep_dow <span class="sc">+</span> <span class="dv">1</span>],</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_onsets =</span> <span class="fu">rpois</span>(<span class="fu">n</span>(), onsets <span class="sc">*</span> reporting_delay <span class="sc">*</span> rep_weight)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We can see the report-date effect clearly if we sum reports by report day: the totals dip on a regular weekly cycle.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>reports_by_day <span class="ot">&lt;-</span> dow_triangle <span class="sc">|&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(reported_day <span class="sc">&lt;=</span> <span class="fu">max</span>(day)) <span class="sc">|&gt;</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">reports =</span> <span class="fu">sum</span>(reported_onsets), <span class="at">.by =</span> reported_day)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(reports_by_day, <span class="fu">aes</span>(<span class="at">x =</span> reported_day, <span class="at">y =</span> reports)) <span class="sc">+</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Report day"</span>, <span class="at">y =</span> <span class="st">"Reports"</span>, <span class="at">title =</span> <span class="st">"Reports by report day"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/dow-plot-data-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look back at the three simulation chunks (<code>dow-reference</code>, <code>dow-delay</code>, <code>dow-report</code>).</p>
+<ol type="1">
+<li>Every weekly weight is indexed as <code>[... + 1]</code>, for example <code>ref_dow_effect[ref_dow + 1]</code>. Why the <code>+ 1</code>?</li>
+<li>In <code>dow-delay</code> the day of week enters through <code>meanlog</code>, not through a multiplicative weight. What does giving weekend onsets a larger <code>meanlog</code> do to their reporting delay?</li>
+<li>The reference-date effect keys off <code>day %% 7</code> but the report-date effect keys off <code>reported_day %% 7</code>. Why does each effect use a different day?</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><code>ref_dow</code> is <code>day %% 7</code>, which runs from 0 (Monday) to 6 (Sunday), but R vectors are indexed from 1. Adding 1 maps day-of-week 0 to the first weight and day-of-week 6 to the seventh.</li>
+<li><code>meanlog</code> is the log-scale mean of the lognormal delay, so a larger value shifts the whole delay distribution towards longer delays. Weekend onsets are therefore reported more slowly than weekday onsets, rather than simply being fewer in number.</li>
+<li>The reference-date effects describe what happens on the day an event <em>occurred</em>, so they key off the onset day <code>day</code>. The report-date effect describes how the reporting system behaves on the day a report is <em>processed</em>, which is the onset day plus its delay, so it keys off <code>reported_day</code>. The same onset contributes to different report-day weights depending on how long its delay was.</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="optional callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Interactive: how day-of-week effects combine
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-14" class="callout-14-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<iframe class="nfidd-embed" src="../interactive/complex-reporting-processes.html?embed=combine" title="how day-of-week effects combine interactive" loading="lazy" style="width:100%;height:820px;border:1px solid #e5e7eb;border-radius:10px;background:#fff"></iframe>
+<script>(function(){if(window.__nfiddEmbedInit)return;window.__nfiddEmbedInit=1;window.addEventListener('message',function(ev){var h=ev&&ev.data&&ev.data.nfiddEmbedHeight;if(!h)return;document.querySelectorAll('iframe.nfidd-embed').forEach(function(f){if(f.contentWindow===ev.source)f.style.height=(h+24)+'px';});});})();</script>
+<p>Start from a smooth underlying onset curve and switch each of the three effects on and off to see how the observed reported series builds up its weekly structure.</p>
+</div>
+</div>
+</div>
+<p>The three effects act on different things. The reference-date effect on the counts changes <em>when events happen</em> (the onset day), so it belongs in the model for the expected counts. The reference-date effect on the delay changes <em>how long reporting takes</em> for events on a given onset day, so it belongs in the delay (reference) module. The report-date effect changes <em>when reports are processed</em> (the report day), so it belongs in a separate report-date module, which our bespoke <span class="math inline">\(p_{t,d}\)</span> (a function of delay <span class="math inline">\(d\)</span> alone) had no way to express.</p>
+<p>These extended models have a slightly harder posterior, so for them we add <code>adapt_delta = 0.95</code> to the fitting options (just as we did for the harder joint model in the <a href="joint-nowcasting">joint nowcasting session</a>).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fit_opts_hard <span class="ot">&lt;-</span> <span class="fu">enw_fit_opts</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">save_warmup =</span> <span class="cn">FALSE</span>, <span class="at">pp =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">500</span>, <span class="at">iter_sampling =</span> <span class="dv">500</span>,</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">adapt_delta =</span> <span class="fl">0.95</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_messages =</span> <span class="cn">FALSE</span>, <span class="at">refresh =</span> <span class="dv">0</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>dow_long <span class="ot">&lt;-</span> <span class="fu">to_enw_format</span>(dow_triangle) <span class="sc">|&gt;</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_report_dates</span>(<span class="at">latest_date =</span> nowcast_date) <span class="sc">|&gt;</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_reference_dates</span>(<span class="at">include_days =</span> n_history)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>dow_pobs <span class="ot">&lt;-</span> <span class="fu">enw_preprocess_data</span>(dow_long, <span class="at">max_delay =</span> <span class="dv">16</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>dow_nowcast <span class="ot">&lt;-</span> <span class="fu">epinowcast</span>(</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  dow_pobs,</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Reference-side day-of-week effect on the expected onsets</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">expectation =</span> <span class="fu">enw_expectation</span>(</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> day) <span class="sc">+</span> day_of_week, <span class="at">data =</span> dow_pobs</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Reference-side day-of-week effect on the delay distribution</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference =</span> <span class="fu">enw_reference</span>(<span class="sc">~</span> day_of_week, <span class="at">data =</span> dow_pobs),</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Report-side day-of-week reporting effect</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">report =</span> <span class="fu">enw_report</span>(<span class="sc">~</span> day_of_week, <span class="at">data =</span> dow_pobs),</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">obs =</span> <span class="fu">enw_obs</span>(<span class="at">family =</span> <span class="st">"poisson"</span>, <span class="at">data =</span> dow_pobs),</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> fit_opts_hard</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>dow_latest <span class="ot">&lt;-</span> <span class="fu">enw_latest_data</span>(<span class="fu">to_enw_format</span>(dow_triangle))</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(dow_nowcast, <span class="at">latest_obs =</span> dow_latest) <span class="sc">+</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(plot_from, nowcast_date))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/dow-result-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As with the course model, we can also check the fit with the posterior-prediction plot, faceted by the most recent reference dates.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>pp_recent <span class="ot">&lt;-</span> <span class="fu">plot</span>(dow_nowcast, <span class="at">type =</span> <span class="st">"posterior_prediction"</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>pp_recent<span class="sc">$</span>data <span class="ot">&lt;-</span> pp_recent<span class="sc">$</span>data[reference_date <span class="sc">&gt;</span> nowcast_date <span class="sc">-</span> <span class="dv">9</span>]</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>pp_recent <span class="sc">+</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(reference_date), <span class="at">scales =</span> <span class="st">"free"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?
+`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/dow-plot-pp-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>In the nowcast plot (<code>dow-result-plot</code>), does the model recover the underlying onsets, and what pattern do you see in the nowcast median across reference dates?</li>
+<li>In the posterior-prediction plot (<code>dow-plot-pp</code>), each panel is one reference (onset) date and shows the reports that landed on each report date. Compare weekday and weekend reference dates. Where does the day-of-week signal show up, and does the model track it?</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-16-contents" aria-controls="callout-16" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-16" class="callout-16-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>The nowcast median follows the eventually-observed points, filling in the recent, still-incomplete dates. It is not a smooth curve. The median wobbles from day to day, and part of that wobble repeats every seven days because we simulated fewer onsets at weekends. The rest is the day-to-day variation in the onsets themselves, which the random effect by day is free to follow. The model recovers this structure in the <em>onsets</em> while stripping out the separate day-of-week effect in <em>reporting</em>, rather than smearing the two together. At the last two or three dates, where hardly anything has been reported yet, the median sits above the eventual counts and the interval is wide. The model carries the recent rise forward, and there is little data to tell it otherwise.</li>
+<li>Each panel shows the reports arriving on each report date for one onset date, so it traces out the delay distribution for that onset date, scaled by how many onsets there were. Weekend reference dates were simulated with a longer delay, so their reports peak later and are spread out further than those of weekday reference dates. Within a panel the profile is not smooth, and it dips on the report days when the reporting system processes fewer reports, which is the report-date effect. The posterior-prediction band covers the observed reports in each panel, so the three day-of-week terms together are tracking the data rather than fighting each other.</li>
+</ol>
+<p>Each of these effects is one extra formula on the relevant module. The report-date effect in particular was awkward when using Stan directly, where the reporting probabilities depended only on the delay <span class="math inline">\(d\)</span> and had to sum to one for each reference date, so making them also depend on the calendar day of the report meant restructuring the whole delay component.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="extending-the-model-a-time-varying-delay" class="level1">
+<h1>Extending the model: a time-varying delay</h1>
+<p>For our second worked example we relax the assumption that the delay distribution is the same on every day. Reporting delays may lengthen when a system is under strain and shorten when it has spare capacity, so a single fixed <span class="math inline">\(p_{t,d}\)</span> cannot represent a delay that drifts across the outbreak.</p>
+<p>We simulate this by letting the mean of the reporting delay grow slowly with the onset day, so later onsets may be reported with longer delays.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>tvd_triangle <span class="ot">&lt;-</span> onset_df <span class="sc">|&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(day <span class="sc">&lt;</span> cutoff) <span class="sc">|&gt;</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">|&gt;</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">reporting_delay =</span> <span class="fu">list</span>({</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>      <span class="co"># meanlog drifts upwards over the outbreak: delays may lengthen over time</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>      meanlog_t <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> day <span class="sc">/</span> cutoff</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tibble</span>(</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">d =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">15</span>,</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">reporting_delay =</span> <span class="fu">censored_delay_pmf</span>(</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>          rlnorm, <span class="at">max =</span> <span class="dv">15</span>, <span class="at">meanlog =</span> meanlog_t, <span class="at">sdlog =</span> <span class="fl">0.5</span></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(reporting_delay) <span class="sc">|&gt;</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_day =</span> day <span class="sc">+</span> d,</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_onsets =</span> <span class="fu">rpois</span>(<span class="fu">n</span>(), onsets <span class="sc">*</span> reporting_delay)</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Before fitting anything, it is worth looking at what this drift actually does to the data. For each reference date the mean of the reporting delay distribution is <span class="math inline">\(\sum_d d\, p_{t,d}\)</span>, so we can compute it from the simulated per-date delay PMF and average it by reference week to see the delay lengthening over the outbreak.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>tvd_mean_delay <span class="ot">&lt;-</span> tvd_triangle <span class="sc">|&gt;</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_delay =</span> <span class="fu">sum</span>(d <span class="sc">*</span> reporting_delay) <span class="sc">/</span> <span class="fu">sum</span>(reporting_delay),</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(day)</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">reference_week =</span> day <span class="sc">%/%</span> <span class="dv">7</span>) <span class="sc">|&gt;</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_delay =</span> <span class="fu">mean</span>(mean_delay), <span class="at">.by =</span> reference_week)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(tvd_mean_delay, <span class="fu">aes</span>(<span class="at">x =</span> reference_week, <span class="at">y =</span> mean_delay)) <span class="sc">+</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Reference week"</span>, <span class="at">y =</span> <span class="st">"Mean reporting delay (days)"</span>,</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"The reporting delay drifts upwards over the outbreak"</span></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/tvd-show-delay-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The whole drift comes from one line in <code>tvd-simulate</code>: <code>meanlog_t &lt;- 1 + 0.5 * day / cutoff</code>.</p>
+<ol type="1">
+<li><code>meanlog</code> is the log-scale mean of the lognormal delay. What does letting it grow with <code>day</code> do to the most recent reference dates, and why does that make them harder to nowcast?</li>
+<li>What else could you simulate by changing this one line? Sketch how you would make (a) the delay <em>shorten</em> over the outbreak, and (b) a sudden step change in the delay rather than a smooth drift. Would the <code>~ rw(week)</code> delay model still cope?</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-18-contents" aria-controls="callout-18" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-18" class="callout-18-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>A larger <code>meanlog</code> shifts the whole lognormal towards longer delays, so recent onsets take longer to be fully reported. The most recent reference dates are therefore less complete than a fixed-delay model would assume, and it is exactly those dates the nowcast has to fill in, so getting the drift right matters most where the data are thinnest.</li>
+<li><ol type="a">
+<li>A shortening delay is just a decreasing trend, for example <code>1.5 - 0.5 * day / cutoff</code>.</li>
+<li>A step change is a branch on <code>day</code>, for example <code>if (day &lt; cutoff / 2) 1 else 1.5</code>. The random walk makes no assumption about direction or shape, so it tracks a shortening delay as readily as a lengthening one and follows a smooth drift closely. A random walk could also model a sudden change, but it might be difficult to fit, as it expects the delay to change smoothly from week to week rather than in one jump.</li>
+</ol></li>
+</ol>
+</div>
+</div>
+</div>
+<p>This is a property of the <em>reference</em> (onset) date, so we put structure on the <strong>reference module</strong> rather than on the report module.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We simulated a roughly <em>linear</em> drift, so we could fit a model with a matching linear trend on the delay parameters and recover it almost perfectly. That would be cheating: in a real analysis we do not know the functional form of the drift, because we did not generate the data. We therefore deliberately choose a <em>flexible</em> model, a random walk on the delay parameters, that can track a drift without us baking in the exact form we happened to simulate.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Time-varying delay versus a rolling window
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A common alternative to a time-varying delay is to estimate a single delay from only the most recent stretch of data, a rolling window. The random-walk approach here uses <em>all</em> the data with a smoothness prior, so it borrows strength across the whole series while still letting the delay change from week to week. A rolling window instead throws away every report outside the window, so it has less data to estimate the delay from and cannot use the earlier reports at all, even though they still say something about how the delay is changing.</p>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>tvd_long <span class="ot">&lt;-</span> <span class="fu">to_enw_format</span>(tvd_triangle) <span class="sc">|&gt;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_report_dates</span>(<span class="at">latest_date =</span> nowcast_date) <span class="sc">|&gt;</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_reference_dates</span>(<span class="at">include_days =</span> n_history)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>tvd_pobs <span class="ot">&lt;-</span> <span class="fu">enw_preprocess_data</span>(tvd_long, <span class="at">max_delay =</span> <span class="dv">16</span>)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>tvd_nowcast <span class="ot">&lt;-</span> <span class="fu">epinowcast</span>(</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  tvd_pobs,</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">expectation =</span> <span class="fu">enw_expectation</span>(<span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> day), <span class="at">data =</span> tvd_pobs),</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Delay distribution now drifts week to week (this is the new part)</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference =</span> <span class="fu">enw_reference</span>(<span class="sc">~</span> <span class="fu">rw</span>(week), <span class="at">data =</span> tvd_pobs),</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">obs =</span> <span class="fu">enw_obs</span>(<span class="at">family =</span> <span class="st">"poisson"</span>, <span class="at">data =</span> tvd_pobs),</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> fit_opts_hard</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>tvd_latest <span class="ot">&lt;-</span> <span class="fu">enw_latest_data</span>(<span class="fu">to_enw_format</span>(tvd_triangle))</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(tvd_nowcast, <span class="at">latest_obs =</span> tvd_latest) <span class="sc">+</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(plot_from, nowcast_date))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/tvd-result-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As with the course model, we can also check the fit with the posterior-prediction plot, faceted by the most recent reference dates.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>pp_recent <span class="ot">&lt;-</span> <span class="fu">plot</span>(tvd_nowcast, <span class="at">type =</span> <span class="st">"posterior_prediction"</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>pp_recent<span class="sc">$</span>data <span class="ot">&lt;-</span> pp_recent<span class="sc">$</span>data[reference_date <span class="sc">&gt;</span> nowcast_date <span class="sc">-</span> <span class="dv">9</span>]</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>pp_recent <span class="sc">+</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="fu">vars</span>(reference_date), <span class="at">scales =</span> <span class="st">"free"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?
+`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/tvd-plot-pp-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 3 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Look at the nowcast plot (<code>tvd-result-plot</code>), where we fit <code>enw_reference(~ rw(week), ...)</code>.</p>
+<ol type="1">
+<li>Does the nowcast median track the eventually-observed points at the recent, still-incomplete dates?</li>
+<li>What would the plot look like if we had kept a <em>fixed</em> delay when the true delay was lengthening?</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-22-contents" aria-controls="callout-22" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-22" class="callout-22-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>The median follows the eventual points up to the nowcast date, and the credible interval widens for the most recent dates where fewer reports have arrived. <code>rw(week)</code> lets the parameters of the delay distribution change from week to week, so the model learns that recent onsets are being reported more slowly and fills the gap up to the eventual counts.</li>
+<li>A fixed delay would assume recent dates are more complete than they really are, so the nowcast median would sit <em>below</em> the eventual points at the recent end and <em>under</em>-nowcast exactly where it matters most. This is the same flexibility we used for the expectation module, applied to the delay instead.</li>
+</ol>
+</div>
+</div>
+</div>
+</section>
+<section id="extending-the-model-weekly-batched-reporting" class="level1">
+<h1>Extending the model: weekly (batched) reporting</h1>
+<p>For our third worked example the data are <em>reported</em> less often than they occur. Many surveillance systems release updates weekly rather than daily, so counts arrive in weekly batches even though events happen every day. There are two ways to handle this in <code>epinowcast</code>, and they trade resolution against simplicity.</p>
+<ul>
+<li><strong>Weekly reporting of weekly data (“weekly-weekly”).</strong> Aggregate everything to a weekly timestep and model a weekly process. This is the simplest and cheapest option, but it can only ever produce weekly nowcasts.</li>
+<li><strong>Weekly reporting of daily data (“weekly-daily”).</strong> Keep a daily process but tell the model that reports only land once a week, using a <em>structural</em> reporting schedule. This recovers daily resolution from weekly reports at a higher computational cost.</li>
+</ul>
+<p>We show both here on the same simulated series. <code>epinowcast</code>’s <a href="https://package.epinowcast.org/articles/temporal-aggregation.html">temporal aggregation guide</a> works through these patterns in full, including a daily benchmark and a scoring comparison.</p>
+<p>The two approaches differ most when the epidemic is changing rapidly near the nowcast date. When the most recent, still-incomplete week is rising or falling steeply, collapsing it to a single weekly value discards the within-week trend, so the weekly-weekly model can only carry the recent weekly level forward. A daily process keeps the resolution and can still track the change.</p>
+<p>To make this visible we deliberately place the nowcast in a steep decline, keeping data up to a later date than the rest of the session so the most recent week is falling fast. We re-simulate the same reporting process at this later cutoff and leave everything else unchanged.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Position the nowcast in a rapid decline, so the most recent,</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="co"># still-incomplete week is changing fast rather than flat</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>weekly_cutoff <span class="ot">&lt;-</span> <span class="dv">106</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>weekly_nowcast_date <span class="ot">&lt;-</span> ref_date0 <span class="sc">+</span> (weekly_cutoff <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>weekly_plot_from <span class="ot">&lt;-</span> weekly_nowcast_date <span class="sc">-</span> <span class="dv">35</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="co"># The weekly-weekly model fits 10 whole weeks; the weekly-daily model below</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co"># reuses the shorter daily history (n_history) to stay fast</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>weekly_n_history <span class="ot">&lt;-</span> <span class="dv">70</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Re-seed so this weekly reporting triangle is reproducible on its own</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>weekly_reporting_triangle <span class="ot">&lt;-</span> onset_df <span class="sc">|&gt;</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(day <span class="sc">&lt;</span> weekly_cutoff) <span class="sc">|&gt;</span></span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">reporting_delay =</span> <span class="fu">list</span>(</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tibble</span>(<span class="at">d =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">15</span>, <span class="at">reporting_delay =</span> reporting_delay_pmf)</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(reporting_delay) <span class="sc">|&gt;</span></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_day =</span> day <span class="sc">+</span> d,</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">reported_onsets =</span> <span class="fu">rpois</span>(<span class="fu">n</span>(), onsets <span class="sc">*</span> reporting_delay)</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>weekly_enw_long <span class="ot">&lt;-</span> <span class="fu">to_enw_format</span>(weekly_reporting_triangle) <span class="sc">|&gt;</span></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_report_dates</span>(<span class="at">latest_date =</span> weekly_nowcast_date) <span class="sc">|&gt;</span></span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_reference_dates</span>(<span class="at">include_days =</span> weekly_n_history)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="weekly-weekly" class="level2">
+<h2 class="anchored" data-anchor-id="weekly-weekly">Weekly-weekly</h2>
+<p>We take the change-point reporting triangle and aggregate it to a weekly reporting schedule with <code>enw_aggregate_cumulative()</code>, which sums both reference and report dates into weekly steps.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>weekly_long <span class="ot">&lt;-</span> <span class="fu">enw_aggregate_cumulative</span>(weekly_enw_long, <span class="at">timestep =</span> <span class="st">"week"</span>)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(weekly_long)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Key: &lt;reference_date, report_date&gt;
+   report_date reference_date new_confirm confirm delay
+        &lt;IDat&gt;         &lt;IDat&gt;       &lt;int&gt;   &lt;int&gt; &lt;int&gt;
+1:  2023-02-13           &lt;NA&gt;           0       0     0
+2:  2023-02-20           &lt;NA&gt;           0       0     1
+3:  2023-02-27           &lt;NA&gt;           0       0     2
+4:  2023-03-06           &lt;NA&gt;           0       0     3
+5:  2023-03-13           &lt;NA&gt;           0       0     4
+6:  2023-03-20           &lt;NA&gt;           0       0     5</code></pre>
+</div>
+</div>
+<p>We then preprocess with a weekly timestep, so <code>epinowcast</code> knows the reporting schedule is weekly rather than daily. With a weekly timestep the maximum delay is now counted in weeks, so we model up to three weeks of delay.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>weekly_pobs <span class="ot">&lt;-</span> <span class="fu">enw_preprocess_data</span>(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  weekly_long, <span class="at">max_delay =</span> <span class="dv">3</span>, <span class="at">timestep =</span> <span class="st">"week"</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(weekly_pobs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/weekly-preprocess-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The model is the course model again; only the timestep of the data has changed.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>weekly_nowcast <span class="ot">&lt;-</span> <span class="fu">epinowcast</span>(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  weekly_pobs,</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">expectation =</span> <span class="fu">enw_expectation</span>(<span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> week), <span class="at">data =</span> weekly_pobs),</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">reference =</span> <span class="fu">enw_reference</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> weekly_pobs),</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">obs =</span> <span class="fu">enw_obs</span>(<span class="at">family =</span> <span class="st">"poisson"</span>, <span class="at">data =</span> weekly_pobs),</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> fit_opts_hard</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>As before we compare against the eventually-complete data, aggregated to the same weekly timestep.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>weekly_latest <span class="ot">&lt;-</span> <span class="fu">enw_latest_data</span>(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_aggregate_cumulative</span>(</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">to_enw_format</span>(weekly_reporting_triangle), <span class="at">timestep =</span> <span class="st">"week"</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(weekly_nowcast, <span class="at">latest_obs =</span> weekly_latest) <span class="sc">+</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(weekly_plot_from, weekly_nowcast_date))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/weekly-result-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="weekly-daily-structural-reporting" class="level2">
+<h2 class="anchored" data-anchor-id="weekly-daily-structural-reporting">Weekly-daily (structural reporting)</h2>
+<p>Now we keep the <em>daily</em> process but model the fact that reports only arrive once a week. The idea is to build a daily grid where the cumulative count is only observed on the reporting day and carried forward on the other days, then tell the model which cells are real observations. We start from the daily reporting triangle we fit to, blank out the cumulative counts on every other day, and let <code>enw_impute_na_observations()</code> carry the last reported value forward; <code>enw_flag_observed_observations()</code> records which cells are real in a <code>.observed</code> column.</p>
+<p>Which day we choose as the reporting day matters, and not only for realism. <code>enw_aggregate_cumulative()</code> anchors its weekly grid on the report dates in the data, so the weekly-weekly model already has a reporting day baked in. If we picked a different day here, the two models would see their last report on different dates, and the one with the older final report would be nowcasting further ahead with less information. Any difference between the two nowcasts would then just be that information gap rather than the modelling choice we want to compare. So we read the reporting day off the aggregated data rather than hard-coding it, which keeps the comparison like-for-like.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Both models must see their last report on the same date, or the comparison</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="co"># below is confounded by one model simply having fresher data</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>report_dow <span class="ot">&lt;-</span> <span class="fu">weekdays</span>(<span class="fu">max</span>(weekly_long<span class="sc">$</span>report_date))</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>report_dow</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Monday"</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>weekly_rep_data <span class="ot">&lt;-</span> weekly_enw_long <span class="sc">|&gt;</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_reference_dates</span>(<span class="at">include_days =</span> n_history) <span class="sc">|&gt;</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_complete_dates</span>(<span class="at">timestep =</span> <span class="st">"day"</span>)</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>weekly_rep_data[, day_of_week <span class="sc">:</span><span class="er">=</span> <span class="fu">weekdays</span>(report_date)]</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>weekly_rep_data[</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  , confirm <span class="sc">:</span><span class="er">=</span> <span class="fu">fifelse</span>(day_of_week <span class="sc">==</span> report_dow, confirm, <span class="cn">NA_real_</span>)</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>weekly_rep_data <span class="ot">&lt;-</span> weekly_rep_data <span class="sc">|&gt;</span></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_flag_observed_observations</span>() <span class="sc">|&gt;</span></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_impute_na_observations</span>() <span class="sc">|&gt;</span></span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_filter_reference_dates_by_report_start</span>() <span class="sc">|&gt;</span></span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_add_incidence</span>()</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>weekly_rep_pobs <span class="ot">&lt;-</span> weekly_rep_data <span class="sc">|&gt;</span></span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_complete_dates</span>(<span class="at">timestep =</span> <span class="st">"day"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_preprocess_data</span>(<span class="at">max_delay =</span> <span class="dv">16</span>, <span class="at">timestep =</span> <span class="st">"day"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Pre-existing columns in `metaobs` will be overwritten: day_of_week.
+Pre-existing columns in `metaobs` will be overwritten: day_of_week.</code></pre>
+</div>
+</div>
+<p>We describe the known once-a-week reporting cycle with <code>enw_dayofweek_structural_reporting()</code> and pass it to <code>enw_report()</code> through its <code>structural</code> argument instead of a formula. Because most daily cells are imputed rather than observed, we also point the observation model at the <code>.observed</code> indicator so the likelihood only uses the real reports.</p>
+<p>The expected counts also need a different treatment here. Elsewhere in the session we gave the growth rate a random effect by day, which lets the expected counts move freely from day to day. With only one report a week there is little in the data to pin down that much daily freedom, so we give the growth rate a random effect by week instead. The expected counts still change every day, but the rate at which they change is only allowed to move from week to week. This keeps the same structure we justified for the daily models, a random effect on the growth rate at the model’s time unit, and only coarsens the unit to match how often the data arrive.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Structural variants need a little less adapt_delta and more tree depth</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>fit_opts_structural <span class="ot">&lt;-</span> <span class="fu">enw_fit_opts</span>(</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">save_warmup =</span> <span class="cn">FALSE</span>, <span class="at">pp =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">parallel_chains =</span> <span class="dv">4</span>,</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter_warmup =</span> <span class="dv">500</span>, <span class="at">iter_sampling =</span> <span class="dv">500</span>,</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">adapt_delta =</span> <span class="fl">0.9</span>, <span class="at">max_treedepth =</span> <span class="dv">12</span>,</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_messages =</span> <span class="cn">FALSE</span>, <span class="at">refresh =</span> <span class="dv">0</span></span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>structural <span class="ot">&lt;-</span> <span class="fu">enw_dayofweek_structural_reporting</span>(</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>  weekly_rep_pobs, <span class="at">day_of_week =</span> report_dow</span>
+<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-14"><a href="#cb46-14" aria-hidden="true" tabindex="-1"></a>weekly_daily_nowcast <span class="ot">&lt;-</span> <span class="fu">epinowcast</span>(</span>
+<span id="cb46-15"><a href="#cb46-15" aria-hidden="true" tabindex="-1"></a>  weekly_rep_pobs,</span>
+<span id="cb46-16"><a href="#cb46-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">expectation =</span> <span class="fu">enw_expectation</span>(<span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> week), <span class="at">data =</span> weekly_rep_pobs),</span>
+<span id="cb46-17"><a href="#cb46-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">report =</span> <span class="fu">enw_report</span>(<span class="at">structural =</span> structural, <span class="at">data =</span> weekly_rep_pobs),</span>
+<span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">obs =</span> <span class="fu">enw_obs</span>(</span>
+<span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"poisson"</span>, <span class="at">observation_indicator =</span> <span class="st">".observed"</span>,</span>
+<span id="cb46-20"><a href="#cb46-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> weekly_rep_pobs</span>
+<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb46-22"><a href="#cb46-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> fit_opts_structural</span>
+<span id="cb46-23"><a href="#cb46-23" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This model makes three configuration choices that differ from the course model. For each, say what it does and what would go wrong if you left it out.</p>
+<ol type="1">
+<li><code>report = enw_report(structural = structural, ...)</code> instead of a report formula.</li>
+<li><code>observation_indicator = ".observed"</code> in <code>enw_obs()</code>.</li>
+<li><code>expectation = enw_expectation(~ 0 + (1 | week), ...)</code> rather than the random effect by day we used for the daily-reporting models.</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-24-contents" aria-controls="callout-24" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-24" class="callout-24-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>The structural report module encodes the known once-a-week reporting schedule. Without it the model would treat the carried-forward daily values as ordinary reports and try to explain them with a smooth daily delay, misestimating both the delay and how complete the recent dates are.</li>
+<li>The observation indicator tells the likelihood to use only the cells flagged as real reports. Imputing carries the cumulative count forward, so every cell that is not a reporting day has an incident count of exactly zero. Without the indicator the model would take all of those zeros as data and try to fit zero reporting on those days, on top of the reporting schedule it already knows about.</li>
+<li>The data still have a daily timestep, so the expected counts change from one day to the next and the model can track a trend developing <em>within</em> the most recent week, which is what gives us a daily nowcast. The random effect by week applies to the growth rate, so the rate of change is held fixed within a week. A random effect by day would leave the growth rate free every day, with only one report a week to learn it from, so there would be little in the data to pin it down.</li>
+</ol>
+</div>
+</div>
+</div>
+<p>The nowcast is now on the daily scale even though reports only arrived weekly, so we compare it against the eventually-complete daily data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>weekly_daily_latest <span class="ot">&lt;-</span> <span class="fu">enw_latest_data</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">to_enw_format</span>(weekly_reporting_triangle)</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(weekly_daily_nowcast, <span class="at">latest_obs =</span> weekly_daily_latest) <span class="sc">+</span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">c</span>(weekly_plot_from, weekly_nowcast_date))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/weekly-daily-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This structural nowcast is on the daily scale, so we can read it against the eventually-observed daily points directly. Its payoff over the weekly-weekly model is the finer daily granularity: a within-week nowcast recovered from once-a-week reports, which the weekly-weekly model cannot give. It will not match a nowcast fitted to truly daily reports, because once-a-week reporting leaves the model less information about within-week timing than daily data would.</p>
+<p>To compare the two directly we can aggregate the daily structural nowcast up to the same weekly buckets as the weekly-weekly model and plot them against the eventually-observed weekly totals. A week can only be rebuilt from the daily model where its whole seven days fall inside the recent nowcast window, so the comparison covers the most recent complete weeks.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bin each daily reference date onto the weekly grid, keeping only full weeks</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>weekly_daily_samples <span class="ot">&lt;-</span> <span class="fu">summary</span>(weekly_daily_nowcast, <span class="at">type =</span> <span class="st">"nowcast_samples"</span>)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>weekly_daily_samples[</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  , week <span class="sc">:</span><span class="er">=</span> <span class="fu">as.IDate</span>(</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>      ref_date0 <span class="sc">+</span> <span class="dv">7</span>L <span class="sc">*</span> <span class="fu">ceiling</span>(<span class="fu">as.integer</span>(reference_date <span class="sc">-</span> ref_date0) <span class="sc">/</span> <span class="dv">7</span>)</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>full_weeks <span class="ot">&lt;-</span> weekly_daily_samples[</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  , .(<span class="at">n =</span> <span class="fu">uniqueN</span>(reference_date)), by <span class="ot">=</span> week</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>][n <span class="sc">==</span> <span class="dv">7</span>, week]</span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>wd_weekly <span class="ot">&lt;-</span> weekly_daily_samples[week <span class="sc">%in%</span> full_weeks][</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>  , .(<span class="at">total =</span> <span class="fu">sum</span>(sample)), by <span class="ot">=</span> .(week, .draw)</span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>][</span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>  , .(<span class="at">median =</span> <span class="fu">median</span>(total), <span class="at">lower =</span> <span class="fu">quantile</span>(total, <span class="fl">0.05</span>),</span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">upper =</span> <span class="fu">quantile</span>(total, <span class="fl">0.95</span>)), by <span class="ot">=</span> week</span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>][, model <span class="sc">:</span><span class="er">=</span> <span class="st">"Weekly-daily (aggregated)"</span>]</span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a>ww_weekly <span class="ot">&lt;-</span> <span class="fu">summary</span>(weekly_nowcast, <span class="at">type =</span> <span class="st">"nowcast"</span>)[</span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>  reference_date <span class="sc">%in%</span> full_weeks</span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>][, .(<span class="at">week =</span> reference_date, <span class="at">median =</span> q50, <span class="at">lower =</span> q5, <span class="at">upper =</span> q95)][</span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a>  , model <span class="sc">:</span><span class="er">=</span> <span class="st">"Weekly-weekly"</span></span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>obs_weekly <span class="ot">&lt;-</span> <span class="fu">enw_latest_data</span>(</span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enw_aggregate_cumulative</span>(</span>
+<span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">to_enw_format</span>(weekly_reporting_triangle), <span class="at">timestep =</span> <span class="st">"week"</span></span>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>)[reference_date <span class="sc">%in%</span> full_weeks, .(<span class="at">week =</span> reference_date, <span class="at">observed =</span> confirm)]</span>
+<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">rbind</span>(wd_weekly, ww_weekly), <span class="fu">aes</span>(week, <span class="at">colour =</span> model, <span class="at">fill =</span> model)) <span class="sc">+</span></span>
+<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">colour =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> median)) <span class="sc">+</span></span>
+<span id="cb48-34"><a href="#cb48-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y =</span> median)) <span class="sc">+</span></span>
+<span id="cb48-35"><a href="#cb48-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> obs_weekly, <span class="fu">aes</span>(week, observed), <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb48-36"><a href="#cb48-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Week (reference date)"</span>, <span class="at">y =</span> <span class="st">"Weekly onsets"</span>,</span>
+<span id="cb48-37"><a href="#cb48-37" aria-hidden="true" tabindex="-1"></a>       <span class="at">colour =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="cn">NULL</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="complex-reporting-processes_files/figure-html/weekly-compare-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Because the nowcast sits in a steep decline, the two models disagree about the most recent, still-incomplete week (the black points are the eventually-observed totals). The weekly-weekly model sees only whole-week totals, so it cannot tell where within the week its reports came from, and it overshoots the falling week. The weekly-daily model keeps a daily process, so it can see the decline happening <em>within</em> the week and its central estimate lands closer to the eventual total. On the earlier week, which is almost fully reported, the two agree closely.</p>
+<p>Both intervals contain the eventual total at the recent week, so this is a difference in central estimate rather than one model being flatly wrong. The weekly-weekly interval is the narrower of the two, and the eventual total sits close to its lower edge, so a slightly sharper turn would have taken it outside.</p>
+<p>The weekly-weekly model gave us a weekly nowcast from a small, cheap model, while the weekly-daily model recovers a daily nowcast from the same weekly reports at the price of a larger reporting triangle and a slower fit. The <a href="https://package.epinowcast.org/articles/temporal-aggregation.html">temporal aggregation guide</a> scores these approaches against a fully daily benchmark if you want to see how much each one gives up.</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>The daily advantage is conditional
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The daily model helps here because the epidemic is changing rapidly right at the nowcast date. When the recent weeks are flat or already reported the two approaches agree, and weekly-weekly is then just as good for far less compute. The daily model is also slower and harder to fit, so on the weekly total alone it will not always beat weekly-weekly. What it reliably buys is resolution: a daily nowcast that keeps the within-week shape weekly aggregation discards, which matters most exactly when things are changing fast.</p>
+<p>The comparison is also only fair because we gave both models the same final report date. It is worth being alert to this in your own work: a nowcast that appears to lose to a simpler model is often just working from staler data, and that shows up as a wider interval and a slower response to a turning point rather than as an obvious error.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Read the comparison plot (<code>weekly-compare</code>), where both weekly nowcasts are shown against the eventually-observed weekly totals (the black points).</p>
+<ol type="1">
+<li>On the earlier, almost fully reported week the two models agree; at the most recent, still-incomplete week they diverge. Which model’s central estimate lands closer to the eventual total, and in which direction does the other one err?</li>
+<li>Why can the weekly-daily model see the decline that the weekly-weekly model misses, given both are built from exactly the same weekly reports?</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-27-contents" aria-controls="callout-27" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-27" class="callout-27-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>On the earlier week both models sit close to the eventual total, so they are hard to tell apart there. At the recent falling week the weekly-daily median sits a little below the eventual total and the weekly-weekly median well above it, so the daily model is the closer of the two. The weekly model works from whole-week totals alone, so it carries the recent level forward and overshoots a week that is falling fast. At the recent week both intervals cover the eventual total, but the weekly-weekly one only just does, with the truth near its lower edge.</li>
+<li>The two models see the same <em>reports</em>, but not at the same resolution. Within one weekly release, each day of the preceding week has had a different amount of time to be reported, so the same delay distribution implies a different degree of completeness for each day. The daily model uses that to reconstruct the shape <em>within</em> the week and can see the decline under way; the weekly model collapses the week to a single number and has nothing left to read the within-week trend from.</li>
+</ol>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="other-reporting-complications" class="level1">
+<h1>Other reporting complications</h1>
+<p>We have worked through three complications end to end: a day-of-week effect, a time-varying delay, and weekly reporting. Other complications are handled by the same modular idea, each a change to one formula rather than a new model. Two worth knowing about are delays that vary by strata (for example age or region), which add the stratifying variable to a module formula such as <code>enw_reference(~ (1 | age_group), data = pobs)</code> so each stratum has its own delay while borrowing strength across strata, and missing reference dates, which <code>epinowcast</code> models with a dedicated module. We link the relevant documentation for both in <em>Going further</em> below rather than fitting them here.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Take 5 minutes
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Suppose you also had the data split by two age groups, and you suspected reporting was slower in one of them. Which module would you change, and what would be the advantage of fitting both age groups in one <code>epinowcast</code> model rather than two separate nowcasts?</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-29-contents" aria-controls="callout-29" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-29" class="callout-29-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>You would add age group to the <em>reference</em> module so the delay distribution can differ by group. Fitting both groups jointly lets a sparse group borrow strength from the other through shared (partially pooled) structure, which is more stable than fitting each group on its own, especially when counts are low.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="going-further" class="level1">
+<h1>Going further</h1>
+<p>This session only scratches the surface of what <code>epinowcast</code> can do, and <code>epinowcast</code> is only one of several tools for this kind of modelling. In fact <code>epinowcast</code> can express essentially all of the modelling in this course, from delay estimation and nowcasting through renewal-based <span class="math inline">\(R_t\)</span> estimation to the reporting effects above.</p>
+<p><code>epinowcast</code> has extensive documentation and worked case studies that go well beyond this session; rather than try to cover everything here, the best next step is to read them:</p>
+<ul>
+<li>The <a href="https://package.epinowcast.org/"><code>epinowcast</code> package website</a> <span class="citation" data-cites="epinowcastPackage2024">(<a href="#ref-epinowcastPackage2024" role="doc-biblioref">Sam Abbott et al. 2024</a>)</span>, including its <a href="https://package.epinowcast.org/articles/model.html">model description</a> and the <a href="https://package.epinowcast.org/articles/epinowcast.html">getting started vignette</a>.</li>
+<li>The <a href="https://package.epinowcast.org/articles/features.html">model features summary</a>, a table of everything <code>epinowcast</code> currently supports with links to the relevant documentation for each feature.</li>
+</ul>
+<p>To go deeper on the topics we covered, the relevant reference pages are:</p>
+<ul>
+<li><strong>Reporting schedule (weekly or batched reporting):</strong> the <a href="https://package.epinowcast.org/articles/temporal-aggregation.html">temporal aggregation guide</a>, <a href="https://package.epinowcast.org/reference/enw_aggregate_cumulative.html"><code>enw_aggregate_cumulative()</code></a> and the <code>timestep</code> argument of <a href="https://package.epinowcast.org/reference/enw_preprocess_data.html"><code>enw_preprocess_data()</code></a>.</li>
+<li><strong>Day-of-week and other report-date effects:</strong> the <a href="https://package.epinowcast.org/reference/enw_report.html"><code>enw_report()</code></a> report-date module.</li>
+<li><strong>Time-varying delay (reference-date effects):</strong> the <a href="https://package.epinowcast.org/reference/enw_reference.html"><code>enw_reference()</code></a> reference-date module.</li>
+<li><strong>Delays that vary by strata:</strong> the <a href="https://package.epinowcast.org/articles/germany-age-stratified-nowcasting.html">hierarchical age-stratified nowcasting case study</a>, which fits many reporting triangles at once with partially pooled effects.</li>
+<li><strong>Missing reference dates:</strong> the <a href="https://package.epinowcast.org/reference/enw_missing.html"><code>enw_missing()</code></a> module.</li>
+<li>The <a href="https://package.epinowcast.org/reference/plot.epinowcast.html">plotting reference</a> for more ways to visualise a fit than the default <code>plot()</code> we used here.</li>
+</ul>
+<p>Its <a href="https://package.epinowcast.org/articles/package-use-cases.html">case studies</a> and vignettes also go beyond this session. The <a href="https://package.epinowcast.org/articles/single-timeseries-rt-estimation.html">real-time <span class="math inline">\(R_t\)</span> estimation vignette</a> jointly estimates transmission and reporting delays with a renewal-based expectation model, generalising the joint model from the <a href="joint-nowcasting">joint nowcasting session</a>. Others work through evaluation of nowcasts with proper scoring rules, as we did for forecasts in the <a href="forecasting-nowcasting">combining nowcasting and forecasting session</a>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Challenge: fit the wrong model on purpose
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A good way to build intuition for these models is to misspecify one deliberately and see how the misspecification shows up. Reusing the models and data already defined above, fit the wrong model to each worked example and compare it to the correct one:</p>
+<ul>
+<li>Fit the constant-delay course model (the reference module with no time variation) to the <em>time-varying-delay</em> data, and compare its nowcast to the <code>~ rw(week)</code> model that lets the delay drift.</li>
+<li>Fit a model that omits the day-of-week terms to the <em>day-of-week</em> data, and compare it to the model that includes them.</li>
+<li>Fit the model to the weekly data as if it were ordinary daily data, and compare it to the weekly-aware fits.</li>
+</ul>
+<p>For each, compare the nowcasts against the eventually-observed data and use a posterior-predictive check (<code>type = "posterior_prediction"</code>) to see where the fit breaks down. Which misspecifications bite hardest, and how would you detect them from the fit alone if you did not have the eventual data to check against?</p>
+</div>
+</div>
+<p><code>epinowcast</code> is not the only option, and the right tool depends on the problem.</p>
+<ul>
+<li>The models we built using Stan directly in this course remain a perfectly good choice when you understand the reporting process and want full control.</li>
+<li>The <a href="https://baselinenowcast.epinowcast.org"><code>baselinenowcast</code></a> package implements simple multiplicative nowcasting methods that make useful benchmarks.</li>
+<li>A range of other methods and frameworks are used in practice; the collaborative nowcasting comparison in <span class="citation" data-cites="wolfframCollaborativeNowcastingCOVID192023">(<a href="#ref-wolfframCollaborativeNowcastingCOVID192023" role="doc-biblioref">Wolffram et al. 2023</a>)</span> surveys several and discusses what drives differences in their performance.</li>
+</ul>
+<p>For the methodological background to generative nowcasting models of this kind, see <span class="citation" data-cites="lisonGenerativeBayesianModeling2024">(<a href="#ref-lisonGenerativeBayesianModeling2024" role="doc-biblioref">Lison et al. 2024</a>)</span>.</p>
+</section>
+<section id="wrap-up" class="level1">
+<h1>Wrap up</h1>
+<ul>
+<li>Review what you’ve learned in this session with the <a href="../reference/learning_objectives">learning objectives</a></li>
+<li>Share your <a href="../reference/help">questions and thoughts</a></li>
+</ul>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-lisonGenerativeBayesianModeling2024" class="csl-entry" role="listitem">
+Lison, Adrian, Sam Abbott, Jana Huisman, and Tanja Stadler. 2024. <span>“Generative <span>Bayesian</span> Modeling to Nowcast the Effective Reproduction Number from Line List Data with Missing Symptom Onset Dates.”</span> <em>PLOS Computational Biology</em> 20 (4): e1012021. <a href="https://doi.org/10.1371/journal.pcbi.1012021">https://doi.org/10.1371/journal.pcbi.1012021</a>.
+</div>
+<div id="ref-epinowcastPackage2024" class="csl-entry" role="listitem">
+Sam Abbott, Adrian Lison, Sebastian Funk, et al. 2024. <em>Epinowcast: <span>A Bayesian Framework</span> for <span class="nocase">Real-time Infectious Disease Surveillance</span></em>. <a href="https://doi.org/10.5281/zenodo.5637165">https://doi.org/10.5281/zenodo.5637165</a>.
+</div>
+<div id="ref-wolfframCollaborativeNowcastingCOVID192023" class="csl-entry" role="listitem">
+Wolffram, Daniel, Sam Abbott, Matthias an der Heiden, et al. 2023. <span>“Collaborative Nowcasting of <span>COVID-19</span> Hospitalization Incidences in <span>Germany</span>.”</span> <em>PLOS Computational Biology</em> 19 (8): e1011394. <a href="https://doi.org/10.1371/journal.pcbi.1011394">https://doi.org/10.1371/journal.pcbi.1011394</a>.
+</div>
+</div>
+
+
+</section>
+</section>
+
+<script data-goatcounter="https://nfidd.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/nfidd\.github\.io\/sismid-nowcasting\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+            // default icon
+            link.classList.add("external");
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/nfidd/sismid-nowcasting/blob/main/sessions/complex-reporting-processes.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/nfidd/sismid-nowcasting/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
