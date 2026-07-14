@@ -1218,13 +1218,17 @@ When the geometry of the posterior is contorted by trying to satisfy contradicto
 That surfaces as divergent transitions, low effective sample sizes, or high `rhat` in the fit summary.
 It is the least reliable of the three symptoms, as we are about to see.
 
+A whole-fit summary can only tell us *that* something is straining, not *where*, so alongside the worst value we also report which parameter it belongs to.
+
 ```{r conflict_diagnostics}
 diagnostics <- function(f, label) {
   s <- f$summary(c("R", "infections", "ascertainment", "ifr", "ww_scale"))
   tibble(
     fit = label,
     max_rhat = round(max(s$rhat), 3),
+    worst_rhat = s$variable[which.max(s$rhat)],
     min_ess_bulk = round(min(s$ess_bulk)),
+    worst_ess = s$variable[which.min(s$ess_bulk)],
     divergences = sum(f$diagnostic_summary(quiet = TRUE)$num_divergent)
   )
 }
@@ -1234,6 +1238,9 @@ bind_rows(
   diagnostics(fit_conflict, "conflicting deaths")
 )
 ```
+
+Even this is a summary across every parameter.
+In a real check we would scan `rhat` and `ess_bulk` *per parameter* (the full `fit$summary()` output), because a single badly-behaved parameter is easy to hide in a whole-fit maximum, and which parameter it is often points straight at the part of the model that is struggling.
 
 ::: {.callout-tip}
 ## Take 5 minutes
