@@ -679,7 +679,8 @@ ggplot(two_inf, aes(x = day)) +
   geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   labs(title = "Infections, cases + deaths jointly (grey) vs truth (red)",
-       subtitle = "Two data sources sharing one latent infection process")
+       subtitle = "Two data sources sharing one latent infection process",
+       x = "Day", y = "Infections")
 ```
 
 The two-source fit gives us $R_t$ as well, now informed by both data sources at once.
@@ -787,7 +788,8 @@ ggplot(ww_inf, aes(x = day)) +
   geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   labs(title = "Infections, wastewater only (grey) vs truth (red)",
-       subtitle = "A short-delay data source on its own scale")
+       subtitle = "A short-delay data source on its own scale",
+       x = "Day", y = "Infections")
 ```
 
 Wastewater identifies the trend through a short delay, so its $R_t$ is informative right up to the recent end of the time series.
@@ -842,7 +844,8 @@ ggplot(inf_posterior, aes(x = day)) +
   geom_line(aes(y = .value, group = .draw), alpha = 0.05) +
   geom_line(data = inf_df, aes(y = infections), colour = "red") +
   labs(title = "Infections, estimated (grey) and true (red)",
-       subtitle = "Joint model fit to cases, deaths and wastewater")
+       subtitle = "Joint model fit to cases, deaths and wastewater",
+       x = "Day", y = "Infections")
 ```
 
 and so is the reproduction number.
@@ -1142,7 +1145,8 @@ ggplot(
   scale_colour_brewer(palette = "Set1") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   coord_cartesian(ylim = c(0.4, 2)) +
-  labs(title = "Rt under consistent vs conflicting data sources") +
+  labs(title = "Rt under consistent vs conflicting data sources",
+       x = "Day", y = "Rt") +
   theme(legend.position = "bottom")
 ```
 
