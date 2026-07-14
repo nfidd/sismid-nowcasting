@@ -316,7 +316,6 @@ The top of the DAG is the shared process: the $R_t$ random walk and the renewal 
 In the `transformed parameters` block this is:
 
 ```stan
-// one shared infection / Rt process feeds every data source
 array[n] real R = geometric_random_walk(init_R, rw_noise, rw_sd); // <1>
 array[gen_time_max] real seed_infections;                         // <2>
 for (t in 1:gen_time_max)
@@ -461,10 +460,7 @@ death_delay_pmf <- censored_delay_pmf(rgamma, max = 12, shape = 8, rate = 1)
 
 ascertainment <- 0.4
 ifr <- 0.1
-## negative-binomial size: smaller = noisier cases. At size 10 the case
-## variance is several times the Poisson variance at the peak, so the cases
-## are heavily overdispersed but still carry the signal.
-case_dispersion <- 10
+case_dispersion <- 10   # negative-binomial size: smaller = noisier cases
 
 exp_cases  <- ascertainment * convolve_with_delay(infections, case_delay_pmf)
 exp_deaths <- ifr * convolve_with_delay(infections, death_delay_pmf)
@@ -497,7 +493,6 @@ Before we fit anything, the workflow asks us to check that our *priors* alone ca
 We sample from the model with every likelihood switched off (`use_* = 0`), so the draws come only from the priors, and compare the implied cases and deaths with the data.
 
 ```{r prior_predictive, results = 'hide', message = FALSE}
-## every likelihood off: the draws come from the priors alone
 ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 prior_data <- make_data(
   cases = obs$cases, deaths = obs$deaths, ww = rep(0, n),
@@ -508,17 +503,16 @@ prior_data <- make_data(
 fit_prior <- fit_streams(prior_data, use_cases = 0, use_deaths = 0, use_ww = 0)
 ```
 
+The random-walk prior lets infections wander a long way before any data constrain them, so the upper limits of the prior predictive intervals run into the thousands.
+We clip them at twice the observed maximum so that the data stay visible; the bands really do extend far higher.
+
 ```{r plot_prior_predictive}
 prior_obs <- bind_rows(
   obs |> transmute(day, source = "cases", value = cases),
   obs |> transmute(day, source = "deaths", value = deaths)
 )
-## the geometric random-walk prior lets infections wander a long way, so the
-## prior predictive upper limits run into the thousands; clip them to twice
-## the observed maximum for display -- the bands really extend far higher
 caps <- prior_obs |> group_by(source) |> summarise(cap = 2 * max(value))
 
-## one row per source, day and width, so the clipping applies within each band
 prior_pp <- bind_rows(
   fit_prior |> gather_draws(pp_cases[day])  |> mutate(source = "cases"),
   fit_prior |> gather_draws(pp_deaths[day]) |> mutate(source = "deaths")
@@ -571,8 +565,6 @@ To recover the level from one data source we have to inform its scaling.
 We therefore give each single-source diagnostic fit a *tight* prior on that data source's scaling, centred near the truth, as a deliberate device: it lets us check that the data source recovers the infection level, not just its shape.
 
 ```{r fit_single, results = 'hide', message = FALSE}
-## placeholder wastewater: never enters the likelihood while use_ww = 0
-ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 cd_data <- make_data(
   cases = obs$cases, deaths = obs$deaths, ww = rep(0, n),
   case_delay_pmf = case_delay_pmf,
@@ -580,7 +572,6 @@ cd_data <- make_data(
   ww_delay_pmf = ww_placeholder_pmf
 )
 
-## tight, informed priors on each data source's own scaling anchor the level
 cases_data <- cd_data
 cases_data$ascertainment_p <- c(0.4, 0.03)
 deaths_data <- cd_data
@@ -769,7 +760,7 @@ full_data <- make_data(
   ww_delay_pmf = ww_delay_pmf
 )
 ww_data <- full_data
-ww_data$ww_scale_p <- c(2, 0.15)   # tight, informed prior on the ww scaling
+ww_data$ww_scale_p <- c(2, 0.15)
 fit_ww <- fit_streams(ww_data, use_cases = 0, use_deaths = 0, use_ww = 1)
 ```
 
@@ -814,8 +805,9 @@ fit <- fit_streams(
 )
 ```
 
+We look at the scalings and a few $R_t$ values, so that we can compare how precisely each is estimated.
+
 ```{r fit_summary}
-## focus on the scalings and a few Rt values so we can compare their precision
 fit$summary(c("ascertainment", "ifr", "ww_scale", "R[1]", "R[20]", "R[41]"))
 ```
 
@@ -896,8 +888,6 @@ ggplot(r_by_model, aes(x = day, y = .value,
   geom_line(alpha = 0.05) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   facet_wrap(~model, nrow = 3) +
-  ## Dark2 rather than Set1: Set1's sixth colour is a pale yellow that all
-  ## but disappears as faint spaghetti on white
   scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   coord_cartesian(ylim = c(0, 2)) +
@@ -1005,7 +995,6 @@ fit_at_cutoff <- function(cutoff, use_cases, use_deaths, use_ww, ...) {
 
 ```{r realtime_fits, results = 'hide', message = FALSE}
 cutoffs <- c(20, 40)
-## three single sources and the three pairwise combinations
 model_specs <- list(
   "cases only"          = c(1, 0, 0),
   "deaths only"         = c(0, 1, 0),
@@ -1136,7 +1125,6 @@ Cases and wastewater are unchanged.
 Under our constant-scaling model the rising deaths therefore *look like* a rising epidemic, which the flat-scaling cases and wastewater flatly contradict.
 
 ```{r simulate_conflict}
-## death scaling drifts up over the second half of the outbreak
 ifr_drift <- ifr * c(rep(1, 20), seq(1, 4, length.out = n - 20))
 exp_deaths_conflict <-
   ifr_drift * convolve_with_delay(infections, death_delay_pmf)
