@@ -1078,16 +1078,16 @@ In each panel compare the real-time (day 20) band with the retrospective (day 40
 ::: {.callout-note collapse="true"}
 ## Solution
 
-The deaths do carry signal at day 20, but it is *old* signal.
-Over the first ten days or so the deaths-only day-20 estimate stays within reach of its day-40 goal, running a little above it.
-It is the *recent* end that the deaths cannot see.
-With a long infection-to-death delay, infections from the last week have barely begun to cause deaths, so the estimate keeps $R_t$ near the level the earlier data implied instead of turning it over.
+The deaths carry signal at day 20, but it is *old* signal.
+Early on, the deaths-only estimate runs a little above its day-40 goal.
+It is the recent end that the deaths cannot see.
+Infections from the last week have barely begun to cause deaths, so the estimate holds $R_t$ near the level the earlier data implied instead of turning it over.
 
-- **Single sources.** Cases and wastewater have short delays, so their day-20 estimates track the day-40 goal over almost the whole overlapping window. The deaths-only day-20 estimate stays flat at around 1.5, while the day-40 fit shows $R_t$ already back near 1 by day 20, so deaths miss the turn entirely.
-- **Pairs.** Every pair here contains a timely source, so all three track the goal reasonably. Of the pairs, cases + wastewater is the closest match and much the tightest, which is what we would expect from two short-delay sources.
-- **What a second source buys.** Pairing deaths with a timely source (cases + deaths, deaths + wastewater) pulls the day-20 estimate off the deaths-only plateau and back onto the retrospective trajectory. The gain is largest where the single source was weakest, at the recent end. Note that the traffic is one-way: adding *deaths* to a source that was already timely does not help, and if anything drags the recent end slightly, because the delayed source has nothing to say about the present.
-- **Does the full model beat the best pair?** It is the closest of the seven, but only just, and its interval is not the tightest. Once two timely sources are in the model there is little left for a third to add.
-- **Everything overshoots at the recent end.** Every model's day-20 estimate sits *above* its day-40 goal on the last few days, the delayed sources by most. This is the real-time problem in miniature: the most recent infections are the least observed, so the estimate leans on the earlier, higher $R_t$ and is slow to follow the epidemic down.
+- **Single sources.** Cases and wastewater have short delays, so they track the day-40 goal over almost the whole window. Deaths stay flat at about 1.5 while the goal is already near 1 by day 20, so they miss the turn.
+- **Pairs.** Of the pairs, cases + wastewater is the closest and much the tightest, as two short-delay sources should be.
+- **What a second source buys.** Adding a timely source to deaths pulls the estimate off the deaths-only plateau. Adding *deaths* to a source that is already timely does not help, and slightly degrades the recent end.
+- **Does the full model beat the best pair?** It is the closest of the seven, but only just, and its interval is not the tightest. Once two timely sources are in, a third adds little.
+- **Every model overshoots at the recent end.** The most recent infections are the least observed, so each estimate leans on the earlier, higher $R_t$ and is slow to follow the epidemic down.
 :::
 
 # When data sources conflict
