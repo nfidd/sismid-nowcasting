@@ -454,13 +454,10 @@ Each is a convolution of the shared infections with its own delay distribution, 
 -   **Cases**: a short infection-to-report delay, scaled by an *ascertainment* fraction (most infections are never confirmed), and reported with noise beyond the Poisson, so we simulate them as *negative binomial*.
 -   **Deaths**: a long infection-to-death delay, scaled by the *infection fatality ratio* (IFR), simulated as Poisson.
 
-We also define a placeholder wastewater delay alongside them, so the data list is complete before we introduce wastewater in Part 3.
-It never enters the likelihood while `use_ww` is `0`.
 
 ```{r simulate_cd}
 case_delay_pmf  <- censored_delay_pmf(rgamma, max = 10, shape = 3, rate = 1)
 death_delay_pmf <- censored_delay_pmf(rgamma, max = 12, shape = 8, rate = 1)
-ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 
 ascertainment <- 0.4
 ifr <- 0.1
@@ -497,6 +494,7 @@ Before we fit anything, the workflow asks us to check that our *priors* alone ca
 We sample from the model with every likelihood switched off (`use_* = 0`), so the draws come only from the priors, and compare the implied cases and deaths with the data.
 
 ```{r prior_predictive, results = 'hide', message = FALSE}
+ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 prior_data <- make_data(
   cases = obs$cases, deaths = obs$deaths, ww = rep(0, n),
   case_delay_pmf = case_delay_pmf,
@@ -571,6 +569,9 @@ To recover the level from one data source we have to inform its scaling.
 We therefore give each single-source diagnostic fit a *tight* prior on that data source's scaling, centred near the truth, as a deliberate device: it lets us check that the data source recovers the infection level, not just its shape.
 
 ```{r fit_single, results = 'hide', message = FALSE}
+## censored_delay_pmf() simulates, so dropping this apparently redundant
+## call advances the RNG and changes every result below
+ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 cd_data <- make_data(
   cases = obs$cases, deaths = obs$deaths, ww = rep(0, n),
   case_delay_pmf = case_delay_pmf,
