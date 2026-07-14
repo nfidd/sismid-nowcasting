@@ -454,9 +454,13 @@ Each is a convolution of the shared infections with its own delay distribution, 
 -   **Cases**: a short infection-to-report delay, scaled by an *ascertainment* fraction (most infections are never confirmed), and reported with noise beyond the Poisson, so we simulate them as *negative binomial*.
 -   **Deaths**: a long infection-to-death delay, scaled by the *infection fatality ratio* (IFR), simulated as Poisson.
 
+We also define a placeholder wastewater delay alongside them, so the data list is complete before we introduce wastewater in Part 3.
+It never enters the likelihood while `use_ww` is `0`.
+
 ```{r simulate_cd}
 case_delay_pmf  <- censored_delay_pmf(rgamma, max = 10, shape = 3, rate = 1)
 death_delay_pmf <- censored_delay_pmf(rgamma, max = 12, shape = 8, rate = 1)
+ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 
 ascertainment <- 0.4
 ifr <- 0.1
@@ -493,7 +497,6 @@ Before we fit anything, the workflow asks us to check that our *priors* alone ca
 We sample from the model with every likelihood switched off (`use_* = 0`), so the draws come only from the priors, and compare the implied cases and deaths with the data.
 
 ```{r prior_predictive, results = 'hide', message = FALSE}
-ww_placeholder_pmf <- censored_delay_pmf(rgamma, max = 10, shape = 2, rate = 1)
 prior_data <- make_data(
   cases = obs$cases, deaths = obs$deaths, ww = rep(0, n),
   case_delay_pmf = case_delay_pmf,
@@ -1146,7 +1149,7 @@ ggplot(
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   coord_cartesian(ylim = c(0.4, 2)) +
   labs(title = "Rt under consistent vs conflicting data sources",
-       x = "Day", y = "Rt") +
+       x = "Day", y = "Rt", colour = NULL) +
   theme(legend.position = "bottom")
 ```
 
@@ -1232,9 +1235,9 @@ diagnostics <- function(f, label) {
   tibble(
     fit = label,
     max_rhat = round(max(s$rhat), 3),
-    worst_rhat = s$variable[which.max(s$rhat)],
+    worst_rhat_param = s$variable[which.max(s$rhat)],
     min_ess_bulk = round(min(s$ess_bulk)),
-    worst_ess = s$variable[which.min(s$ess_bulk)],
+    worst_ess_param = s$variable[which.min(s$ess_bulk)],
     divergences = sum(f$diagnostic_summary(quiet = TRUE)$num_divergent)
   )
 }
@@ -1253,8 +1256,8 @@ In a real check we would scan `rhat` and `ess_bulk` *per parameter* (the full `f
 
 Look at the posterior predictive plot and at the diagnostics printed above.
 
-- Which data source is fitted worst, and in which direction does the model miss?
-- Neither panel is fitted well. Which data source would you nonetheless *suspect* of being the misspecified one, and why?
+- How well is each count source fitted, and in which direction does the model miss on each?
+- Which data source would you *suspect* of being the misspecified one, and why?
 - Which of the assumptions in the list above would you relax first?
 - Do the sampler diagnostics look worse than for the consistent fit?
 :::
