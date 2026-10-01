@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>When surveillance streams conflict</title>
+<style>
+  :root{
+    --truth:#334155;  /* true infections / slate */
+    --deaths:#ea580c; /* deaths-implied / orange */
+    --est:#9333ea;    /* joint estimate / purple */
+    --ink:#1f2933;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --bg:#fbfbfd;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 22px 120px}
+  header.hero{padding:54px 22px 30px; text-align:center;
+    background:linear-gradient(180deg,#faf5ff 0%, var(--bg) 100%); border-bottom:1px solid var(--line);}
+  header.hero h1{font-size:30px; margin:0 0 8px; letter-spacing:-.4px}
+  header.hero p{max-width:720px; margin:0 auto; color:var(--muted)}
+  section{background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; margin:30px 0; box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  section > h2{margin:0 0 4px; font-size:23px; letter-spacing:-.3px}
+  .tagline{color:var(--muted); margin:0 0 18px; font-size:15px}
+  p{margin:10px 0}
+  .fig{border:1px solid var(--line); border-radius:12px; padding:16px 14px 10px; margin:18px 0 6px; background:#fff}
+  .fig svg{display:block; width:100%; height:auto}
+  .figcap{font-size:13.5px; color:var(--muted); margin:8px 4px 2px}
+  .controls{display:flex; flex-wrap:wrap; gap:16px 24px; align-items:center; margin:8px 4px 2px;
+    padding:12px 14px; background:#f8fafc; border:1px solid var(--line); border-radius:10px; font-size:14px}
+  .controls label{display:flex; flex-direction:column; gap:2px; min-width:220px}
+  .controls .vlabel{font-weight:600}
+  .controls input[type=range]{width:220px; accent-color:var(--est)}
+  .toggle{display:flex; align-items:center; gap:8px; min-width:auto; flex-direction:row}
+  .toggle input{width:auto; accent-color:var(--est); transform:scale(1.2)}
+  .readout{display:inline-flex; gap:14px; flex-wrap:wrap; margin:10px 4px 0; font-variant-numeric:tabular-nums}
+  .readout .chip{background:#f1f5f9; border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:14px}
+  .readout .chip b{font-size:16px}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:13.5px; margin:4px 4px 8px}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .swatch{width:22px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block}
+  .key{background:#faf5ff; border-left:4px solid var(--est); padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0}
+  .presets{display:flex; gap:8px; flex-wrap:wrap; margin:14px 4px 0}
+  .presets button{font:600 13px inherit; border:1px solid #e9d5ff; background:#fff; color:var(--est);
+    padding:6px 13px; border-radius:8px; cursor:pointer}
+  .presets button:hover{background:#faf5ff}
+  ul{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+  footer{text-align:center; color:var(--muted); font-size:13px; margin-top:40px}
+  a{color:var(--est)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>When surveillance streams conflict</h1>
+  <p>Cases, deaths and wastewater are all delayed, scaled views of the <b>same</b> infections. If one stream's scaling drifts — say a rising death-to-infection ratio — it starts to <b>imply a different trajectory</b> than the others. A joint model that assumes constant scaling cannot satisfy both, so it settles on a <b style="color:var(--est)">compromise that fits none of them</b>. Drag the drift up to create the conflict, then let the scaling vary to resolve it.</p>
+</header>
+
+<div class="wrap">
+
+<section id="intro">
+  <h2>One shared epidemic, several lenses</h2>
+  <p class="tagline">Each stream implies its own answer to "what did the infections do?"</p>
+  <p>Every stream is the shared latent infections passed through its own scaling. Invert that scaling and each stream <i>implies</i> an infection trajectory. When the scalings are what the model assumes, the implied trajectories agree and pinning down infections is easy. When one scaling drifts, its implied trajectory peels away from the rest, and the streams conflict.</p>
+  <div class="key">Here cases and wastewater keep a constant scaling, so both imply the <b>true</b> trajectory. Only the death scaling (the infection fatality ratio) drifts upward over the second half of the outbreak, so the deaths imply a trajectory that keeps rising when the truth is falling.</div>
+</section>
+
+<section id="conflict">
+  <h2>Conflict, and how to resolve it</h2>
+  <p class="tagline">Raise the drift to open a gap; let the scaling vary to close it</p>
+
+  <div class="legend">
+    <span><i class="swatch" style="border-color:var(--truth);border-top-width:4px"></i> true infections (cases &amp; wastewater imply this)</span>
+    <span><i class="swatch" style="border-color:var(--deaths);border-top-style:dashed;border-top-width:3px"></i> deaths imply (constant-IFR assumption)</span>
+    <span><i class="swatch" style="border-color:var(--est);border-top-width:4px"></i> joint estimate</span>
+  </div>
+
+  <div class="fig">
+    <svg id="conflictSvg" viewBox="0 0 720 380" role="img" aria-label="Infection trajectories on a shared day axis. The true infections (which cases and wastewater imply) rise to a peak and decline. As the death scaling drifts up, the trajectory implied by deaths under a constant-IFR assumption peels upward in the second half. The joint estimate settles between the two, fitting neither, until the resolve toggle lets the death scaling vary and the estimate snaps back onto the truth."></svg>
+  </div>
+  <p class="figcap">Schematic illustration, not a real posterior: the estimate is a simple weighted blend of the implied trajectories, drawn to show the intuition rather than the output of fitting the Stan model.</p>
+
+  <div class="presets" id="conflictPresets">
+    <button data-drift="0">No conflict</button>
+    <button data-drift="1.2">Mild drift</button>
+    <button data-drift="2.6">Strong drift</button>
+  </div>
+
+  <div class="controls">
+    <label><span class="vlabel">How much the death scaling drifts: <span id="driftVal">2.0</span>&times; by the end</span>
+      <input id="drift" type="range" min="0" max="3" step="0.1" value="2"></label>
+    <label class="toggle"><input id="resolve" type="checkbox"> <span class="vlabel">Let the death scaling vary to resolve</span></label>
+  </div>
+  <div class="readout">
+    <span class="chip" style="border-left:4px solid var(--deaths);padding-left:10px">death scaling by end = <b id="driftChip">—</b>&times; its start</span>
+    <span class="chip" style="border-left:4px solid var(--est);padding-left:10px">estimate error vs truth = <b id="errChip">—</b></span>
+    <span class="chip" id="stateChip" style="background:#faf5ff"></span>
+  </div>
+
+  <div class="key"><b>The point.</b> With a constant-scaling model the estimate is dragged toward a compromise between the trajectory the cases/wastewater imply and the (wrong) one the deaths imply. It fits neither stream, and the error grows with the drift. Sharing one infection process <i>surfaces</i> the conflict but does not <i>resolve</i> it. Letting the death scaling vary models the reason the streams disagree, so the estimate snaps back onto the truth.</div>
+</section>
+
+<section id="takeaways">
+  <h2>Takeaways</h2>
+  <ul>
+    <li>Streams <b>conflict</b> when their implied infection trajectories are incompatible — here a drifting death scaling makes the deaths imply a rising epidemic while the cases and wastewater imply a falling one.</li>
+    <li>A joint model with a <b>constant</b> scaling settles on a compromise that is faithful to no stream, and the miss grows with the drift.</li>
+    <li>Sharing one latent infection process <b>surfaces</b> the conflict; it does not resolve it.</li>
+    <li>You resolve genuine conflict by modelling the <b>reason</b> for it — here, letting the death scaling vary over time — not by averaging the streams together.</li>
+  </ul>
+  <footer>Built as a teaching aid for the NFIDD multiple-data-streams session &middot; self-contained and illustrative.</footer>
+</section>
+
+</div>
+
+<script>
+/* ---------- tiny SVG helpers ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function clear(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+
+/* ================= the conflict figure =================
+   A schematic, JS-only illustration (it does NOT run Stan).
+
+   * true infections I(t): a rise to a peak then a decline to a plateau.
+     Cases and wastewater keep a constant scaling, so both imply this curve.
+   * deaths imply I(t) * (1 + drift * ramp(t)), where the death scaling
+     ramps up over the second half of the outbreak (a rising IFR). Under the
+     model's constant-IFR assumption those rising deaths look like rising
+     infections.
+   * constant-scaling joint estimate: a weighted blend (in log space) of the
+     implied trajectories, leaning toward the more numerous cases but pulled up
+     by the deaths -- a compromise that fits neither.
+   * resolve: the death scaling is allowed to vary, absorbing the drift, so the
+     estimate returns to the truth.                                            */
+(function(){
+  const svg=document.getElementById("conflictSvg");
+  const W=720,H=380, m={l:56,r:22,t:26,b:46};
+  const N=60, peak=20, sig=9, tmid=28, A=1000, wCases=0.6;
+  const driftInp=document.getElementById("drift"), resolveInp=document.getElementById("resolve");
+
+  function truth(t){ return A*(0.30 + 0.70*Math.exp(-((t-peak)*(t-peak))/(2*sig*sig))); }
+  function ramp(t){ return t<=tmid ? 0 : Math.min(1,(t-tmid)/(N-tmid)); }
+
+  // fixed y-axis so lines do not jump as the slider moves: cover the worst case
+  let yMax=0;
+  for(let t=0;t<=N;t++){ yMax=Math.max(yMax, truth(t)*(1+3*ramp(t))); }
+  yMax*=1.08;
+
+  const sx=t=>m.l+t/N*(W-m.l-m.r);
+  const sy=v=>H-m.b-(Math.min(v,yMax)/yMax)*(H-m.t-m.b);
+  function pathOf(fn){ let p=""; for(let t=0;t<=N;t++) p+=(t?" L ":"M ")+sx(t)+" "+sy(fn(t)); return p; }
+
+  function draw(){
+    const drift=+driftInp.value, resolved=resolveInp.checked;
+    document.getElementById("driftVal").textContent=(1+drift).toFixed(1);
+
+    const tru=t=>truth(t);
+    const deathsImplied=t=>truth(t)*(1+drift*ramp(t));
+    // constant-scaling compromise: log-weighted blend of the implied trajectories
+    const estimate=t=> resolved ? truth(t)
+      : Math.exp(wCases*Math.log(tru(t)) + (1-wCases)*Math.log(deathsImplied(t)));
+
+    clear(svg);
+
+    // gridlines + axes
+    for(let k=0;k<=4;k++){
+      const v=yMax*k/4, yy=sy(v);
+      svg.appendChild(el("line",{x1:m.l,y1:yy,x2:W-m.r,y2:yy,stroke:"#eef2f7"}));
+      svg.appendChild(el("text",{x:m.l-8,y:yy+4,"text-anchor":"end","font-size":10,fill:"#6b7280"}))
+        .textContent=(v>=1000?(v/1000).toFixed(1)+"k":Math.round(v));
+    }
+    svg.appendChild(el("line",{x1:m.l,y1:H-m.b,x2:W-m.r,y2:H-m.b,stroke:"#cbd5e1"}));
+    svg.appendChild(el("line",{x1:m.l,y1:m.t,x2:m.l,y2:H-m.b,stroke:"#cbd5e1"}));
+    for(let t=0;t<=N;t+=10)
+      svg.appendChild(el("text",{x:sx(t),y:H-m.b+16,"text-anchor":"middle","font-size":10,fill:"#6b7280"})).textContent=t;
+    svg.appendChild(el("text",{x:(m.l+W-m.r)/2,y:H-8,"text-anchor":"middle","font-size":12,fill:"#374151"})).textContent="day";
+    const yl=el("text",{x:16,y:(m.t+H-m.b)/2,"text-anchor":"middle","font-size":12,fill:"#374151",transform:`rotate(-90 16 ${(m.t+H-m.b)/2})`});
+    yl.textContent="infections"; svg.appendChild(yl);
+
+    // shade the second half, where the scaling drifts
+    svg.appendChild(el("rect",{x:sx(tmid),y:m.t,width:sx(N)-sx(tmid),height:(H-m.b)-m.t,fill:"#f97316",opacity:0.05}));
+    svg.appendChild(el("text",{x:sx(tmid)+6,y:m.t+14,"font-size":10,fill:"#c2410c",opacity:.8})).textContent="death scaling drifts here";
+
+    // deaths-implied (dashed orange), then truth (slate), then estimate (purple) on top
+    svg.appendChild(el("path",{d:pathOf(deathsImplied),fill:"none",stroke:"var(--deaths)","stroke-width":2.6,"stroke-dasharray":"7 5"}));
+    svg.appendChild(el("path",{d:pathOf(tru),fill:"none",stroke:"var(--truth)","stroke-width":3.4}));
+    svg.appendChild(el("path",{d:pathOf(estimate),fill:"none",stroke:"var(--est)","stroke-width":3}));
+
+    // end-of-curve labels
+    svg.appendChild(el("text",{x:sx(N)-2,y:sy(deathsImplied(N))-6,"text-anchor":"end","font-size":10.5,"font-weight":700,fill:"var(--deaths)"})).textContent="deaths imply";
+    svg.appendChild(el("text",{x:sx(N)-2,y:sy(tru(N))+16,"text-anchor":"end","font-size":10.5,"font-weight":700,fill:"var(--truth)"})).textContent="truth";
+    if(!resolved && drift>0.05)
+      svg.appendChild(el("text",{x:sx(N)-2,y:sy(estimate(N))-6,"text-anchor":"end","font-size":10.5,"font-weight":700,fill:"var(--est)"})).textContent="estimate";
+
+    // readouts: mean absolute % error of the estimate vs truth over the drift window
+    let err=0,cnt=0;
+    for(let t=tmid;t<=N;t++){ err+=Math.abs(estimate(t)-tru(t))/tru(t); cnt++; }
+    const errPct=100*err/cnt;
+    document.getElementById("driftChip").textContent=(1+drift).toFixed(1);
+    document.getElementById("errChip").textContent=errPct.toFixed(0)+"%";
+    const st=document.getElementById("stateChip");
+    if(resolved) st.textContent="resolved: scaling varies → estimate matches the truth";
+    else if(drift<0.05) st.textContent="no conflict: every stream implies the same trajectory";
+    else st.textContent="conflict: the estimate fits neither the cases nor the deaths";
+  }
+
+  driftInp.addEventListener("input",draw);
+  resolveInp.addEventListener("change",draw);
+  document.querySelectorAll("#conflictPresets button").forEach(b=>{
+    b.addEventListener("click",()=>{ driftInp.value=b.dataset.drift; draw(); });
+  });
+  draw();
+})();
+</script>
+<script>
+/* embed mode: ?embed=sectionId[,id2,...] strips the page chrome AND the
+   explanatory prose from the kept sections, leaving only the interactive
+   figures, for inlining in an <iframe> in the course site. Reports height so
+   the host page can auto-size the iframe. */
+(function(){
+  var q=new URLSearchParams(location.search), e=q.get('embed');
+  var KEEP={fig:1,controls:1,readout:1,legend:1,presets:1,figcap:1};
+  if(e){
+    var keep=e.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    ['header.hero','footer'].forEach(function(sel){
+      Array.prototype.forEach.call(document.querySelectorAll(sel),function(n){n.style.display='none';});
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('body > div'),function(d){
+      if(!d.classList.contains('wrap')) d.style.display='none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('section'),function(sec){
+      if(keep.indexOf(sec.id)===-1){ sec.style.display='none'; return; }
+      sec.style.margin='0'; sec.style.border='none'; sec.style.boxShadow='none'; sec.style.padding='2px 2px 8px';
+      Array.prototype.forEach.call(sec.children,function(c){
+        var k=false, cl=c.classList; if(cl){ for(var key in KEEP){ if(cl.contains(key)){k=true;break;} } }
+        if(!k) c.style.display='none';
+      });
+    });
+    var wrap=document.querySelector('.wrap'); if(wrap) wrap.style.padding='0 8px 10px';
+    document.body.style.background='#fff'; document.documentElement.style.background='#fff';
+  }
+  function postH(){ try{ parent.postMessage({nfiddEmbedHeight: Math.ceil(document.body.getBoundingClientRect().height)}, '*'); }catch(_){} }
+  window.addEventListener('load', postH);
+  window.addEventListener('resize', postH);
+  document.addEventListener('input', function(){ setTimeout(postH,60); });
+  document.addEventListener('click', function(){ setTimeout(postH,120); });
+  setTimeout(postH,250); setTimeout(postH,1000);
+})();
+</script>
+</body>
+</html>
